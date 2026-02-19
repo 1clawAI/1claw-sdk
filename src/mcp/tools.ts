@@ -205,6 +205,38 @@ export const TOOL_PAY_AND_FETCH: McpToolDefinition = {
   },
 };
 
+export const TOOL_SHARE_SECRET: McpToolDefinition = {
+  name: "1claw_share_secret",
+  description:
+    "Share a secret with another person by email. " +
+    "The recipient does NOT need a 1Claw account — they will see " +
+    "the shared secret when they sign up or log in. " +
+    "Use this to grant a human access to a credential.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      secret_id: {
+        type: "string",
+        description: "UUID of the secret entry to share",
+      },
+      email: {
+        type: "string",
+        description: "Email address of the recipient",
+      },
+      expires_at: {
+        type: "string",
+        description: "ISO-8601 expiry date for the share (e.g. '2025-12-31T00:00:00Z')",
+      },
+      max_access_count: {
+        type: "number",
+        description: "Maximum number of times the secret can be accessed (default: 5)",
+        default: 5,
+      },
+    },
+    required: ["secret_id", "email", "expires_at"],
+  },
+};
+
 /** All MCP tool definitions for 1Claw. */
 export const ALL_TOOLS: McpToolDefinition[] = [
   TOOL_GET_SECRET,
@@ -216,6 +248,7 @@ export const ALL_TOOLS: McpToolDefinition[] = [
   TOOL_REQUEST_APPROVAL,
   TOOL_CHECK_APPROVAL,
   TOOL_PAY_AND_FETCH,
+  TOOL_SHARE_SECRET,
 ];
 
 /** Return all MCP tool definitions for use in agent tool registries. */

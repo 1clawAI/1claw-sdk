@@ -37,6 +37,7 @@ export type {
   AgentTokenRequest,
   UserApiKeyTokenRequest,
   GoogleAuthRequest,
+  SignupRequest,
   TokenResponse,
   ChangePasswordRequest,
   // API Keys
@@ -68,6 +69,7 @@ export type {
   // Sharing
   CreateShareRequest,
   ShareResponse,
+  SharedSecretResponse,
   // Organization
   OrgMemberResponse,
   OrgMemberListResponse,

@@ -4,6 +4,7 @@ import type {
   AgentTokenRequest,
   UserApiKeyTokenRequest,
   GoogleAuthRequest,
+  SignupRequest,
   ChangePasswordRequest,
   TokenResponse,
   OneclawResponse,
@@ -25,6 +26,23 @@ export class AuthResource {
     const res = await this.http.request<TokenResponse>(
       "POST",
       "/v1/auth/token",
+      { body: credentials },
+    );
+    if (res.data?.access_token) {
+      this.http.setToken(res.data.access_token);
+    }
+    return res;
+  }
+
+  /**
+   * Create a new account with email and password.
+   * Creates a new organization, returns a JWT, and automatically
+   * claims any pending email-based secret shares.
+   */
+  async signup(credentials: SignupRequest): Promise<OneclawResponse<TokenResponse>> {
+    const res = await this.http.request<TokenResponse>(
+      "POST",
+      "/v1/auth/signup",
       { body: credentials },
     );
     if (res.data?.access_token) {

@@ -2,7 +2,7 @@ import type { HttpClient } from "./http";
 import type {
   CreateShareRequest,
   ShareResponse,
-  SecretResponse,
+  SharedSecretResponse,
   OneclawResponse,
 } from "./types";
 
@@ -10,14 +10,37 @@ import type {
  * Sharing resource — create time-limited, access-controlled share links
  * for individual secrets.
  *
- * Note: the sharing endpoints are defined in the API but not yet fully
- * implemented server-side. These methods are provided for forward
- * compatibility and will work once the backend is complete.
+ * Supports four recipient types:
+ * - `user` — direct share to an existing user by UUID
+ * - `agent` — direct share to an agent by UUID
+ * - `external_email` — invite-by-email; recipient doesn't need an account yet.
+ *   When they sign up or log in, the share is automatically claimed.
+ * - `anyone_with_link` — anyone with the URL can access the secret
  */
 export class SharingResource {
   constructor(private readonly http: HttpClient) {}
 
-  /** Create a shareable link for a secret. */
+  /**
+   * Create a shareable link for a secret.
+   *
+   * @example
+   * ```ts
+   * // Share with an existing user
+   * await client.sharing.create(secretId, {
+   *   recipient_type: "user",
+   *   recipient_id: userId,
+   *   expires_at: "2025-04-01T00:00:00Z",
+   * });
+   *
+   * // Invite by email (recipient doesn't need an account)
+   * await client.sharing.create(secretId, {
+   *   recipient_type: "external_email",
+   *   email: "alice@example.com",
+   *   expires_at: "2025-04-01T00:00:00Z",
+   *   max_access_count: 3,
+   * });
+   * ```
+   */
   async create(
     secretId: string,
     options: CreateShareRequest,
@@ -29,12 +52,16 @@ export class SharingResource {
     );
   }
 
-  /** Access a shared secret using its share ID. */
-  async access(shareId: string): Promise<OneclawResponse<SecretResponse>> {
-    return this.http.request<SecretResponse>("GET", `/v1/share/${shareId}`);
+  /**
+   * Access a shared secret using its share ID.
+   * This is a public endpoint — no authentication required,
+   * but the share must not be expired or over its access limit.
+   */
+  async access(shareId: string): Promise<OneclawResponse<SharedSecretResponse>> {
+    return this.http.request<SharedSecretResponse>("GET", `/v1/share/${shareId}`);
   }
 
-  /** Revoke an active share link. */
+  /** Revoke an active share link. Only the creator can revoke. */
   async revoke(shareId: string): Promise<OneclawResponse<void>> {
     return this.http.request<void>("DELETE", `/v1/share/${shareId}`);
   }

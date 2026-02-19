@@ -56,6 +56,12 @@ export interface GoogleAuthRequest {
   id_token: string;
 }
 
+export interface SignupRequest {
+  email: string;
+  password: string;
+  display_name?: string;
+}
+
 export interface TokenResponse {
   access_token: string;
   token_type: string;
@@ -247,6 +253,8 @@ export interface AgentKeyRotatedResponse {
 export interface CreateShareRequest {
   recipient_type: string;
   recipient_id?: string;
+  /** Email address for invite-by-email shares (recipient_type = "external_email"). */
+  email?: string;
   permissions?: string[];
   max_access_count?: number;
   expires_at: string;
@@ -257,6 +265,19 @@ export interface CreateShareRequest {
 export interface ShareResponse {
   id: string;
   share_url: string;
+  recipient_type: string;
+  recipient_email?: string;
+  expires_at: string;
+  max_access_count: number;
+}
+
+export interface SharedSecretResponse {
+  id: string;
+  path: string;
+  type: string;
+  value: string;
+  access_count: number;
+  max_access_count: number;
 }
 
 // ---------------------------------------------------------------------------

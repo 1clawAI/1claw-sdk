@@ -31,6 +31,7 @@ export class McpHandler {
       ["1claw_request_approval", this.requestApproval.bind(this)],
       ["1claw_check_approval_status", this.checkApproval.bind(this)],
       ["1claw_pay_and_fetch", this.payAndFetch.bind(this)],
+      ["1claw_share_secret", this.shareSecret.bind(this)],
     ]);
   }
 
@@ -218,6 +219,31 @@ export class McpHandler {
         type: res.data!.type,
         value: res.data!.value,
         version: res.data!.version,
+      }),
+    );
+  }
+
+  private async shareSecret(args: ToolArgs): Promise<McpToolResult> {
+    const secretId = args.secret_id as string;
+    const email = args.email as string;
+    const expiresAt = args.expires_at as string;
+    const maxAccessCount = (args.max_access_count as number) ?? 5;
+
+    const res = await this.client.sharing.create(secretId, {
+      recipient_type: "external_email",
+      email,
+      expires_at: expiresAt,
+      max_access_count: maxAccessCount,
+    });
+    if (res.error) return this.error(res.error.message);
+
+    return this.text(
+      JSON.stringify({
+        status: "shared",
+        share_id: res.data!.id,
+        recipient_email: email,
+        expires_at: res.data!.expires_at,
+        message: `Secret shared with ${email}. They will see it when they sign up or log in.`,
       }),
     );
   }
