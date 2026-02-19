@@ -1,189 +1,142 @@
-import type {
-  OneClawConfig,
-  SecretResponse,
-  VaultResponse,
-  PolicyResponse,
-  ShareOptions,
-  PaymentRequired,
-} from "./types";
+import type { OneclawClientConfig } from "./types";
+import { HttpClient } from "./http";
+import { VaultResource } from "./vault";
+import { SecretsResource } from "./secrets";
+import { AccessResource } from "./access";
+import { AgentsResource } from "./agents";
+import { SharingResource } from "./sharing";
+import { ApprovalsResource } from "./approvals";
+import { BillingResource } from "./billing";
+import { AuditResource } from "./audit";
+import { OrgResource } from "./org";
+import { AuthResource } from "./auth";
+import { ApiKeysResource } from "./api-keys";
+import { X402Resource } from "./x402";
 
-export class OneClawClient {
-  private baseUrl: string;
-  private apiKey?: string;
-  private token?: string;
-  private maxPaymentPerRequest: number;
+/**
+ * The main 1Claw SDK client. All API resources are exposed as
+ * namespaced properties for discoverability and tree-shaking.
+ *
+ * @example
+ * ```ts
+ * import { createClient } from "@1claw/sdk";
+ *
+ * const client = createClient({
+ *   baseUrl: "https://api.1claw.xyz",
+ *   apiKey: "ocv_...",
+ * });
+ *
+ * // Authenticate (exchanges API key for a JWT)
+ * await client.auth.apiKeyToken({ api_key: "ocv_..." });
+ *
+ * // Use resources
+ * const vaults = await client.vault.list();
+ * const secret = await client.secrets.get(vaultId, "my-key");
+ * ```
+ */
+export class OneclawClient {
+  private readonly http: HttpClient;
 
-  constructor(config: OneClawConfig) {
-    this.baseUrl = config.baseUrl.replace(/\/$/, "");
-    this.apiKey = config.apiKey;
-    this.maxPaymentPerRequest = config.maxPaymentPerRequest ?? 1.0;
-  }
+  /** Vault management — create, list, get, delete vaults. */
+  readonly vault: VaultResource;
+  /** Secret management — store, retrieve, list, rotate, delete secrets. */
+  readonly secrets: SecretsResource;
+  /** Access control — grant/revoke policies for humans and agents. */
+  readonly access: AccessResource;
+  /** Agent management — register, update, delete agents and rotate keys. */
+  readonly agents: AgentsResource;
+  /** Secret sharing — create and manage time-limited share links. */
+  readonly sharing: SharingResource;
+  /** Human-in-the-loop approvals — request, review, approve/deny. */
+  readonly approvals: ApprovalsResource;
+  /** Billing and usage — view usage summaries and per-request history. */
+  readonly billing: BillingResource;
+  /** Audit log — query the immutable audit trail. */
+  readonly audit: AuditResource;
+  /** Organization — manage members and roles. */
+  readonly org: OrgResource;
+  /** Authentication — login, agent auth, API key auth, Google OAuth. */
+  readonly auth: AuthResource;
+  /** API keys — create, list, and revoke personal API keys. */
+  readonly apiKeys: ApiKeysResource;
+  /** x402 payment protocol — inspect, pay, and verify micropayments. */
+  readonly x402: X402Resource;
 
-  private async getHeaders(): Promise<Record<string, string>> {
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-    };
-    if (this.token) {
-      headers["Authorization"] = `Bearer ${this.token}`;
+  constructor(config: OneclawClientConfig) {
+    this.http = new HttpClient(config);
+
+    if (config.apiKey && !config.token) {
+      this.autoAuthenticate(config);
     }
-    return headers;
+
+    this.vault = new VaultResource(this.http);
+    this.secrets = new SecretsResource(this.http);
+    this.access = new AccessResource(this.http);
+    this.agents = new AgentsResource(this.http);
+    this.sharing = new SharingResource(this.http);
+    this.approvals = new ApprovalsResource(this.http);
+    this.billing = new BillingResource(this.http);
+    this.audit = new AuditResource(this.http);
+    this.org = new OrgResource(this.http);
+    this.auth = new AuthResource(this.http);
+    this.apiKeys = new ApiKeysResource(this.http);
+    this.x402 = new X402Resource(this.http, config.x402Signer);
   }
 
   /**
-   * Authenticate with API key to get a JWT token
+   * When an API key is provided without a pre-existing token, lazily
+   * exchange it for a JWT on construction. This is async but fires
+   * without blocking the constructor — the first actual request
+   * will await token resolution.
    */
-  async authenticate(agentId: string, apiKey?: string): Promise<void> {
-    const key = apiKey || this.apiKey;
-    if (!key) throw new Error("API key required for authentication");
+  private autoAuthenticate(config: OneclawClientConfig): void {
+    const authPromise = config.agentId
+      ? this.http
+          .request<{ access_token: string }>("POST", "/v1/auth/agent-token", {
+            body: { agent_id: config.agentId, api_key: config.apiKey },
+          })
+          .then((res) => {
+            if (res.data?.access_token) this.http.setToken(res.data.access_token);
+          })
+      : this.http
+          .request<{ access_token: string }>("POST", "/v1/auth/api-key-token", {
+            body: { api_key: config.apiKey },
+          })
+          .then((res) => {
+            if (res.data?.access_token) this.http.setToken(res.data.access_token);
+          });
 
-    const response = await fetch(`${this.baseUrl}/v1/auth/agent-token`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ agent_id: agentId, api_key: key }),
+    authPromise.catch(() => {
+      /* auth failure will surface on the next request */
     });
-
-    if (!response.ok) {
-      throw new Error(`Authentication failed: ${response.status}`);
-    }
-
-    const data = await response.json();
-    this.token = data.access_token;
   }
+}
 
-  /**
-   * Fetch with automatic 402 payment handling
-   */
-  private async fetchWithPayment(url: string, options: RequestInit = {}): Promise<Response> {
-    const headers = await this.getHeaders();
-    const response = await fetch(url, {
-      ...options,
-      headers: { ...headers, ...(options.headers as Record<string, string>) },
-    });
-
-    if (response.status === 402) {
-      const paymentRequired: PaymentRequired = await response.json();
-
-      // Check price safety limit
-      const price = parseFloat(paymentRequired.accepts[0]?.price || "0");
-      if (price > this.maxPaymentPerRequest) {
-        throw new Error(
-          `Payment of $${price} exceeds max allowed $${this.maxPaymentPerRequest}`
-        );
-      }
-
-      // TODO: Implement actual x402 payment signing with wallet
-      // For now, throw an informative error
-      throw new Error(
-        `Payment required: $${price} USDC. ` +
-          `x402 wallet payment not yet implemented in SDK. ` +
-          `Use an API key to authenticate instead.`
-      );
-    }
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ detail: "Request failed" }));
-      throw new Error((error as { detail?: string }).detail || `HTTP ${response.status}`);
-    }
-
-    return response;
-  }
-
-  /**
-   * Get a decrypted secret value
-   */
-  async getSecret(vaultId: string, path: string): Promise<SecretResponse> {
-    const response = await this.fetchWithPayment(
-      `${this.baseUrl}/v1/vaults/${vaultId}/secrets/${path}`
-    );
-    return response.json();
-  }
-
-  /**
-   * Store or update a secret
-   */
-  async putSecret(
-    vaultId: string,
-    path: string,
-    value: string,
-    type: string = "api_key",
-    metadata?: Record<string, unknown>
-  ): Promise<void> {
-    await this.fetchWithPayment(
-      `${this.baseUrl}/v1/vaults/${vaultId}/secrets/${path}`,
-      {
-        method: "PUT",
-        body: JSON.stringify({ type, value, metadata }),
-      }
-    );
-  }
-
-  /**
-   * Delete a secret
-   */
-  async deleteSecret(vaultId: string, path: string): Promise<void> {
-    await this.fetchWithPayment(
-      `${this.baseUrl}/v1/vaults/${vaultId}/secrets/${path}`,
-      { method: "DELETE" }
-    );
-  }
-
-  /**
-   * List vaults
-   */
-  async listVaults(): Promise<VaultResponse[]> {
-    const response = await this.fetchWithPayment(`${this.baseUrl}/v1/vaults`);
-    const data = await response.json();
-    return (data as { vaults: VaultResponse[] }).vaults;
-  }
-
-  /**
-   * Create a new vault
-   */
-  async createVault(name: string, description?: string): Promise<VaultResponse> {
-    const response = await this.fetchWithPayment(`${this.baseUrl}/v1/vaults`, {
-      method: "POST",
-      body: JSON.stringify({ name, description: description ?? "" }),
-    });
-    return response.json();
-  }
-
-  /**
-   * Grant access to a vault by creating an access policy
-   */
-  async grantAccess(
-    vaultId: string,
-    principalType: string,
-    principalId: string,
-    permissions: string[] = ["read"],
-    secretPathPattern = "**"
-  ): Promise<PolicyResponse> {
-    const response = await this.fetchWithPayment(
-      `${this.baseUrl}/v1/vaults/${vaultId}/policies`,
-      {
-        method: "POST",
-        body: JSON.stringify({
-          secret_path_pattern: secretPathPattern,
-          principal_type: principalType,
-          principal_id: principalId,
-          permissions,
-        }),
-      }
-    );
-    return response.json();
-  }
-
-  /**
-   * Share a secret
-   */
-  async shareSecret(secretId: string, options: ShareOptions): Promise<string> {
-    const response = await this.fetchWithPayment(
-      `${this.baseUrl}/v1/secrets/${secretId}/share`,
-      {
-        method: "POST",
-        body: JSON.stringify(options),
-      }
-    );
-    const data = await response.json();
-    return (data as { share_url?: string; id?: string }).share_url || (data as { share_url?: string; id?: string }).id || "";
-  }
+/**
+ * Factory function to create a new 1Claw SDK client.
+ *
+ * @example
+ * ```ts
+ * // User with API key
+ * const client = createClient({
+ *   baseUrl: "https://api.1claw.xyz",
+ *   apiKey: "ocv_...",
+ * });
+ *
+ * // Agent with API key
+ * const agent = createClient({
+ *   baseUrl: "https://api.1claw.xyz",
+ *   apiKey: "ocv_...",
+ *   agentId: "agent-uuid",
+ * });
+ *
+ * // Pre-authenticated with JWT
+ * const authed = createClient({
+ *   baseUrl: "https://api.1claw.xyz",
+ *   token: "eyJ...",
+ * });
+ * ```
+ */
+export function createClient(config: OneclawClientConfig): OneclawClient {
+  return new OneclawClient(config);
 }
