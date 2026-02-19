@@ -1,47 +1,47 @@
 {
-  "name": "@1claw/sdk",
-  "version": "0.2.0",
-  "description": "TypeScript SDK for 1Claw Vault — secret management for AI agents",
-  "type": "module",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+    "name": "@1claw/sdk",
+    "version": "0.2.0",
+    "description": "TypeScript SDK for 1Claw Vault — secret management for AI agents",
+    "type": "module",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js"
+        },
+        "./mcp": {
+            "types": "./dist/mcp/index.d.ts",
+            "import": "./dist/mcp/index.js"
+        }
     },
-    "./mcp": {
-      "types": "./dist/mcp/index.d.ts",
-      "import": "./dist/mcp/index.js"
+    "files": [
+        "dist",
+        "README.md"
+    ],
+    "scripts": {
+        "build": "tsc",
+        "clean": "rm -rf dist",
+        "test": "vitest",
+        "prepublishOnly": "npm run clean && npm run build"
+    },
+    "keywords": [
+        "secrets",
+        "vault",
+        "ai-agents",
+        "x402",
+        "hsm",
+        "mcp",
+        "model-context-protocol"
+    ],
+    "license": "PolyForm-Noncommercial-1.0.0",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/1clawAI/1claw-sdk.git"
+    },
+    "dependencies": {},
+    "devDependencies": {
+        "typescript": "^5.0.0",
+        "vitest": "^3.0.0"
     }
-  },
-  "files": [
-    "dist",
-    "README.md"
-  ],
-  "scripts": {
-    "build": "tsc",
-    "clean": "rm -rf dist",
-    "test": "vitest",
-    "prepublishOnly": "npm run clean && npm run build"
-  },
-  "keywords": [
-    "secrets",
-    "vault",
-    "ai-agents",
-    "x402",
-    "hsm",
-    "mcp",
-    "model-context-protocol"
-  ],
-  "license": "PolyForm-Noncommercial-1.0.0",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/1clawAI/1claw-sdk.git"
-  },
-  "dependencies": {},
-  "devDependencies": {
-    "typescript": "^5.0.0",
-    "vitest": "^3.0.0"
-  }
 }

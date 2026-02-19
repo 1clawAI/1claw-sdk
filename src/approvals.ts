@@ -1,9 +1,9 @@
 import type { HttpClient } from "./http";
 import type {
-  ApprovalRequest,
-  CreateApprovalRequest,
-  ApprovalListResponse,
-  OneclawResponse,
+    ApprovalRequest,
+    CreateApprovalRequest,
+    ApprovalListResponse,
+    OneclawResponse,
 } from "./types";
 
 /**
@@ -17,92 +17,97 @@ import type {
  * once the backend endpoints are deployed.
  */
 export class ApprovalsResource {
-  constructor(private readonly http: HttpClient) {}
+    constructor(private readonly http: HttpClient) {}
 
-  /**
-   * Request human approval to access a secret.
-   * Typically called by an agent that encounters a gated secret.
-   */
-  async request(
-    options: CreateApprovalRequest,
-  ): Promise<OneclawResponse<ApprovalRequest>> {
-    return this.http.request<ApprovalRequest>("POST", "/v1/approvals", {
-      body: options,
-    });
-  }
+    /**
+     * Request human approval to access a secret.
+     * Typically called by an agent that encounters a gated secret.
+     */
+    async request(
+        options: CreateApprovalRequest,
+    ): Promise<OneclawResponse<ApprovalRequest>> {
+        return this.http.request<ApprovalRequest>("POST", "/v1/approvals", {
+            body: options,
+        });
+    }
 
-  /**
-   * List approval requests, optionally filtered by status.
-   * @param status - "pending", "approved", or "denied"
-   */
-  async list(
-    status?: "pending" | "approved" | "denied",
-  ): Promise<OneclawResponse<ApprovalListResponse>> {
-    return this.http.request<ApprovalListResponse>("GET", "/v1/approvals", {
-      query: status ? { status } : undefined,
-    });
-  }
+    /**
+     * List approval requests, optionally filtered by status.
+     * @param status - "pending", "approved", or "denied"
+     */
+    async list(
+        status?: "pending" | "approved" | "denied",
+    ): Promise<OneclawResponse<ApprovalListResponse>> {
+        return this.http.request<ApprovalListResponse>("GET", "/v1/approvals", {
+            query: status ? { status } : undefined,
+        });
+    }
 
-  /** Approve a pending request. */
-  async approve(requestId: string): Promise<OneclawResponse<ApprovalRequest>> {
-    return this.http.request<ApprovalRequest>(
-      "POST",
-      `/v1/approvals/${requestId}/approve`,
-    );
-  }
+    /** Approve a pending request. */
+    async approve(
+        requestId: string,
+    ): Promise<OneclawResponse<ApprovalRequest>> {
+        return this.http.request<ApprovalRequest>(
+            "POST",
+            `/v1/approvals/${requestId}/approve`,
+        );
+    }
 
-  /** Deny a pending request with an optional reason. */
-  async deny(
-    requestId: string,
-    reason?: string,
-  ): Promise<OneclawResponse<ApprovalRequest>> {
-    return this.http.request<ApprovalRequest>(
-      "POST",
-      `/v1/approvals/${requestId}/deny`,
-      { body: reason ? { reason } : undefined },
-    );
-  }
+    /** Deny a pending request with an optional reason. */
+    async deny(
+        requestId: string,
+        reason?: string,
+    ): Promise<OneclawResponse<ApprovalRequest>> {
+        return this.http.request<ApprovalRequest>(
+            "POST",
+            `/v1/approvals/${requestId}/deny`,
+            { body: reason ? { reason } : undefined },
+        );
+    }
 
-  /**
-   * Poll for the status of a specific approval request.
-   * Returns the current state — useful for agents waiting on approval.
-   */
-  async check(requestId: string): Promise<OneclawResponse<ApprovalRequest>> {
-    return this.http.request<ApprovalRequest>(
-      "GET",
-      `/v1/approvals/${requestId}`,
-    );
-  }
+    /**
+     * Poll for the status of a specific approval request.
+     * Returns the current state — useful for agents waiting on approval.
+     */
+    async check(requestId: string): Promise<OneclawResponse<ApprovalRequest>> {
+        return this.http.request<ApprovalRequest>(
+            "GET",
+            `/v1/approvals/${requestId}`,
+        );
+    }
 
-  /**
-   * Subscribe to approval events via polling.
-   * Calls the callback every `intervalMs` with new/changed approvals.
-   * Returns an unsubscribe function.
-   */
-  subscribe(
-    callback: (approvals: ApprovalRequest[]) => void,
-    options: { status?: "pending" | "approved" | "denied"; intervalMs?: number } = {},
-  ): () => void {
-    const interval = options.intervalMs ?? 3000;
-    let active = true;
+    /**
+     * Subscribe to approval events via polling.
+     * Calls the callback every `intervalMs` with new/changed approvals.
+     * Returns an unsubscribe function.
+     */
+    subscribe(
+        callback: (approvals: ApprovalRequest[]) => void,
+        options: {
+            status?: "pending" | "approved" | "denied";
+            intervalMs?: number;
+        } = {},
+    ): () => void {
+        const interval = options.intervalMs ?? 3000;
+        let active = true;
 
-    const poll = async () => {
-      while (active) {
-        try {
-          const res = await this.list(options.status);
-          if (res.data?.approvals) {
-            callback(res.data.approvals);
-          }
-        } catch {
-          /* silently retry */
-        }
-        await new Promise((r) => setTimeout(r, interval));
-      }
-    };
+        const poll = async () => {
+            while (active) {
+                try {
+                    const res = await this.list(options.status);
+                    if (res.data?.approvals) {
+                        callback(res.data.approvals);
+                    }
+                } catch {
+                    /* silently retry */
+                }
+                await new Promise((r) => setTimeout(r, interval));
+            }
+        };
 
-    poll();
-    return () => {
-      active = false;
-    };
-  }
+        poll();
+        return () => {
+            active = false;
+        };
+    }
 }
