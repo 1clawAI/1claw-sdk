@@ -212,6 +212,8 @@ export interface CreateAgentRequest {
     auth_method?: string;
     scopes?: string[];
     expires_at?: string;
+    /** Enable the crypto transaction proxy for this agent (default: false). */
+    crypto_proxy_enabled?: boolean;
 }
 
 export interface UpdateAgentRequest {
@@ -219,6 +221,8 @@ export interface UpdateAgentRequest {
     scopes?: string[];
     is_active?: boolean;
     expires_at?: string | null;
+    /** Toggle the crypto transaction proxy for this agent. */
+    crypto_proxy_enabled?: boolean;
 }
 
 export interface AgentResponse {
@@ -228,6 +232,8 @@ export interface AgentResponse {
     auth_method: string;
     scopes: string[];
     is_active: boolean;
+    /** Whether this agent can submit transactions through the signing proxy. */
+    crypto_proxy_enabled: boolean;
     created_at: string;
     expires_at?: string;
     last_active_at?: string;
@@ -457,6 +463,7 @@ export interface X402ConfigResponse {
     network: string;
     scheme: string;
     free_tier_limit: number;
+    facilitator_url: string;
 }
 
 // ---------------------------------------------------------------------------

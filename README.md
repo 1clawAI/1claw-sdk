@@ -117,6 +117,42 @@ The SDK exports a typed error hierarchy for catch-based flows:
 | `ValidationError`       | 400         | Invalid request body                                  |
 | `ServerError`           | 500+        | Server-side failure                                   |
 
+## Crypto Transaction Proxy
+
+Agents can be granted the ability to sign and broadcast on-chain transactions through a controlled signing proxy. Private keys stay in the HSM — the agent submits intent, the proxy signs and broadcasts.
+
+Toggle `crypto_proxy_enabled` when creating or updating an agent:
+
+```typescript
+// Register an agent with crypto proxy access
+const { data } = await client.agents.create({
+    name: "defi-bot",
+    auth_method: "api_key",
+    scopes: ["vault:read", "tx:sign"],
+    crypto_proxy_enabled: true,
+});
+
+// Or enable it later
+await client.agents.update(agentId, {
+    crypto_proxy_enabled: true,
+});
+
+// Check an agent's proxy status
+const agent = await client.agents.get(agentId);
+console.log(agent.data?.crypto_proxy_enabled); // true
+```
+
+Key properties:
+
+- **Disabled by default** — a human must explicitly enable per-agent
+- **Signing keys never leave the HSM** — same envelope encryption as secrets
+- **Every transaction is audit-logged** with full calldata
+- **Revocable instantly** — set `crypto_proxy_enabled: false` to cut off access
+
+> **Note:** Transaction submission endpoints (`submitTransaction`) are coming soon.
+> The `crypto_proxy_enabled` flag is the prerequisite — agents without it will be
+> rejected by the signing proxy middleware.
+
 ## x402 Payment Protocol
 
 When free-tier limits are exceeded, the API returns `402 Payment Required`. The SDK can automatically handle payments if you provide a signer:

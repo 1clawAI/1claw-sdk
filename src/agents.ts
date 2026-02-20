@@ -38,7 +38,7 @@ export class AgentsResource {
         return this.http.request<AgentListResponse>("GET", "/v1/agents");
     }
 
-    /** Update agent name, scopes, active status, or expiry. */
+    /** Update agent name, scopes, active status, expiry, or crypto proxy setting. */
     async update(
         agentId: string,
         update: UpdateAgentRequest,
