@@ -13,6 +13,7 @@ export { AuditResource } from "./audit";
 export { OrgResource } from "./org";
 export { AuthResource } from "./auth";
 export { ApiKeysResource } from "./api-keys";
+export { ChainsResource } from "./chains";
 export { X402Resource } from "./x402";
 
 // Errors
@@ -66,6 +67,15 @@ export type {
     AgentCreatedResponse,
     AgentListResponse,
     AgentKeyRotatedResponse,
+    // Chains
+    ChainResponse,
+    ChainListResponse,
+    CreateChainRequest,
+    UpdateChainRequest,
+    // Transactions (Crypto Proxy)
+    SubmitTransactionRequest,
+    TransactionResponse,
+    TransactionListResponse,
     // Sharing
     CreateShareRequest,
     ShareResponse,

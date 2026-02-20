@@ -64,20 +64,21 @@ await client.auth.google({ id_token: "..." });
 
 ## API Resources
 
-| Resource           | Methods                                                                    |
-| ------------------ | -------------------------------------------------------------------------- |
-| `client.vault`     | `create`, `get`, `list`, `delete`                                          |
-| `client.secrets`   | `set`, `get`, `delete`, `list`, `rotate`                                   |
-| `client.access`    | `grantHuman`, `grantAgent`, `update`, `revoke`, `listGrants`               |
-| `client.agents`    | `create`, `get`, `list`, `update`, `delete`, `rotateKey`                   |
-| `client.sharing`   | `create`, `access`, `revoke`                                               |
-| `client.approvals` | `request`, `list`, `approve`, `deny`, `check`, `subscribe`                 |
-| `client.billing`   | `usage`, `history`                                                         |
-| `client.audit`     | `query`                                                                    |
-| `client.org`       | `listMembers`, `updateMemberRole`, `removeMember`                          |
-| `client.auth`      | `login`, `agentToken`, `apiKeyToken`, `google`, `changePassword`, `logout` |
-| `client.apiKeys`   | `create`, `list`, `revoke`                                                 |
-| `client.x402`      | `getPaymentRequirement`, `pay`, `verifyReceipt`, `withPayment`             |
+| Resource           | Methods                                                                                                    |
+| ------------------ | ---------------------------------------------------------------------------------------------------------- |
+| `client.vault`     | `create`, `get`, `list`, `delete`                                                                          |
+| `client.secrets`   | `set`, `get`, `delete`, `list`, `rotate`                                                                   |
+| `client.access`    | `grantHuman`, `grantAgent`, `update`, `revoke`, `listGrants`                                               |
+| `client.agents`    | `create`, `get`, `list`, `update`, `delete`, `rotateKey`, `submitTransaction`, `getTransaction`, `listTransactions` |
+| `client.chains`    | `list`, `get`, `adminList`, `create`, `update`, `delete`                                                   |
+| `client.sharing`   | `create`, `access`, `listOutbound`, `listInbound`, `accept`, `decline`, `revoke`                           |
+| `client.approvals` | `request`, `list`, `approve`, `deny`, `check`, `subscribe`                                                 |
+| `client.billing`   | `usage`, `history`                                                                                         |
+| `client.audit`     | `query`                                                                                                    |
+| `client.org`       | `listMembers`, `updateMemberRole`, `removeMember`                                                          |
+| `client.auth`      | `login`, `agentToken`, `apiKeyToken`, `google`, `changePassword`, `logout`                                 |
+| `client.apiKeys`   | `create`, `list`, `revoke`                                                                                 |
+| `client.x402`      | `getPaymentRequirement`, `pay`, `verifyReceipt`, `withPayment`                                             |
 
 ## Response Envelope
 
@@ -142,16 +143,31 @@ const agent = await client.agents.get(agentId);
 console.log(agent.data?.crypto_proxy_enabled); // true
 ```
 
+### Submitting a transaction
+
+Once `crypto_proxy_enabled` is true and the agent has a signing key stored in an accessible vault, the agent can submit transaction intents:
+
+```typescript
+const txRes = await client.agents.submitTransaction(agentId, {
+    to: "0x000000000000000000000000000000000000dEaD",
+    value: "0.01",    // ETH
+    chain: "base",
+    // Optional: data, signing_key_path, nonce, gas_price, gas_limit
+});
+
+console.log(txRes.data?.status);     // "signed"
+console.log(txRes.data?.tx_hash);    // "0x..."
+console.log(txRes.data?.signed_tx);  // signed raw transaction hex
+```
+
+The backend fetches the signing key from the vault, signs the EIP-155 transaction, and returns the signed transaction hex. The signing key is decrypted in-memory, used, and immediately zeroized — it never leaves the server.
+
 Key properties:
 
 - **Disabled by default** — a human must explicitly enable per-agent
 - **Signing keys never leave the HSM** — same envelope encryption as secrets
 - **Every transaction is audit-logged** with full calldata
 - **Revocable instantly** — set `crypto_proxy_enabled: false` to cut off access
-
-> **Note:** Transaction submission endpoints (`submitTransaction`) are coming soon.
-> The `crypto_proxy_enabled` flag is the prerequisite — agents without it will be
-> rejected by the signing proxy middleware.
 
 ## x402 Payment Protocol
 

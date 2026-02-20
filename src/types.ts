@@ -253,6 +253,93 @@ export interface AgentKeyRotatedResponse {
 }
 
 // ---------------------------------------------------------------------------
+// Chains
+// ---------------------------------------------------------------------------
+
+export interface ChainResponse {
+    id: string;
+    name: string;
+    display_name: string;
+    chain_id: number;
+    rpc_url?: string;
+    ws_url?: string;
+    explorer_url?: string;
+    native_currency: string;
+    is_testnet: boolean;
+    is_enabled: boolean;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface ChainListResponse {
+    chains: ChainResponse[];
+}
+
+export interface CreateChainRequest {
+    name: string;
+    display_name: string;
+    chain_id: number;
+    rpc_url?: string;
+    ws_url?: string;
+    explorer_url?: string;
+    native_currency?: string;
+    is_testnet?: boolean;
+    is_enabled?: boolean;
+}
+
+export interface UpdateChainRequest {
+    display_name?: string;
+    rpc_url?: string;
+    ws_url?: string;
+    explorer_url?: string;
+    native_currency?: string;
+    is_testnet?: boolean;
+    is_enabled?: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Transactions (Crypto Proxy)
+// ---------------------------------------------------------------------------
+
+export interface SubmitTransactionRequest {
+    /** Destination address (0x-prefixed). */
+    to: string;
+    /** Value in ETH as a decimal string (e.g. "0.01"). */
+    value: string;
+    /** Chain name ("base", "ethereum", …) or numeric chain ID. */
+    chain: string;
+    /** Hex-encoded calldata for contract interactions. */
+    data?: string;
+    /** Vault path to the signing key. Defaults to `keys/{chain}-signer`. */
+    signing_key_path?: string;
+    /** Transaction nonce. Defaults to 0; callers should provide the correct nonce. */
+    nonce?: number;
+    /** Gas price in wei. Defaults to 1 gwei. */
+    gas_price?: string;
+    /** Gas limit. Defaults to 21 000. */
+    gas_limit?: number;
+}
+
+export interface TransactionResponse {
+    id: string;
+    agent_id: string;
+    chain: string;
+    chain_id: number;
+    to: string;
+    value_wei: string;
+    status: "pending" | "signed" | "failed";
+    signed_tx?: string;
+    tx_hash?: string;
+    error_message?: string;
+    created_at: string;
+    signed_at?: string;
+}
+
+export interface TransactionListResponse {
+    transactions: TransactionResponse[];
+}
+
+// ---------------------------------------------------------------------------
 // Sharing
 // ---------------------------------------------------------------------------
 

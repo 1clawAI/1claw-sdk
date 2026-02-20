@@ -11,6 +11,7 @@ import { AuditResource } from "./audit";
 import { OrgResource } from "./org";
 import { AuthResource } from "./auth";
 import { ApiKeysResource } from "./api-keys";
+import { ChainsResource } from "./chains";
 import { X402Resource } from "./x402";
 
 /**
@@ -59,6 +60,8 @@ export class OneclawClient {
     readonly auth: AuthResource;
     /** API keys — create, list, and revoke personal API keys. */
     readonly apiKeys: ApiKeysResource;
+    /** Supported blockchains — list chains and manage RPC configuration. */
+    readonly chains: ChainsResource;
     /** x402 payment protocol — inspect, pay, and verify micropayments. */
     readonly x402: X402Resource;
 
@@ -80,6 +83,7 @@ export class OneclawClient {
         this.org = new OrgResource(this.http);
         this.auth = new AuthResource(this.http);
         this.apiKeys = new ApiKeysResource(this.http);
+        this.chains = new ChainsResource(this.http);
         this.x402 = new X402Resource(this.http, config.x402Signer);
     }
 

@@ -6,6 +6,10 @@ import type {
     OneclawResponse,
 } from "./types";
 
+export interface ShareListResponse {
+    shares: ShareResponse[];
+}
+
 /**
  * Sharing resource — create time-limited, access-controlled share links
  * for individual secrets.
@@ -63,6 +67,38 @@ export class SharingResource {
         return this.http.request<SharedSecretResponse>(
             "GET",
             `/v1/share/${shareId}`,
+        );
+    }
+
+    /** List shares you have sent (outbound). */
+    async listOutbound(): Promise<OneclawResponse<ShareListResponse>> {
+        return this.http.request<ShareListResponse>(
+            "GET",
+            "/v1/shares/outbound",
+        );
+    }
+
+    /** List shares others have sent to you (inbound). */
+    async listInbound(): Promise<OneclawResponse<ShareListResponse>> {
+        return this.http.request<ShareListResponse>(
+            "GET",
+            "/v1/shares/inbound",
+        );
+    }
+
+    /** Accept an inbound share. */
+    async accept(shareId: string): Promise<OneclawResponse<void>> {
+        return this.http.request<void>(
+            "POST",
+            `/v1/shares/${shareId}/accept`,
+        );
+    }
+
+    /** Decline an inbound share. */
+    async decline(shareId: string): Promise<OneclawResponse<void>> {
+        return this.http.request<void>(
+            "POST",
+            `/v1/shares/${shareId}/decline`,
         );
     }
 

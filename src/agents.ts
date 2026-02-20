@@ -6,6 +6,9 @@ import type {
     AgentCreatedResponse,
     AgentListResponse,
     AgentKeyRotatedResponse,
+    SubmitTransactionRequest,
+    TransactionResponse,
+    TransactionListResponse,
     OneclawResponse,
 } from "./types";
 
@@ -65,6 +68,47 @@ export class AgentsResource {
         return this.http.request<AgentKeyRotatedResponse>(
             "POST",
             `/v1/agents/${agentId}/rotate-key`,
+        );
+    }
+
+    // ── Crypto Transaction Proxy ───────────────────────────────────────
+
+    /**
+     * Submit a transaction intent to be signed by the crypto proxy.
+     * The agent must have `crypto_proxy_enabled: true` and a valid
+     * signing key stored in an accessible vault.
+     *
+     * Returns the signed transaction hex and keccak tx hash.
+     */
+    async submitTransaction(
+        agentId: string,
+        tx: SubmitTransactionRequest,
+    ): Promise<OneclawResponse<TransactionResponse>> {
+        return this.http.request<TransactionResponse>(
+            "POST",
+            `/v1/agents/${agentId}/transactions`,
+            { body: tx },
+        );
+    }
+
+    /** Fetch a single transaction by ID. */
+    async getTransaction(
+        agentId: string,
+        txId: string,
+    ): Promise<OneclawResponse<TransactionResponse>> {
+        return this.http.request<TransactionResponse>(
+            "GET",
+            `/v1/agents/${agentId}/transactions/${txId}`,
+        );
+    }
+
+    /** List recent transactions for an agent. */
+    async listTransactions(
+        agentId: string,
+    ): Promise<OneclawResponse<TransactionListResponse>> {
+        return this.http.request<TransactionListResponse>(
+            "GET",
+            `/v1/agents/${agentId}/transactions`,
         );
     }
 }
