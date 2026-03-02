@@ -7,6 +7,8 @@ import type {
     AgentListResponse,
     AgentKeyRotatedResponse,
     AgentSelfResponse,
+    EnrollAgentRequest,
+    EnrollAgentResponse,
     SubmitTransactionRequest,
     SimulateTransactionRequest,
     SimulateBundleRequest,
@@ -34,6 +36,42 @@ export class AgentsResource {
         return this.http.request<AgentCreatedResponse>("POST", "/v1/agents", {
             body: options,
         });
+    }
+
+    /**
+     * Self-enroll an agent (public, no auth required).
+     * Credentials are emailed to the human — they are NOT returned in the response.
+     */
+    async enroll(
+        options: EnrollAgentRequest,
+    ): Promise<OneclawResponse<EnrollAgentResponse>> {
+        return this.http.request<EnrollAgentResponse>(
+            "POST",
+            "/v1/agents/enroll",
+            { body: options },
+        );
+    }
+
+    /**
+     * Static helper to self-enroll without an existing client instance.
+     * Useful when the agent has no credentials yet.
+     */
+    static async enroll(
+        baseUrl: string,
+        options: EnrollAgentRequest,
+    ): Promise<EnrollAgentResponse> {
+        const res = await fetch(`${baseUrl}/v1/agents/enroll`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(options),
+        });
+        if (!res.ok) {
+            const body = await res.json().catch(() => ({}));
+            throw new Error(
+                body.detail || body.message || `Enroll failed (${res.status})`,
+            );
+        }
+        return res.json();
     }
 
     /** Fetch the calling agent's own profile (includes `created_by`). */

@@ -631,6 +631,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/agents/{agent_id}/rotate-identity-keys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Rotate agent identity keys (SSH + ECDH)
+         * @description Rotates the agent's Ed25519 SSH keypair and P-256 ECDH keypair.
+         *     New private keys are stored in the __agent-keys vault; old keys are overwritten.
+         *     User-only endpoint — agents cannot rotate their own identity keys.
+         */
+        post: operations["rotateAgentIdentityKeys"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/agents/{agent_id}/transactions": {
         parameters: {
             query?: never;
@@ -3389,6 +3411,30 @@ export interface operations {
                     "application/json": components["schemas"]["AgentKeyRotatedResponse"];
                 };
             };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    rotateAgentIdentityKeys: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Agent with updated public keys */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentResponse"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
         };
     };

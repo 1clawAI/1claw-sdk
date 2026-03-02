@@ -308,6 +308,17 @@ export interface AgentKeyRotatedResponse {
     api_key: string;
 }
 
+export interface EnrollAgentRequest {
+    name: string;
+    human_email: string;
+    description?: string;
+}
+
+export interface EnrollAgentResponse {
+    agent_id: string;
+    message: string;
+}
+
 export interface AgentSelfResponse {
     id: string;
     name: string;
