@@ -242,6 +242,22 @@ export interface PolicyListResponse {
  * Hand-written: generated version marks `intents_api_enabled` as required
  * (with default false), but SDK callers expect it to be optional.
  */
+/** Per-agent Shroud LLM Proxy configuration. */
+export interface ShroudConfig {
+    pii_policy?: "block" | "redact" | "warn" | "allow";
+    injection_threshold?: number;
+    context_injection_threshold?: number;
+    allowed_providers?: string[];
+    allowed_models?: string[];
+    denied_models?: string[];
+    max_tokens_per_request?: number;
+    max_requests_per_minute?: number;
+    max_requests_per_day?: number;
+    daily_budget_usd?: number;
+    enable_secret_redaction?: boolean;
+    enable_response_filtering?: boolean;
+}
+
 export interface CreateAgentRequest {
     name: string;
     description?: string;
@@ -261,6 +277,10 @@ export interface CreateAgentRequest {
     oidc_issuer?: string;
     /** OIDC client ID (required for oidc_client_credentials auth) */
     oidc_client_id?: string;
+    /** Enable Shroud LLM Proxy for this agent. */
+    shroud_enabled?: boolean;
+    /** Shroud per-agent policy (PII, injection, providers, token limits, etc.). */
+    shroud_config?: ShroudConfig;
 }
 
 export type UpdateAgentRequest = ApiSchemas["UpdateAgentRequest"];
@@ -289,6 +309,10 @@ export interface AgentResponse {
     ssh_public_key?: string;
     /** P-256 ECDH public key (base64 SEC1 uncompressed point, auto-generated at creation) */
     ecdh_public_key?: string;
+    /** Whether this agent routes LLM traffic through the Shroud TEE proxy. */
+    shroud_enabled: boolean;
+    /** Per-agent Shroud policy (PII, injection, providers, token limits, etc.). */
+    shroud_config?: ShroudConfig | null;
     created_at: string;
     expires_at?: string;
     last_active_at?: string;

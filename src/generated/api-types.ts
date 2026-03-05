@@ -1678,6 +1678,12 @@ export interface components {
             oidc_issuer?: string;
             /** @description OIDC client ID (required for oidc_client_credentials auth) */
             oidc_client_id?: string;
+            /**
+             * @description Enable Shroud LLM Proxy for this agent
+             * @default false
+             */
+            shroud_enabled: boolean;
+            shroud_config?: components["schemas"]["ShroudConfig"];
         };
         UpdateAgentRequest: {
             name?: string;
@@ -1692,6 +1698,9 @@ export interface components {
             tx_allowed_chains?: string[];
             token_ttl_seconds?: number | null;
             vault_ids?: string[];
+            /** @description Enable/disable Shroud LLM Proxy */
+            shroud_enabled?: boolean;
+            shroud_config?: components["schemas"]["ShroudConfig"];
         };
         AgentResponse: {
             /** Format: uuid */
@@ -1719,6 +1728,9 @@ export interface components {
             ssh_public_key?: string;
             /** @description P-256 ECDH public key (base64 SEC1 uncompressed point, auto-generated at creation) */
             ecdh_public_key?: string;
+            /** @description Whether this agent routes LLM traffic through the Shroud TEE proxy */
+            shroud_enabled: boolean;
+            shroud_config?: components["schemas"]["ShroudConfig"];
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
@@ -1748,6 +1760,52 @@ export interface components {
             ssh_public_key?: string;
             /** @description P-256 ECDH public key (base64 SEC1 uncompressed point) */
             ecdh_public_key?: string;
+            /** @description Whether this agent routes LLM traffic through the Shroud TEE proxy */
+            shroud_enabled?: boolean;
+            shroud_config?: components["schemas"]["ShroudConfig"];
+        };
+        /** @description Per-agent Shroud LLM Proxy configuration */
+        ShroudConfig: {
+            /**
+             * @description How PII detections are handled
+             * @default redact
+             * @enum {string}
+             */
+            pii_policy: "block" | "redact" | "warn" | "allow";
+            /**
+             * @description Prompt injection score threshold (0.0–1.0). Requests above are blocked
+             * @default 0.7
+             */
+            injection_threshold: number;
+            /**
+             * @description Context injection score threshold (0.0–1.0)
+             * @default 0.7
+             */
+            context_injection_threshold: number;
+            /** @description LLM providers this agent may use (empty = all) */
+            allowed_providers?: string[];
+            /** @description Specific models allowed (empty = all) */
+            allowed_models?: string[];
+            /** @description Models explicitly blocked */
+            denied_models?: string[];
+            /** @description Maximum input tokens per request */
+            max_tokens_per_request?: number;
+            /** @description Rate limit (requests per minute) */
+            max_requests_per_minute?: number;
+            /** @description Rate limit (requests per day) */
+            max_requests_per_day?: number;
+            /** @description Daily LLM spend cap in USD (0 = unlimited) */
+            daily_budget_usd?: number;
+            /**
+             * @description Whether vault secrets are redacted from prompts/responses
+             * @default true
+             */
+            enable_secret_redaction: boolean;
+            /**
+             * @description Whether response credential scanning is active
+             * @default true
+             */
+            enable_response_filtering: boolean;
         };
         AgentCreatedResponse: {
             agent: components["schemas"]["AgentResponse"];
