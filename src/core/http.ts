@@ -28,7 +28,8 @@ export class HttpClient {
         this.signer = config.x402Signer;
         this.maxAutoPayUsd = config.maxAutoPayUsd ?? 0;
 
-        const isAgentKey = config.apiKey?.startsWith("ocv_") || !!config.agentId;
+        const isAgentKey =
+            config.apiKey?.startsWith("ocv_") || !!config.agentId;
         if (config.apiKey && isAgentKey) {
             this.agentCredentials = {
                 agentId: config.agentId,

@@ -1806,6 +1806,152 @@ export interface components {
              * @default true
              */
             enable_response_filtering: boolean;
+            unicode_normalization?: components["schemas"]["UnicodeNormalizationConfig"];
+            command_injection_detection?: components["schemas"]["CommandInjectionConfig"];
+            social_engineering_detection?: components["schemas"]["SocialEngineeringConfig"];
+            encoding_detection?: components["schemas"]["EncodingDetectionConfig"];
+            network_detection?: components["schemas"]["NetworkDetectionConfig"];
+            filesystem_detection?: components["schemas"]["FilesystemDetectionConfig"];
+            /**
+             * @description Global behavior when threats are detected (block=reject, surgical=remove only malicious parts, log_only=audit without action)
+             * @default block
+             * @enum {string}
+             */
+            sanitization_mode: "block" | "surgical" | "log_only";
+            /**
+             * @description Whether to log all detected threats to audit (even when action is allow/warn)
+             * @default true
+             */
+            threat_logging: boolean;
+        };
+        /** @description Unicode normalization and homoglyph detection settings */
+        UnicodeNormalizationConfig: {
+            /**
+             * @description Enable Unicode normalization
+             * @default true
+             */
+            enabled: boolean;
+            /**
+             * @description Remove zero-width and invisible Unicode characters
+             * @default true
+             */
+            strip_zero_width: boolean;
+            /**
+             * @description Replace look-alike characters (e.g., Cyrillic а → Latin a)
+             * @default true
+             */
+            normalize_homoglyphs: boolean;
+            /**
+             * @description Unicode normalization form to apply
+             * @default NFKC
+             * @enum {string}
+             */
+            normalization_form: "NFC" | "NFKC" | "NFD" | "NFKD";
+        };
+        /** @description Shell/command injection detection settings */
+        CommandInjectionConfig: {
+            /**
+             * @description Enable command injection detection
+             * @default true
+             */
+            enabled: boolean;
+            /**
+             * @description Action when command injection is detected
+             * @default block
+             * @enum {string}
+             */
+            action: "block" | "sanitize" | "warn" | "log";
+            /**
+             * @description Pattern strictness level
+             * @default default
+             * @enum {string}
+             */
+            patterns: "default" | "strict" | "custom";
+            /** @description Custom regex patterns for detection (only used when patterns=custom) */
+            custom_patterns?: string[];
+        };
+        /** @description Social engineering and manipulation detection settings */
+        SocialEngineeringConfig: {
+            /**
+             * @description Enable social engineering detection
+             * @default true
+             */
+            enabled: boolean;
+            /**
+             * @description Action when manipulation attempts are detected
+             * @default warn
+             * @enum {string}
+             */
+            action: "block" | "warn" | "log";
+            /**
+             * @description Detection sensitivity level
+             * @default medium
+             * @enum {string}
+             */
+            sensitivity: "low" | "medium" | "high";
+        };
+        /** @description Encoding/obfuscation detection settings */
+        EncodingDetectionConfig: {
+            /**
+             * @description Enable encoding detection
+             * @default true
+             */
+            enabled: boolean;
+            /**
+             * @description Action when obfuscated content is detected
+             * @default warn
+             * @enum {string}
+             */
+            action: "block" | "decode" | "warn" | "log";
+            /**
+             * @description Detect Base64-encoded content
+             * @default true
+             */
+            detect_base64: boolean;
+            /**
+             * @description Detect hex-encoded content (\\x41, 0x41)
+             * @default true
+             */
+            detect_hex: boolean;
+            /**
+             * @description Detect Unicode escape sequences (\\u0041)
+             * @default true
+             */
+            detect_unicode_escape: boolean;
+        };
+        /** @description Suspicious URL/domain detection settings */
+        NetworkDetectionConfig: {
+            /**
+             * @description Enable network/URL detection
+             * @default true
+             */
+            enabled: boolean;
+            /**
+             * @description Action when suspicious URLs are detected
+             * @default warn
+             * @enum {string}
+             */
+            action: "block" | "warn" | "log";
+            /** @description Domains to always block (e.g., pastebin.com, ngrok.io) */
+            blocked_domains?: string[];
+            /** @description Domains to always allow (allowlist mode when non-empty) */
+            allowed_domains?: string[];
+        };
+        /** @description Filesystem path detection settings */
+        FilesystemDetectionConfig: {
+            /**
+             * @description Enable filesystem path detection (disabled by default as it can be noisy)
+             * @default false
+             */
+            enabled: boolean;
+            /**
+             * @description Action when filesystem paths are detected
+             * @default log
+             * @enum {string}
+             */
+            action: "block" | "sanitize" | "warn" | "log";
+            /** @description Path patterns to block (e.g., /etc/passwd, ~/.ssh) */
+            blocked_paths?: string[];
         };
         AgentCreatedResponse: {
             agent: components["schemas"]["AgentResponse"];

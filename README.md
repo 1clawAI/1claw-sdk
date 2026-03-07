@@ -298,6 +298,58 @@ const client = createClient({
 
 Implement any interface in your own package — no PRs to the SDK needed.
 
+## Shroud Security (LLM Proxy)
+
+Agents can route LLM traffic through Shroud, a TEE-based proxy with comprehensive security features. Configure per-agent security policies via the `shroud_config` object:
+
+```typescript
+const { data } = await client.agents.create({
+    name: "secure-agent",
+    shroud_enabled: true,
+    shroud_config: {
+        // Basic settings
+        pii_policy: "redact",           // block | redact | warn | allow
+        injection_threshold: 0.7,
+
+        // Threat detection
+        unicode_normalization: {
+            enabled: true,
+            strip_zero_width: true,
+            normalize_homoglyphs: true,
+        },
+        command_injection_detection: {
+            enabled: true,
+            action: "block",            // block | sanitize | warn | log
+        },
+        social_engineering_detection: {
+            enabled: true,
+            action: "warn",
+            sensitivity: "medium",      // low | medium | high
+        },
+        encoding_detection: { enabled: true, action: "warn" },
+        network_detection: { enabled: true, action: "warn" },
+        filesystem_detection: { enabled: false },  // disabled by default
+
+        // Global settings
+        sanitization_mode: "block",     // block | surgical | log_only
+        threat_logging: true,
+    },
+});
+```
+
+Update an existing agent's security config:
+
+```typescript
+await client.agents.update(agentId, {
+    shroud_config: {
+        command_injection_detection: { enabled: true, action: "block" },
+        social_engineering_detection: { enabled: true, action: "block" },
+    },
+});
+```
+
+See the [Shroud Security Guide](https://docs.1claw.xyz/docs/guides/shroud) for full configuration options.
+
 ## OpenAPI Types
 
 The SDK's request types are generated from the **OpenAPI 3.1** spec, published as [@1claw/openapi-spec](https://www.npmjs.com/package/@1claw/openapi-spec). Advanced users can access the raw generated types:

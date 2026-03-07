@@ -242,6 +242,53 @@ export interface PolicyListResponse {
  * Hand-written: generated version marks `intents_api_enabled` as required
  * (with default false), but SDK callers expect it to be optional.
  */
+/** Unicode normalization and homoglyph detection settings. */
+export interface UnicodeNormalizationConfig {
+    enabled?: boolean;
+    strip_zero_width?: boolean;
+    normalize_homoglyphs?: boolean;
+    normalization_form?: "NFC" | "NFKC" | "NFD" | "NFKD";
+}
+
+/** Shell/command injection detection settings. */
+export interface CommandInjectionConfig {
+    enabled?: boolean;
+    action?: "block" | "sanitize" | "warn" | "log";
+    patterns?: "default" | "strict" | "custom";
+    custom_patterns?: string[];
+}
+
+/** Social engineering and manipulation detection settings. */
+export interface SocialEngineeringConfig {
+    enabled?: boolean;
+    action?: "block" | "warn" | "log";
+    sensitivity?: "low" | "medium" | "high";
+}
+
+/** Encoding/obfuscation detection settings. */
+export interface EncodingDetectionConfig {
+    enabled?: boolean;
+    action?: "block" | "decode" | "warn" | "log";
+    detect_base64?: boolean;
+    detect_hex?: boolean;
+    detect_unicode_escape?: boolean;
+}
+
+/** Suspicious URL/domain detection settings. */
+export interface NetworkDetectionConfig {
+    enabled?: boolean;
+    action?: "block" | "warn" | "log";
+    blocked_domains?: string[];
+    allowed_domains?: string[];
+}
+
+/** Filesystem path detection settings. */
+export interface FilesystemDetectionConfig {
+    enabled?: boolean;
+    action?: "block" | "sanitize" | "warn" | "log";
+    blocked_paths?: string[];
+}
+
 /** Per-agent Shroud LLM Proxy configuration. */
 export interface ShroudConfig {
     pii_policy?: "block" | "redact" | "warn" | "allow";
@@ -256,6 +303,22 @@ export interface ShroudConfig {
     daily_budget_usd?: number;
     enable_secret_redaction?: boolean;
     enable_response_filtering?: boolean;
+    /** Unicode normalization and homoglyph detection. */
+    unicode_normalization?: UnicodeNormalizationConfig;
+    /** Shell/command injection detection. */
+    command_injection_detection?: CommandInjectionConfig;
+    /** Social engineering and manipulation detection. */
+    social_engineering_detection?: SocialEngineeringConfig;
+    /** Encoding/obfuscation detection (Base64, hex, Unicode escapes). */
+    encoding_detection?: EncodingDetectionConfig;
+    /** Suspicious URL/domain detection. */
+    network_detection?: NetworkDetectionConfig;
+    /** Filesystem path detection. */
+    filesystem_detection?: FilesystemDetectionConfig;
+    /** Global behavior when threats are detected. */
+    sanitization_mode?: "block" | "surgical" | "log_only";
+    /** Whether to log all detected threats to audit. */
+    threat_logging?: boolean;
 }
 
 export interface CreateAgentRequest {
@@ -424,7 +487,8 @@ export interface SubmitTransactionRequest {
     simulate_first?: boolean;
 }
 
-export type SimulateTransactionRequest = ApiSchemas["SimulateTransactionRequest"];
+export type SimulateTransactionRequest =
+    ApiSchemas["SimulateTransactionRequest"];
 
 export interface SimulateBundleRequest {
     transactions: SimulateBundleItem[];

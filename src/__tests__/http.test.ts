@@ -2,7 +2,11 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { HttpClient } from "../core/http";
 import { PaymentRequiredError } from "../core/errors";
 
-function mockFetch(status: number, body: unknown, headers?: Record<string, string>) {
+function mockFetch(
+    status: number,
+    body: unknown,
+    headers?: Record<string, string>,
+) {
     return vi.fn().mockResolvedValue({
         ok: status >= 200 && status < 300,
         status,
@@ -22,7 +26,10 @@ describe("HttpClient", () => {
         const fetcher = mockFetch(200, { id: "v1" });
         globalThis.fetch = fetcher;
 
-        const http = new HttpClient({ baseUrl: "https://api.test", token: "tok123" });
+        const http = new HttpClient({
+            baseUrl: "https://api.test",
+            token: "tok123",
+        });
         const res = await http.request("GET", "/v1/vaults");
 
         expect(fetcher).toHaveBeenCalledOnce();
@@ -39,7 +46,10 @@ describe("HttpClient", () => {
         const fetcher = mockFetch(201, { id: "new" });
         globalThis.fetch = fetcher;
 
-        const http = new HttpClient({ baseUrl: "https://api.test", token: "t" });
+        const http = new HttpClient({
+            baseUrl: "https://api.test",
+            token: "t",
+        });
         await http.request("POST", "/v1/vaults", { body: { name: "test" } });
 
         const [, init] = fetcher.mock.calls[0];
@@ -72,7 +82,10 @@ describe("HttpClient", () => {
         const fetcher = mockFetch(200, {});
         globalThis.fetch = fetcher;
 
-        const http = new HttpClient({ baseUrl: "https://api.test", token: "t" });
+        const http = new HttpClient({
+            baseUrl: "https://api.test",
+            token: "t",
+        });
         await http.request("GET", "/v1/secrets", {
             query: { prefix: "db", limit: 10, missing: undefined },
         });
@@ -86,7 +99,10 @@ describe("HttpClient", () => {
     it("returns null data for 204 No Content", async () => {
         globalThis.fetch = mockFetch(204, null);
 
-        const http = new HttpClient({ baseUrl: "https://api.test", token: "t" });
+        const http = new HttpClient({
+            baseUrl: "https://api.test",
+            token: "t",
+        });
         const res = await http.request<void>("DELETE", "/v1/vaults/abc");
 
         expect(res.data).toBeNull();
@@ -97,7 +113,10 @@ describe("HttpClient", () => {
     it("returns error envelope on non-ok responses", async () => {
         globalThis.fetch = mockFetch(404, { detail: "Vault not found" });
 
-        const http = new HttpClient({ baseUrl: "https://api.test", token: "t" });
+        const http = new HttpClient({
+            baseUrl: "https://api.test",
+            token: "t",
+        });
         const res = await http.request("GET", "/v1/vaults/missing");
 
         expect(res.data).toBeNull();
@@ -110,18 +129,27 @@ describe("HttpClient", () => {
     it("requestOrThrow throws on error responses", async () => {
         globalThis.fetch = mockFetch(401, { detail: "Invalid token" });
 
-        const http = new HttpClient({ baseUrl: "https://api.test", token: "bad" });
+        const http = new HttpClient({
+            baseUrl: "https://api.test",
+            token: "bad",
+        });
 
-        await expect(
-            http.requestOrThrow("GET", "/v1/vaults"),
-        ).rejects.toThrow("Invalid token");
+        await expect(http.requestOrThrow("GET", "/v1/vaults")).rejects.toThrow(
+            "Invalid token",
+        );
     });
 
     it("requestOrThrow returns data on success", async () => {
         globalThis.fetch = mockFetch(200, { vaults: [] });
 
-        const http = new HttpClient({ baseUrl: "https://api.test", token: "t" });
-        const data = await http.requestOrThrow<{ vaults: unknown[] }>("GET", "/v1/vaults");
+        const http = new HttpClient({
+            baseUrl: "https://api.test",
+            token: "t",
+        });
+        const data = await http.requestOrThrow<{ vaults: unknown[] }>(
+            "GET",
+            "/v1/vaults",
+        );
 
         expect(data.vaults).toEqual([]);
     });
@@ -137,7 +165,9 @@ describe("HttpClient", () => {
         expect(http.getToken()).toBe("new-jwt");
 
         await http.request("GET", "/v1/vaults");
-        expect(fetcher.mock.calls[0][1].headers["Authorization"]).toBe("Bearer new-jwt");
+        expect(fetcher.mock.calls[0][1].headers["Authorization"]).toBe(
+            "Bearer new-jwt",
+        );
     });
 
     describe("x402 auto-payment", () => {
@@ -194,9 +224,12 @@ describe("HttpClient", () => {
 
             const res = await http.request("GET", "/v1/vaults/v1/secrets/key");
 
-            expect(signer.signPayment).toHaveBeenCalledWith(paymentRequirement.accepts[0]);
+            expect(signer.signPayment).toHaveBeenCalledWith(
+                paymentRequirement.accepts[0],
+            );
             expect(globalThis.fetch).toHaveBeenCalledTimes(2);
-            const retryHeaders = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[1][1].headers;
+            const retryHeaders = (globalThis.fetch as ReturnType<typeof vi.fn>)
+                .mock.calls[1][1].headers;
             expect(retryHeaders["X-PAYMENT"]).toBeDefined();
             expect(res.data).toEqual({ value: "secret" });
         });
@@ -221,7 +254,9 @@ describe("HttpClient", () => {
                 maxAutoPayUsd: 0,
             });
 
-            await expect(http.request("GET", "/v1/test")).rejects.toThrow(PaymentRequiredError);
+            await expect(http.request("GET", "/v1/test")).rejects.toThrow(
+                PaymentRequiredError,
+            );
         });
 
         it("throws when payment exceeds maxAutoPayUsd", async () => {
