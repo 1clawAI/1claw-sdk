@@ -8,6 +8,8 @@ TypeScript SDK for **1Claw Vault** — HSM-backed secret management for AI agent
 npm install @1claw/sdk
 ```
 
+**Note:** This package is **ESM-only**. Use it in an ESM context (e.g. `"type": "module"` in `package.json`, or `.mjs` files). Next.js and other bundlers handle ESM natively. Running scripts with plain `node` or `tsx` may require an ESM setup to avoid `ERR_PACKAGE_PATH_NOT_EXPORTED`.
+
 ## Quick Start
 
 ```typescript
@@ -81,6 +83,10 @@ await client.auth.google({ id_token: "..." });
 | `client.auth`      | `login`, `signup`, `agentToken`, `apiKeyToken`, `google`, `changePassword`, `logout`, `getMe`, `updateMe`, `deleteMe` |
 | `client.apiKeys`   | `create`, `list`, `revoke`                                                                                          |
 | `client.x402`      | `getPaymentRequirement`, `pay`, `verifyReceipt`, `withPayment`                                                      |
+
+**Agent create response:** `agents.create()` returns `{ agent: AgentResponse, api_key?: string }`. The `api_key` is only present for `auth_method: "api_key"` and is shown once — use `data.agent.id` and `data.api_key` from the response.
+
+**Access grants:** `grantAgent(vaultId, agentId, permissions, options?)` — positional args; options include `secretPathPattern`, `conditions`, `expires_at`.
 
 ## Response Envelope
 
