@@ -73,6 +73,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/auth/jwt-public-key": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get JWT verification public key
+         * @description Returns the Ed25519 public key used to sign JWTs.
+         *     Use this to verify tokens independently (e.g. in a TEE proxy or
+         *     gateway). No authentication required.
+         */
+        get: operations["getJwtPublicKey"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/auth/signup": {
         parameters: {
             query?: never;
@@ -2565,6 +2587,31 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+        };
+    };
+    getJwtPublicKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description JWT public key */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example EdDSA */
+                        alg: string;
+                        /** @description Base64-encoded Ed25519 public key */
+                        public_key_base64: string;
+                    };
+                };
+            };
         };
     };
     signup: {
