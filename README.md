@@ -418,4 +418,4 @@ export const oneclawTools = {
 
 ## License
 
-PolyForm Noncommercial 1.0.0
+[MIT](./LICENSE)
