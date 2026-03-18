@@ -5,6 +5,7 @@ import type {
     UpdateMemberRoleRequest,
     OneclawResponse,
 } from "../types";
+import type { ApiSchemas } from "../types";
 
 /**
  * Org resource — manage organization membership and roles.
@@ -17,6 +18,19 @@ export class OrgResource {
         return this.http.request<OrgMemberListResponse>(
             "GET",
             "/v1/org/members",
+        );
+    }
+
+    /**
+     * Get the org's __agent-keys vault id (for revealing agent identity keys).
+     * Users only. Returns 404 if the vault does not exist (e.g. no agents created yet).
+     */
+    async getAgentKeysVault(): Promise<
+        OneclawResponse<ApiSchemas["AgentKeysVaultResponse"]>
+    > {
+        return this.http.request<ApiSchemas["AgentKeysVaultResponse"]>(
+            "GET",
+            "/v1/org/agent-keys-vault",
         );
     }
 

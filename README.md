@@ -79,7 +79,7 @@ await client.auth.google({ id_token: "..." });
 | `client.approvals` | `request`, `list`, `approve`, `deny`, `check`, `subscribe`                                                          |
 | `client.billing`   | `usage`, `history`                                                                                                  |
 | `client.audit`     | `query`                                                                                                             |
-| `client.org`       | `listMembers`, `updateMemberRole`, `removeMember`                                                                   |
+| `client.org`       | `listMembers`, `getAgentKeysVault`, `updateMemberRole`, `removeMember`                                              |
 | `client.auth`      | `login`, `signup`, `agentToken`, `apiKeyToken`, `google`, `changePassword`, `logout`, `getMe`, `updateMe`, `deleteMe` |
 | `client.apiKeys`   | `create`, `list`, `revoke`                                                                                          |
 | `client.treasury`  | `create`, `list`, `get`, `addSigner`, `removeSigner`, `requestAccess`, `listAccessRequests`, `approveAccess`, `denyAccess` |

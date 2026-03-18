@@ -939,6 +939,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/org/agent-keys-vault": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get the org's __agent-keys vault id
+         * @description Returns the vault id for the caller's org agent-keys vault (used for revealing agent identity keys). Users only; 404 if the vault does not exist.
+         */
+        get: operations["getAgentKeysVault"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/org/invite": {
         parameters: {
             query?: never;
@@ -1191,6 +1211,127 @@ export interface paths {
         post?: never;
         /** Delete an IP rule */
         delete: operations["deleteIpRule"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/treasury": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List treasuries */
+        get: operations["listTreasuries"];
+        put?: never;
+        /** Create a treasury (Safe multisig) */
+        post: operations["createTreasury"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/treasury/{treasury_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get treasury details */
+        get: operations["getTreasury"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/treasury/{treasury_id}/signers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add a signer to a treasury */
+        post: operations["addTreasurySigner"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/treasury/{treasury_id}/signers/{signer_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a signer from a treasury */
+        delete: operations["removeTreasurySigner"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/treasury/{treasury_id}/access-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List access requests for a treasury */
+        get: operations["listTreasuryAccessRequests"];
+        put?: never;
+        /** Request access to a treasury (agent-only) */
+        post: operations["requestTreasuryAccess"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/treasury/{treasury_id}/access-requests/{request_id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve an access request */
+        post: operations["approveTreasuryAccess"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/treasury/{treasury_id}/access-requests/{request_id}/deny": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Deny an access request */
+        post: operations["denyTreasuryAccess"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -2192,6 +2333,10 @@ export interface components {
             message?: string;
             email?: string;
         };
+        AgentKeysVaultResponse: {
+            /** Format: uuid */
+            vault_id?: string;
+        };
         UsageSummaryResponse: {
             billing_tier?: string;
             free_tier_limit?: number;
@@ -2388,6 +2533,58 @@ export interface components {
             tier: "free" | "pro" | "business" | "enterprise";
             /** @description How many days the tier lasts (default 365). Use 90 for a 3-month trial. */
             duration_days?: number;
+        };
+        CreateTreasuryRequest: {
+            name: string;
+            chain: string;
+            chain_id: number;
+            threshold: number;
+            /** @description Pre-deployed Safe address (optional) */
+            safe_address?: string;
+        };
+        TreasuryResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            org_id?: string;
+            name?: string;
+            safe_address?: string;
+            chain?: string;
+            chain_id?: number;
+            threshold?: number;
+            signers?: components["schemas"]["TreasurySignerResponse"][];
+            /** Format: date-time */
+            created_at?: string;
+        };
+        TreasurySignerResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** @enum {string} */
+            signer_type?: "user" | "agent";
+            /** Format: uuid */
+            signer_id?: string;
+            evm_address?: string;
+            /** Format: date-time */
+            created_at?: string;
+        };
+        AddSignerRequest: {
+            /** @enum {string} */
+            signer_type: "user" | "agent";
+            /** Format: uuid */
+            signer_id: string;
+        };
+        AccessRequestResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            treasury_id?: string;
+            /** Format: uuid */
+            agent_id?: string;
+            /** @enum {string} */
+            status?: "pending" | "approved" | "denied";
+            evm_address?: string;
+            /** Format: date-time */
+            created_at?: string;
         };
         PaymentRequirement: {
             x402Version?: number;
@@ -4165,6 +4362,33 @@ export interface operations {
             };
         };
     };
+    getAgentKeysVault: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Agent-keys vault id */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentKeysVaultResponse"];
+                };
+            };
+            /** @description Agent-keys vault not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     inviteMember: {
         parameters: {
             query?: never;
@@ -4541,6 +4765,216 @@ export interface operations {
                 };
                 content?: never;
             };
+        };
+    };
+    listTreasuries: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of treasuries */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        treasuries?: components["schemas"]["TreasuryResponse"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    createTreasury: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTreasuryRequest"];
+            };
+        };
+        responses: {
+            /** @description Treasury created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TreasuryResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    getTreasury: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                treasury_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Treasury details */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TreasuryResponse"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    addTreasurySigner: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                treasury_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddSignerRequest"];
+            };
+        };
+        responses: {
+            /** @description Signer added */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+        };
+    };
+    removeTreasurySigner: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                treasury_id: string;
+                signer_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Signer removed */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listTreasuryAccessRequests: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                treasury_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of access requests */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        access_requests?: components["schemas"]["AccessRequestResponse"][];
+                    };
+                };
+            };
+        };
+    };
+    requestTreasuryAccess: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                treasury_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Access request created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccessRequestResponse"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    approveTreasuryAccess: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                treasury_id: string;
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Access request approved */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    denyTreasuryAccess: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                treasury_id: string;
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Access request denied */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: components["responses"]["NotFound"];
         };
     };
     adminListSettings: {

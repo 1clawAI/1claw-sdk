@@ -528,6 +528,12 @@ describe("OrgResource", () => {
         expect(lastCall().url).toBe(`${BASE}/v1/org/members`);
     });
 
+    it("getAgentKeysVault sends GET /v1/org/agent-keys-vault", async () => {
+        globalThis.fetch = mockFetch(200, { vault_id: "vault-uuid" });
+        await new OrgResource(makeHttp()).getAgentKeysVault();
+        expect(lastCall().url).toBe(`${BASE}/v1/org/agent-keys-vault`);
+    });
+
     it("updateMemberRole sends PATCH /v1/org/members/{userId}", async () => {
         globalThis.fetch = mockFetch(200, {});
         await new OrgResource(makeHttp()).updateMemberRole("u-1", "admin");
