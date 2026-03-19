@@ -2,11 +2,14 @@ import type { HttpClient } from "../core/http";
 import type {
     UsageSummaryResponse,
     UsageHistoryResponse,
+    LlmTokenBillingStatus,
+    LlmCheckoutResponse,
+    LlmDisableResponse,
     OneclawResponse,
 } from "../types";
 
 /**
- * Billing resource — view API usage summaries and per-request history.
+ * Billing resource — usage summaries, history, and LLM token billing.
  */
 export class BillingResource {
     constructor(private readonly http: HttpClient) {}
@@ -32,6 +35,35 @@ export class BillingResource {
             {
                 query: limit !== undefined ? { limit } : undefined,
             },
+        );
+    }
+
+    // ── LLM Token Billing ──────────────────────────────────────────
+
+    /** Get LLM token billing status for the current org. */
+    async llmTokenBilling(): Promise<OneclawResponse<LlmTokenBillingStatus>> {
+        return this.http.request<LlmTokenBillingStatus>(
+            "GET",
+            "/v1/billing/llm-token-billing",
+        );
+    }
+
+    /**
+     * Subscribe to LLM token billing. Returns a Stripe Checkout URL.
+     * Redirect the user to complete the subscription.
+     */
+    async subscribeLlmTokenBilling(): Promise<OneclawResponse<LlmCheckoutResponse>> {
+        return this.http.request<LlmCheckoutResponse>(
+            "POST",
+            "/v1/billing/llm-token-billing/subscribe",
+        );
+    }
+
+    /** Disable LLM token billing for the current org. */
+    async disableLlmTokenBilling(): Promise<OneclawResponse<LlmDisableResponse>> {
+        return this.http.request<LlmDisableResponse>(
+            "POST",
+            "/v1/billing/llm-token-billing/disable",
         );
     }
 }

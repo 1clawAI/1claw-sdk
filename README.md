@@ -77,7 +77,7 @@ await client.auth.google({ id_token: "..." });
 | `client.chains`    | `list`, `get`, `adminList`, `create`, `update`, `delete`                                                            |
 | `client.sharing`   | `create`, `access`, `listOutbound`, `listInbound`, `accept`, `decline`, `revoke`                                    |
 | `client.approvals` | `request`, `list`, `approve`, `deny`, `check`, `subscribe`                                                          |
-| `client.billing`   | `usage`, `history`                                                                                                  |
+| `client.billing`   | `usage`, `history`, `llmTokenBilling`, `subscribeLlmTokenBilling`, `disableLlmTokenBilling` (LLM token billing / Stripe AI Gateway) |
 | `client.audit`     | `query`                                                                                                             |
 | `client.org`       | `listMembers`, `getAgentKeysVault`, `updateMemberRole`, `removeMember`                                              |
 | `client.auth`      | `login`, `signup`, `agentToken`, `apiKeyToken`, `google`, `changePassword`, `logout`, `getMe`, `updateMe`, `deleteMe` |
@@ -369,7 +369,7 @@ type Vault = ApiSchemas["VaultResponse"];
 type Agent = ApiSchemas["AgentResponse"];
 ```
 
-Regenerate types after spec changes: `npm run generate`
+Regenerate types after spec changes (from the monorepo): `cd packages/sdk && npm run generate` — reads [`../openapi-spec/openapi.yaml`](../openapi-spec/openapi.yaml) via `openapi-typescript`.
 
 ## MCP Integration (AI Agents)
 

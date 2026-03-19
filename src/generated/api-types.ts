@@ -1151,6 +1151,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/billing/llm-token-billing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get LLM token billing status
+         * @description Returns whether LLM token billing is enabled for the caller's org.
+         */
+        get: operations["getLlmTokenBilling"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/billing/llm-token-billing/subscribe": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Subscribe to LLM token billing
+         * @description Creates a Stripe Checkout session for the LLM token billing pricing plan. Returns a checkout URL to redirect the user. After the user completes checkout, a webhook activates LLM billing for the org.
+         */
+        post: operations["subscribeLlmTokenBilling"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/billing/llm-token-billing/disable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Disable LLM token billing
+         * @description Disables LLM token billing for the org. Agents will fall back to direct provider routing. Does not cancel the Stripe subscription.
+         */
+        post: operations["disableLlmTokenBilling"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/billing/overage-method": {
         parameters: {
             query?: never;
@@ -2451,6 +2511,18 @@ export interface components {
         UsageMeter: {
             used?: number;
             limit?: number;
+        };
+        LlmTokenBillingStatus: {
+            enabled?: boolean;
+            /** @enum {string} */
+            subscription_status?: "active" | "inactive";
+        };
+        LlmCheckoutResponse: {
+            /** Format: uri */
+            checkout_url?: string;
+        };
+        LlmDisableResponse: {
+            enabled?: boolean;
         };
         CreditBalanceResponse: {
             balance_cents?: number;
@@ -4723,6 +4795,66 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CreditTransactionsListResponse"];
+                };
+            };
+        };
+    };
+    getLlmTokenBilling: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description LLM token billing status */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LlmTokenBillingStatus"];
+                };
+            };
+        };
+    };
+    subscribeLlmTokenBilling: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Stripe Checkout URL */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LlmCheckoutResponse"];
+                };
+            };
+        };
+    };
+    disableLlmTokenBilling: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description LLM billing disabled */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LlmDisableResponse"];
                 };
             };
         };

@@ -624,6 +624,23 @@ export interface UsageHistoryResponse {
 }
 
 // ---------------------------------------------------------------------------
+// LLM Token Billing
+// ---------------------------------------------------------------------------
+
+export interface LlmTokenBillingStatus {
+    enabled: boolean;
+    subscription_status?: string;
+}
+
+export interface LlmCheckoutResponse {
+    checkout_url: string;
+}
+
+export interface LlmDisableResponse {
+    enabled: boolean;
+}
+
+// ---------------------------------------------------------------------------
 // Audit — hand-written (AuditQuery is SDK-only, not in the spec)
 // ---------------------------------------------------------------------------
 
