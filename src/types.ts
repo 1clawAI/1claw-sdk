@@ -531,6 +531,7 @@ export interface TransactionResponse {
     to: string;
     value_wei: string;
     status: "pending" | "signed" | "broadcast" | "failed" | "simulation_failed";
+    /** Raw signed tx hex. Omitted on list/get unless request used includeSignedTx: true. Always present on submit response. */
     signed_tx?: string;
     tx_hash?: string;
     error_message?: string;

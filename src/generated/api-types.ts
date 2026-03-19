@@ -2211,7 +2211,7 @@ export interface components {
             value_wei?: string;
             /** @enum {string} */
             status?: "pending" | "signed" | "broadcast" | "failed" | "simulation_failed";
-            /** @description Raw signed transaction hex. Omitted (null) by default to reduce exfiltration risk. Pass `include_signed_tx=true` query param on GET endpoints to include it. Always returned on the initial POST submission response. */
+            /** @description Raw signed transaction hex. On GET list and GET by id, this property is omitted by default (absent from the response). Pass `include_signed_tx=true` on those endpoints to include it. Always present on the initial POST submit response. */
             signed_tx?: string | null;
             tx_hash?: string;
             error_message?: string;
@@ -2722,7 +2722,7 @@ export interface components {
         SecretPath: string;
         AgentId: string;
         PolicyId: string;
-        /** @description Set to `true` or `1` to include the raw signed transaction hex in the response. Omitted by default to reduce key exfiltration risk. Only the literal values "true" or "1" enable inclusion; any other value or omission returns responses without signed_tx. */
+        /** @description Set to `true` or `1` to include the raw signed transaction hex in the response. Omitted by default to reduce key exfiltration risk. Only the literal values "true" or "1" enable inclusion; any other value or omission returns responses without signed_tx. Applies to GET /v1/agents/{agent_id}/transactions and GET /v1/agents/{agent_id}/transactions/{tx_id}. */
         IncludeSignedTx: boolean;
     };
     requestBodies: never;
@@ -3987,7 +3987,7 @@ export interface operations {
     listTransactions: {
         parameters: {
             query?: {
-                /** @description Set to `true` or `1` to include the raw signed transaction hex in the response. Omitted by default to reduce key exfiltration risk. Only the literal values "true" or "1" enable inclusion; any other value or omission returns responses without signed_tx. */
+                /** @description Set to `true` or `1` to include the raw signed transaction hex in the response. Omitted by default to reduce key exfiltration risk. Only the literal values "true" or "1" enable inclusion; any other value or omission returns responses without signed_tx. Applies to GET /v1/agents/{agent_id}/transactions and GET /v1/agents/{agent_id}/transactions/{tx_id}. */
                 include_signed_tx?: components["parameters"]["IncludeSignedTx"];
             };
             header?: never;
@@ -4070,7 +4070,7 @@ export interface operations {
     getTransaction: {
         parameters: {
             query?: {
-                /** @description Set to `true` or `1` to include the raw signed transaction hex in the response. Omitted by default to reduce key exfiltration risk. Only the literal values "true" or "1" enable inclusion; any other value or omission returns responses without signed_tx. */
+                /** @description Set to `true` or `1` to include the raw signed transaction hex in the response. Omitted by default to reduce key exfiltration risk. Only the literal values "true" or "1" enable inclusion; any other value or omission returns responses without signed_tx. Applies to GET /v1/agents/{agent_id}/transactions and GET /v1/agents/{agent_id}/transactions/{tx_id}. */
                 include_signed_tx?: components["parameters"]["IncludeSignedTx"];
             };
             header?: never;
