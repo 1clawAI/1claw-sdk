@@ -17,7 +17,7 @@ function mockFetch(status: number, body: unknown) {
 }
 
 describe("OneclawClient", () => {
-    it("initializes all 14 resource properties", () => {
+    it("initializes all 15 resource properties", () => {
         globalThis.fetch = mockFetch(200, {});
         const client = new OneclawClient({ baseUrl: "https://api.test", token: "t" });
 
@@ -34,6 +34,7 @@ describe("OneclawClient", () => {
         expect(client.apiKeys).toBeDefined();
         expect(client.chains).toBeDefined();
         expect(client.x402).toBeDefined();
+        expect(client.treasury).toBeDefined();
     });
 
     it("auto-authenticates with agent apiKey + agentId on first request", async () => {

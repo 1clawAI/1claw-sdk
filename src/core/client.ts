@@ -13,6 +13,7 @@ import { AuthResource } from "../resources/auth";
 import { ApiKeysResource } from "../resources/api-keys";
 import { ChainsResource } from "../resources/chains";
 import { X402Resource } from "../resources/x402";
+import { TreasuryResource } from "../resources/treasury";
 
 /**
  * The main 1Claw SDK client. All API resources are exposed as
@@ -64,6 +65,8 @@ export class OneclawClient {
     readonly chains: ChainsResource;
     /** x402 payment protocol — inspect, pay, and verify micropayments. */
     readonly x402: X402Resource;
+    /** Safe multisig treasuries — CRUD, signers, agent access requests. */
+    readonly treasury: TreasuryResource;
 
     constructor(config: OneclawClientConfig) {
         this.http = new HttpClient(config);
@@ -89,6 +92,7 @@ export class OneclawClient {
         this.apiKeys = new ApiKeysResource(this.http);
         this.chains = new ChainsResource(this.http);
         this.x402 = new X402Resource(this.http, config.x402Signer);
+        this.treasury = new TreasuryResource(this.http);
     }
 
     private autoAuthenticateUserKey(config: OneclawClientConfig): void {

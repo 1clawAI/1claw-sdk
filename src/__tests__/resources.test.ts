@@ -12,6 +12,7 @@ import { AuditResource } from "../resources/audit";
 import { OrgResource } from "../resources/org";
 import { AuthResource } from "../resources/auth";
 import { ApiKeysResource } from "../resources/api-keys";
+import { TreasuryResource } from "../resources/treasury";
 
 const BASE = "https://api.test";
 const originalFetch = globalThis.fetch;
@@ -633,5 +634,48 @@ describe("ApiKeysResource", () => {
         await new ApiKeysResource(makeHttp()).revoke("k-1");
         expect(lastCall().init.method).toBe("DELETE");
         expect(lastCall().url).toBe(`${BASE}/v1/auth/api-keys/k-1`);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// TreasuryResource
+// ---------------------------------------------------------------------------
+describe("TreasuryResource", () => {
+    it("create sends POST /v1/treasury with safe_address", async () => {
+        globalThis.fetch = mockFetch(201, { id: "t-1", name: "fund" });
+        await new TreasuryResource(makeHttp()).create({
+            name: "fund",
+            safe_address: "0x1111111111111111111111111111111111111111",
+            chain: "sepolia",
+            chain_id: 11155111,
+            threshold: 1,
+        });
+        expect(lastCall().url).toBe(`${BASE}/v1/treasury`);
+        expect(JSON.parse(lastCall().init.body as string).safe_address).toMatch(/^0x/);
+    });
+
+    it("list sends GET /v1/treasury", async () => {
+        globalThis.fetch = mockFetch(200, { treasuries: [] });
+        await new TreasuryResource(makeHttp()).list();
+        expect(lastCall().url).toBe(`${BASE}/v1/treasury`);
+    });
+
+    it("update sends PATCH /v1/treasury/{id}", async () => {
+        globalThis.fetch = mockFetch(200, { id: "t-1" });
+        await new TreasuryResource(makeHttp()).update("t-1", { name: "renamed" });
+        expect(lastCall().init.method).toBe("PATCH");
+        expect(lastCall().url).toBe(`${BASE}/v1/treasury/t-1`);
+    });
+
+    it("delete sends DELETE /v1/treasury/{id}", async () => {
+        globalThis.fetch = mockFetch(204, null);
+        await new TreasuryResource(makeHttp()).delete("t-1");
+        expect(lastCall().init.method).toBe("DELETE");
+    });
+
+    it("listAccessRequests sends GET .../access-requests", async () => {
+        globalThis.fetch = mockFetch(200, { requests: [] });
+        await new TreasuryResource(makeHttp()).listAccessRequests("t-1");
+        expect(lastCall().url).toBe(`${BASE}/v1/treasury/t-1/access-requests`);
     });
 });

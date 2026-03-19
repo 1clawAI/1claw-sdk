@@ -675,6 +675,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/agents/{agent_id}/smart-accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add a smart account (Safe) for this agent on a chain
+         * @description Use after deploying a Safe on a new chain. Multi-chain; one Safe per chain.
+         *     Replaces any existing entry for the same chain_id.
+         */
+        post: operations["addAgentSmartAccount"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/agents/{agent_id}/transactions": {
         parameters: {
             query?: never;
@@ -1245,10 +1266,12 @@ export interface paths {
         get: operations["getTreasury"];
         put?: never;
         post?: never;
-        delete?: never;
+        /** Delete a treasury and its signers */
+        delete: operations["deleteTreasury"];
         options?: never;
         head?: never;
-        patch?: never;
+        /** Update treasury name and/or threshold */
+        patch: operations["updateTreasury"];
         trace?: never;
     };
     "/v1/treasury/{treasury_id}/signers": {
@@ -1900,6 +1923,27 @@ export interface components {
             expires_at?: string;
             /** Format: date-time */
             last_active_at?: string;
+            /** @description Multi-chain; one Safe per chain */
+            smart_accounts?: components["schemas"]["AgentSmartAccountResponse"][];
+        };
+        /** @description One Safe smart account per chain for an agent */
+        AgentSmartAccountResponse: {
+            /** Format: uuid */
+            id?: string;
+            chain?: string;
+            chain_id?: number;
+            safe_address?: string;
+            nonce?: string;
+            init_data?: Record<string, never>;
+            /** Format: date-time */
+            created_at?: string;
+        };
+        AddSmartAccountRequest: {
+            chain: string;
+            chain_id: number;
+            safe_address: string;
+            nonce?: string;
+            init_data?: Record<string, never>;
         };
         AgentSelfResponse: {
             /** Format: uuid */
@@ -2535,23 +2579,40 @@ export interface components {
             duration_days?: number;
         };
         CreateTreasuryRequest: {
+            /** @description Display name (1–128 characters) */
             name: string;
-            chain: string;
-            chain_id: number;
-            threshold: number;
-            /** @description Pre-deployed Safe address (optional) */
-            safe_address?: string;
+            /** @description Deployed Safe contract address (0x-prefixed, 42 characters) */
+            safe_address: string;
+            /** @description Chain name (default base) */
+            chain?: string;
+            /** @description EVM chain ID (default 8453 for Base) */
+            chain_id?: number;
+            /** @description Safe threshold (default 1) */
+            threshold?: number;
+            signers?: components["schemas"]["CreateTreasurySignerEntry"][];
+        };
+        CreateTreasurySignerEntry: {
+            /** @enum {string} */
+            signer_type: "user" | "agent";
+            /** Format: uuid */
+            signer_id: string;
+            /** @description EVM address (0x-prefixed) */
+            signer_address: string;
+        };
+        UpdateTreasuryRequest: {
+            name?: string;
+            threshold?: number;
         };
         TreasuryResponse: {
             /** Format: uuid */
             id?: string;
-            /** Format: uuid */
-            org_id?: string;
             name?: string;
             safe_address?: string;
             chain?: string;
             chain_id?: number;
             threshold?: number;
+            /** Format: uuid */
+            created_by?: string;
             signers?: components["schemas"]["TreasurySignerResponse"][];
             /** Format: date-time */
             created_at?: string;
@@ -2563,15 +2624,16 @@ export interface components {
             signer_type?: "user" | "agent";
             /** Format: uuid */
             signer_id?: string;
-            evm_address?: string;
+            signer_address?: string;
             /** Format: date-time */
-            created_at?: string;
+            added_at?: string;
         };
         AddSignerRequest: {
             /** @enum {string} */
             signer_type: "user" | "agent";
             /** Format: uuid */
             signer_id: string;
+            signer_address: string;
         };
         AccessRequestResponse: {
             /** Format: uuid */
@@ -2582,9 +2644,13 @@ export interface components {
             agent_id?: string;
             /** @enum {string} */
             status?: "pending" | "approved" | "denied";
-            evm_address?: string;
+            reason?: string;
             /** Format: date-time */
-            created_at?: string;
+            requested_at?: string;
+            /** Format: uuid */
+            resolved_by?: string;
+            /** Format: date-time */
+            resolved_at?: string;
         };
         PaymentRequirement: {
             x402Version?: number;
@@ -3889,6 +3955,35 @@ export interface operations {
             404: components["responses"]["NotFound"];
         };
     };
+    addAgentSmartAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddSmartAccountRequest"];
+            };
+        };
+        responses: {
+            /** @description Agent with updated smart_accounts list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
     listTransactions: {
         parameters: {
             query?: {
@@ -4839,6 +4934,55 @@ export interface operations {
             404: components["responses"]["NotFound"];
         };
     };
+    deleteTreasury: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                treasury_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Treasury deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateTreasury: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                treasury_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTreasuryRequest"];
+            };
+        };
+        responses: {
+            /** @description Treasury updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TreasuryResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            404: components["responses"]["NotFound"];
+        };
+    };
     addTreasurySigner: {
         parameters: {
             query?: never;
@@ -4904,7 +5048,7 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        access_requests?: components["schemas"]["AccessRequestResponse"][];
+                        requests?: components["schemas"]["AccessRequestResponse"][];
                     };
                 };
             };

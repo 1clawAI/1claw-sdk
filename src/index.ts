@@ -18,6 +18,11 @@ export { AuthResource } from "./resources/auth";
 export { ApiKeysResource } from "./resources/api-keys";
 export { ChainsResource } from "./resources/chains";
 export { X402Resource } from "./resources/x402";
+export { TreasuryResource } from "./resources/treasury";
+export type {
+    TreasuryListResponse,
+    AccessRequestListResponse,
+} from "./resources/treasury";
 
 // CMEK (Customer-Managed Encryption Keys)
 export {

@@ -109,6 +109,9 @@ export async function cmekDecrypt(
     return new Uint8Array(plaintext);
 }
 
+/** Node Buffer global when available (not in browser). */
+declare const Buffer: undefined | { from(data: Uint8Array, encoding?: string): { toString(encoding: string): string }; from(b64: string, encoding: "base64"): Uint8Array };
+
 /**
  * Encode a Uint8Array to a base64 string.
  * Works in browsers and Node.js 18+.
@@ -130,7 +133,7 @@ export function toBase64(data: Uint8Array): string {
  */
 export function fromBase64(b64: string): Uint8Array {
     if (typeof Buffer !== "undefined") {
-        return new Uint8Array(Buffer.from(b64, "base64"));
+        return new Uint8Array(Buffer!.from(b64, "base64"));
     }
     const binary = atob(b64);
     const bytes = new Uint8Array(binary.length);
