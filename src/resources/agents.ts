@@ -10,6 +10,8 @@ import type {
     EnrollAgentRequest,
     EnrollAgentResponse,
     SubmitTransactionRequest,
+    SignTransactionRequest,
+    SignTransactionResponse,
     SimulateTransactionRequest,
     SimulateBundleRequest,
     SimulationResponse,
@@ -176,6 +178,22 @@ export class AgentsResource {
         return this.http.request<TransactionListResponse>(
             "GET",
             `/v1/agents/${agentId}/transactions${qs}`,
+        );
+    }
+
+    /**
+     * Sign a transaction without broadcasting. The signed_tx hex is returned
+     * so the caller can submit to their own RPC endpoint.
+     * All agent guardrails (allowlists, value caps, daily limits) are enforced.
+     */
+    async signTransaction(
+        agentId: string,
+        tx: SignTransactionRequest,
+    ): Promise<OneclawResponse<SignTransactionResponse>> {
+        return this.http.request<SignTransactionResponse>(
+            "POST",
+            `/v1/agents/${agentId}/transactions/sign`,
+            { body: tx },
         );
     }
 

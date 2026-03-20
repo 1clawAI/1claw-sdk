@@ -73,7 +73,7 @@ await client.auth.google({ id_token: "..." });
 | `client.vault`     | `create`, `get`, `list`, `delete`                                                                                   |
 | `client.secrets`   | `set`, `get`, `delete`, `list`, `rotate`                                                                            |
 | `client.access`    | `grantHuman`, `grantAgent`, `update`, `revoke`, `listGrants`                                                        |
-| `client.agents`    | `create`, `getSelf`, `get`, `list`, `update`, `delete`, `rotateKey`, `submitTransaction`, `getTransaction`, `listTransactions`, `simulateTransaction`, `simulateBundle` |
+| `client.agents`    | `create`, `getSelf`, `get`, `list`, `update`, `delete`, `rotateKey`, `submitTransaction`, `signTransaction`, `getTransaction`, `listTransactions`, `simulateTransaction`, `simulateBundle` |
 | `client.chains`    | `list`, `get`, `adminList`, `create`, `update`, `delete`                                                            |
 | `client.sharing`   | `create`, `access`, `listOutbound`, `listInbound`, `accept`, `decline`, `revoke`                                    |
 | `client.approvals` | `request`, `list`, `approve`, `deny`, `check`, `subscribe`                                                          |
@@ -190,6 +190,26 @@ console.log(txRes.data?.signed_tx); // signed raw transaction hex
 The backend fetches the signing key from the vault, signs the EIP-155 transaction, and returns the signed transaction hex. The signing key is decrypted in-memory, used, and immediately zeroized — it never leaves the server.
 
 The SDK automatically generates an `Idempotency-Key` header (UUID v4) on each `submitTransaction` call, providing replay protection. Duplicate requests within 24 hours return the cached response instead of re-signing.
+
+### Sign-only mode (BYORPC)
+
+Use `signTransaction` when you want the server to sign but **not** broadcast — for example, to submit via your own RPC (Flashbots, MEV protection, custom relayers):
+
+```typescript
+const signRes = await client.agents.signTransaction(agentId, {
+    to: "0x000000000000000000000000000000000000dEaD",
+    value: "0.01",
+    chain: "base",
+});
+
+console.log(signRes.data?.signed_tx); // raw signed tx hex
+console.log(signRes.data?.tx_hash);   // precomputed keccak hash
+console.log(signRes.data?.from);      // derived sender address
+
+// Broadcast yourself via ethers, viem, or raw JSON-RPC
+```
+
+All agent guardrails (allowlists, value caps, daily limits) are enforced exactly as for submit. The transaction is recorded for audit and daily-limit tracking with `status: "sign_only"`.
 
 Key properties:
 

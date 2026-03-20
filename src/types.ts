@@ -487,6 +487,40 @@ export interface SubmitTransactionRequest {
     simulate_first?: boolean;
 }
 
+/**
+ * Sign-only request: signs a transaction but does NOT broadcast.
+ * The caller receives the signed_tx hex to broadcast via their own RPC.
+ */
+export interface SignTransactionRequest {
+    to: string;
+    value: string;
+    chain: string;
+    data?: string;
+    signing_key_path?: string;
+    nonce?: number;
+    gas_price?: string;
+    gas_limit?: number;
+    max_fee_per_gas?: string;
+    max_priority_fee_per_gas?: string;
+    simulate_first?: boolean;
+}
+
+export interface SignTransactionResponse {
+    signed_tx: string;
+    tx_hash: string;
+    from: string;
+    to: string;
+    chain: string;
+    chain_id: number;
+    nonce: number;
+    value_wei: string;
+    status: "sign_only";
+    simulation_id?: string;
+    simulation_status?: string;
+    max_fee_per_gas?: string;
+    max_priority_fee_per_gas?: string;
+}
+
 export type SimulateTransactionRequest =
     ApiSchemas["SimulateTransactionRequest"];
 
@@ -530,7 +564,7 @@ export interface TransactionResponse {
     chain_id: number;
     to: string;
     value_wei: string;
-    status: "pending" | "signed" | "broadcast" | "failed" | "simulation_failed";
+    status: "pending" | "signed" | "sign_only" | "broadcast" | "failed" | "simulation_failed";
     /** Raw signed tx hex. Omitted on list/get unless request used includeSignedTx: true. Always present on submit response. */
     signed_tx?: string;
     tx_hash?: string;

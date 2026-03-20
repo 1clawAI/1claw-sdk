@@ -112,6 +112,8 @@ export type {
     UpdateChainRequest,
     // Transactions (Intents API)
     SubmitTransactionRequest,
+    SignTransactionRequest,
+    SignTransactionResponse,
     SimulateTransactionRequest,
     SimulateBundleRequest,
     SimulateBundleItem,
