@@ -318,6 +318,11 @@ const { data } = await client.agents.create({
         pii_policy: "redact",           // block | redact | warn | allow
         injection_threshold: 0.7,
 
+        // Model restrictions
+        allowed_models: ["gpt-4o-mini", "claude-sonnet-4"],  // Whitelist specific models
+        denied_models: ["gpt-3.5-turbo"],                   // Blacklist models
+        allowed_providers: ["openai", "anthropic"],          // Restrict providers
+
         // Threat detection
         unicode_normalization: {
             enabled: true,
@@ -351,9 +356,40 @@ await client.agents.update(agentId, {
     shroud_config: {
         command_injection_detection: { enabled: true, action: "block" },
         social_engineering_detection: { enabled: true, action: "block" },
+        allowed_models: ["gpt-4o-mini"],  // Restrict to cost-effective models
     },
 });
 ```
+
+### Specifying Models in Requests
+
+When making LLM requests to Shroud, specify the model in one of two ways:
+
+**Option 1: Header**
+```typescript
+const res = await fetch("https://shroud.1claw.xyz/v1/chat/completions", {
+  method: "POST",
+  headers: {
+    "X-Shroud-Agent-Key": `${agentId}:${agentApiKey}`,
+    "X-Shroud-Provider": "openai",
+    "X-Shroud-Model": "gpt-4o-mini",  // ← Model in header
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    messages: [{ role: "user", content: "Hello" }],
+  }),
+});
+```
+
+**Option 2: Request Body** (for OpenAI-style providers)
+```typescript
+body: JSON.stringify({
+  model: "gpt-4o-mini",  // ← Model in body
+  messages: [{ role: "user", content: "Hello" }],
+})
+```
+
+Shroud enforces the agent's `allowed_models` and `denied_models` restrictions automatically — requests using unauthorized models return **403 Forbidden**.
 
 See the [Shroud Security Guide](https://docs.1claw.xyz/docs/guides/shroud) for full configuration options.
 
