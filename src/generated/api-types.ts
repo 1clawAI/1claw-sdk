@@ -736,6 +736,32 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/agents/{agent_id}/transactions/sign": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Sign a transaction without broadcasting
+         * @description Signs a transaction inside the server (or TEE when using Shroud) but does
+         *     **not** broadcast it. The caller receives the raw `signed_tx` hex and
+         *     `tx_hash` so it can submit to any RPC of its choosing.
+         *
+         *     All agent guardrails (allowlists, value caps, daily limits) are enforced
+         *     exactly as for the submit endpoint. The signed transaction is recorded for
+         *     audit and daily-limit tracking with `status: "sign_only"`.
+         */
+        post: operations["signTransaction"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/agents/{agent_id}/transactions/simulate": {
         parameters: {
             query?: never;
@@ -1202,7 +1228,7 @@ export interface paths {
         put?: never;
         /**
          * Disable LLM token billing
-         * @description Disables LLM token billing for the org. Agents will fall back to direct provider routing. Does not cancel the Stripe subscription.
+         * @description Disables LLM token billing for the org and cancels all active Stripe subscriptions for the LLM pricing plan. Agents will fall back to direct provider routing. You can re-enable it at any time.
          */
         post: operations["disableLlmTokenBilling"];
         delete?: never;
@@ -1614,8 +1640,11 @@ export interface components {
             refresh_token?: string;
         };
         AgentTokenRequest: {
-            /** Format: uuid */
-            agent_id: string;
+            /**
+             * Format: uuid
+             * @description Optional when using key-only auth (ocv_ keys auto-resolve agent)
+             */
+            agent_id?: string;
             api_key: string;
         };
         UserApiKeyTokenRequest: {
@@ -2248,6 +2277,48 @@ export interface components {
             max_priority_fee_per_gas?: string;
             /** @default false */
             simulate_first: boolean;
+            /**
+             * @description Transaction mode
+             * @default eoa
+             * @enum {string}
+             */
+            mode: "eoa" | "smart_account";
+        };
+        SignTransactionRequest: {
+            /** @description Destination address (0x-prefixed) */
+            to: string;
+            /** @description Value in ETH */
+            value: string;
+            /** @description Chain name or numeric ID */
+            chain: string;
+            /** @description Hex-encoded calldata */
+            data?: string;
+            signing_key_path?: string;
+            nonce?: number;
+            gas_price?: string;
+            gas_limit?: number;
+            max_fee_per_gas?: string;
+            max_priority_fee_per_gas?: string;
+            /** @default false */
+            simulate_first: boolean;
+        };
+        SignTransactionResponse: {
+            /** @description Raw signed transaction hex (always included) */
+            signed_tx?: string;
+            tx_hash?: string;
+            /** @description Derived sender address */
+            from?: string;
+            to?: string;
+            chain?: string;
+            chain_id?: number;
+            nonce?: number;
+            value_wei?: string;
+            /** @enum {string} */
+            status?: "sign_only";
+            simulation_id?: string;
+            simulation_status?: string;
+            max_fee_per_gas?: string;
+            max_priority_fee_per_gas?: string;
         };
         SimulateTransactionRequest: {
             to: string;
@@ -2270,7 +2341,7 @@ export interface components {
             to?: string;
             value_wei?: string;
             /** @enum {string} */
-            status?: "pending" | "signed" | "broadcast" | "failed" | "simulation_failed";
+            status?: "pending" | "signed" | "sign_only" | "broadcast" | "failed" | "simulation_failed";
             /** @description Raw signed transaction hex. On GET list and GET by id, this property is omitted by default (absent from the response). Pass `include_signed_tx=true` on those endpoints to include it. Always present on the initial POST submit response. */
             signed_tx?: string | null;
             tx_hash?: string;
@@ -4164,6 +4235,35 @@ export interface operations {
                 };
             };
             404: components["responses"]["NotFound"];
+        };
+    };
+    signTransaction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SignTransactionRequest"];
+            };
+        };
+        responses: {
+            /** @description Transaction signed successfully (not broadcast) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SignTransactionResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            402: components["responses"]["PaymentRequired"];
+            403: components["responses"]["Forbidden"];
         };
     };
     simulateTransaction: {
