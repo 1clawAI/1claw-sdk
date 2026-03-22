@@ -1693,6 +1693,11 @@ export interface components {
         };
         DeviceCodeRequest: {
             client_id: string;
+            /**
+             * Format: email
+             * @description Account email; only that user may approve the code in the dashboard.
+             */
+            email: string;
         };
         DeviceCodeResponse: {
             device_code?: string;
