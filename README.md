@@ -34,7 +34,7 @@ const secret = await client.secrets.get("vault-id", "OPENAI_KEY");
 console.log(secret.data?.value);
 ```
 
-**API contract:** This SDK is built from the **OpenAPI 3.1** spec. The canonical spec is published as [@1claw/openapi-spec](https://www.npmjs.com/package/@1claw/openapi-spec) (YAML/JSON). Types are generated with `npm run generate` (`openapi-typescript ../openapi-spec/openapi.yaml`). Run `generate` after spec changes, then `npm run build`. For a full endpoint list, see the [API reference](https://docs.1claw.xyz/docs/reference/api-reference) or the spec.
+**API contract:** This SDK is built from the **OpenAPI 3.1** spec. The canonical spec is published as [@1claw/openapi-spec](https://www.npmjs.com/package/@1claw/openapi-spec) (YAML/JSON). Types are generated with `npm run generate` (`openapi-typescript ../openapi-spec/openapi.yaml`). Run `generate` after spec changes, then `npm run build`. Shapes such as `LlmTokenBillingStatus` (including optional `credit_balance` and `billing_cycle_usage.metered_lines`) come from the generated `api-types.ts`. For a full endpoint list, see the [API reference](https://docs.1claw.xyz/docs/reference/api-reference) or the spec.
 
 ## Authentication
 
