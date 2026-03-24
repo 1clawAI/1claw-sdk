@@ -129,6 +129,44 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/auth/forgot-password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Request password reset email
+         * @description Always returns the same message whether or not the email exists (no account enumeration).
+         *     Only password-based accounts receive mail.
+         */
+        post: operations["forgotPassword"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/reset-password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Set a new password using reset token from email */
+        post: operations["resetPassword"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/auth/google": {
         parameters: {
             query?: never;
@@ -1574,6 +1612,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/usage/reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reset all API usage events (testing)
+         * @description Deletes every row in `usage_events` for all organizations. Resets monthly
+         *     request counts used for free-tier / x402 quota. Does not change prepaid credit
+         *     balances or Stripe. **Platform admin only** (same guard as other `/v1/admin/*` routes).
+         */
+        post: operations["adminResetUsageEvents"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/usage/reset-for-user": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reset API usage for a user's organization
+         * @description Looks up a registered user by email and deletes all `usage_events` rows for that
+         *     user's `org_id`. Resets free-tier / monthly quota for the whole org (not other orgs).
+         *     **Platform admin only.**
+         */
+        post: operations["adminResetUsageForUserByEmail"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/health": {
         parameters: {
             query?: never;
@@ -1618,6 +1700,27 @@ export interface components {
             title?: string;
             status?: number;
             detail?: string;
+        };
+        ResetUsageEventsResponse: {
+            /**
+             * Format: int64
+             * @description Number of usage_events rows removed
+             */
+            deleted_events: number;
+        };
+        ResetUsageForUserEmailRequest: {
+            /** Format: email */
+            email: string;
+        };
+        ResetUsageForUserEmailResponse: {
+            /** Format: int64 */
+            deleted_events: number;
+            /** Format: uuid */
+            org_id: string;
+            /** Format: uuid */
+            user_id: string;
+            email: string;
+            display_name: string;
         };
         LoginRequest: {
             /** Format: email */
@@ -1669,6 +1772,20 @@ export interface components {
         ChangePasswordRequest: {
             current_password: string;
             new_password: string;
+        };
+        ForgotPasswordRequest: {
+            /** Format: email */
+            email: string;
+        };
+        ForgotPasswordResponse: {
+            message?: string;
+        };
+        ResetPasswordRequest: {
+            token: string;
+            new_password: string;
+        };
+        ResetPasswordResponse: {
+            message?: string;
         };
         MfaStatusResponse: {
             enabled?: boolean;
@@ -3072,6 +3189,55 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TokenResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+        };
+    };
+    forgotPassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ForgotPasswordRequest"];
+            };
+        };
+        responses: {
+            /** @description Acknowledgement (check email if account exists) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ForgotPasswordResponse"];
+                };
+            };
+        };
+    };
+    resetPassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResetPasswordRequest"];
+            };
+        };
+        responses: {
+            /** @description Password updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResetPasswordResponse"];
                 };
             };
             400: components["responses"]["BadRequest"];
@@ -5580,6 +5746,54 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             403: components["responses"]["Forbidden"];
+        };
+    };
+    adminResetUsageEvents: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Usage table cleared; returns number of deleted rows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResetUsageEventsResponse"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    adminResetUsageForUserByEmail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResetUsageForUserEmailRequest"];
+            };
+        };
+        responses: {
+            /** @description Usage cleared for the user's org */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResetUsageForUserEmailResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
         };
     };
     healthCheck: {

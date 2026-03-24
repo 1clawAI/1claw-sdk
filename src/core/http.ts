@@ -137,15 +137,19 @@ export class HttpClient {
             body?: unknown;
             query?: Record<string, string | number | undefined>;
             headers?: Record<string, string>;
+            /** Public routes: no Bearer token, no agent token refresh. */
+            skipAuth?: boolean;
         } = {},
     ): Promise<OneclawResponse<T>> {
-        await this.ensureToken();
+        if (!options.skipAuth) {
+            await this.ensureToken();
+        }
         const url = this.buildUrl(path, options.query);
         const headers: Record<string, string> = {
             "Content-Type": "application/json",
             ...options.headers,
         };
-        if (this.token) {
+        if (!options.skipAuth && this.token) {
             headers["Authorization"] = `Bearer ${this.token}`;
         }
 

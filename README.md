@@ -34,7 +34,7 @@ const secret = await client.secrets.get("vault-id", "OPENAI_KEY");
 console.log(secret.data?.value);
 ```
 
-**API contract:** This SDK is built from the **OpenAPI 3.1** spec. The canonical spec is published as [@1claw/openapi-spec](https://www.npmjs.com/package/@1claw/openapi-spec) (YAML/JSON). Types are generated from it; the SDK stays in sync with the API. For a full endpoint list, see the [API reference](https://docs.1claw.xyz/docs/reference/api-reference) or the spec.
+**API contract:** This SDK is built from the **OpenAPI 3.1** spec. The canonical spec is published as [@1claw/openapi-spec](https://www.npmjs.com/package/@1claw/openapi-spec) (YAML/JSON). Types are generated with `npm run generate` (`openapi-typescript ../openapi-spec/openapi.yaml`). Run `generate` after spec changes, then `npm run build`. For a full endpoint list, see the [API reference](https://docs.1claw.xyz/docs/reference/api-reference) or the spec.
 
 ## Authentication
 
@@ -64,6 +64,10 @@ const authed = createClient({
 await client.auth.login({ email: "...", password: "..." });
 await client.auth.agentToken({ agent_id: "...", api_key: "..." });
 await client.auth.google({ id_token: "..." });
+
+// Password reset (public; no Bearer token — use a client without stored JWT)
+await client.auth.forgotPassword({ email: "user@example.com" });
+await client.auth.resetPassword({ token: "...", new_password: "..." });
 ```
 
 ## API Resources

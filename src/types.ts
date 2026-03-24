@@ -65,6 +65,11 @@ export type SignupRequest = ApiSchemas["SignupRequest"];
 
 export type ChangePasswordRequest = ApiSchemas["ChangePasswordRequest"];
 
+export type ForgotPasswordRequest = ApiSchemas["ForgotPasswordRequest"];
+export type ForgotPasswordResponse = ApiSchemas["ForgotPasswordResponse"];
+export type ResetPasswordRequest = ApiSchemas["ResetPasswordRequest"];
+export type ResetPasswordResponse = ApiSchemas["ResetPasswordResponse"];
+
 // Account management
 export interface UserProfileResponse {
     id: string;

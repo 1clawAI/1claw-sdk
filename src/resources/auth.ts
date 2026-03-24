@@ -6,6 +6,10 @@ import type {
     GoogleAuthRequest,
     SignupRequest,
     ChangePasswordRequest,
+    ForgotPasswordRequest,
+    ForgotPasswordResponse,
+    ResetPasswordRequest,
+    ResetPasswordResponse,
     TokenResponse,
     UserProfileResponse,
     UpdateProfileRequest,
@@ -119,6 +123,31 @@ export class AuthResource {
         return this.http.request<void>("POST", "/v1/auth/change-password", {
             body: request,
         });
+    }
+
+    /**
+     * Request a password reset email (email/password accounts only).
+     * Always returns a generic success message (no email enumeration).
+     */
+    async forgotPassword(
+        request: ForgotPasswordRequest,
+    ): Promise<OneclawResponse<ForgotPasswordResponse>> {
+        return this.http.request<ForgotPasswordResponse>(
+            "POST",
+            "/v1/auth/forgot-password",
+            { body: request, skipAuth: true },
+        );
+    }
+
+    /** Complete password reset using the token from the email. */
+    async resetPassword(
+        request: ResetPasswordRequest,
+    ): Promise<OneclawResponse<ResetPasswordResponse>> {
+        return this.http.request<ResetPasswordResponse>(
+            "POST",
+            "/v1/auth/reset-password",
+            { body: request, skipAuth: true },
+        );
     }
 
     /** Revoke the current session token. */
