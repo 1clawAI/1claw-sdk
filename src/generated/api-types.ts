@@ -1224,7 +1224,7 @@ export interface paths {
         };
         /**
          * Get LLM token billing status
-         * @description Returns whether LLM token billing is enabled for the caller's org.
+         * @description Returns whether LLM token billing is enabled, optional Stripe billing credit balance (metered scope), and estimated cycle usage from the upcoming invoice—including per-line metered rows when Stripe returns them (amounts; quantities such as tokens when present).
          */
         get: operations["getLlmTokenBilling"];
         put?: never;
@@ -2705,10 +2705,41 @@ export interface components {
             used?: number;
             limit?: number;
         };
+        /** @description Metered line from Stripe upcoming invoice (usage detail when available). */
+        LlmMeteredInvoiceLine: {
+            description?: string | null;
+            /** Format: int64 */
+            amount_cents?: number;
+            /** @description Billed usage units when Stripe returns quantity (e.g. tokens). */
+            quantity?: number | null;
+            price_nickname?: string | null;
+        };
+        /** @description Accrued LLM charges for the current Stripe subscription period (upcoming invoice). */
+        LlmBillingCycleUsage: {
+            /** Format: date-time */
+            period_start?: string | null;
+            /** Format: date-time */
+            period_end?: string | null;
+            /** Format: int64 */
+            accrued_usage_cents?: number;
+            currency?: string;
+            metered_lines?: components["schemas"]["LlmMeteredInvoiceLine"][];
+        };
+        LlmCreditBalance: {
+            /** Format: int64 */
+            available_cents?: number;
+            /** Format: int64 */
+            ledger_cents?: number;
+            /** Format: int64 */
+            used_cents?: number;
+            currency?: string;
+        };
         LlmTokenBillingStatus: {
-            enabled?: boolean;
+            enabled: boolean;
             /** @enum {string} */
             subscription_status?: "active" | "inactive";
+            credit_balance?: components["schemas"]["LlmCreditBalance"];
+            billing_cycle_usage?: components["schemas"]["LlmBillingCycleUsage"];
         };
         LlmCheckoutResponse: {
             /** Format: uri */
