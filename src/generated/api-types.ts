@@ -31,7 +31,21 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Exchange agent credentials for JWT */
+        /**
+         * Exchange agent credentials for JWT
+         * @description Returns a short-lived EdDSA-signed JWT (`access_token`). Standard claims include `sub`
+         *     (`agent:<uuid>`), `org`, `scopes`, `vault_ids`, optional `intents_api_enabled`, optional
+         *     `shroud_enabled`, optional `llm_token_billing` / `stripe_customer_id` when org LLM billing is on.
+         *
+         *     When **`shroud_enabled`** is true, the JWT payload may include **`shroud_config`**: a JSON object
+         *     mirroring the agent row in Vault (same shape as `ShroudConfig` on `GET /v1/agents/{id}`).
+         *     **Shroud** (TEE proxy) decodes this on each LLM request and runs **PolicyEngine** after the
+         *     global inspection pipeline so per-agent limits and threat **block** actions apply without a
+         *     separate policy fetch. Re-exchange the agent token after changing `shroud_config` so the JWT
+         *     is fresh.
+         *
+         *     User JWTs from password, API key, or device flow do **not** include `shroud_config`.
+         */
         post: operations["agentToken"];
         delete?: never;
         options?: never;

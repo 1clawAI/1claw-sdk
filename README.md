@@ -38,6 +38,8 @@ console.log(secret.data?.value);
 
 ## Authentication
 
+Agent JWTs issued by `POST /v1/auth/agent-token` may include optional claims such as `shroud_enabled` and **`shroud_config`** (when Shroud is on for that agent). Those are for services like **Shroud** that verify the JWT; the TypeScript SDK uses the token for Vault API calls and does not need to read `shroud_config` unless you build custom tooling.
+
 The SDK supports three authentication modes:
 
 ```typescript
