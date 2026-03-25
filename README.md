@@ -368,6 +368,39 @@ const { data } = await client.agents.create({
         network_detection: { enabled: true, action: "warn" },
         filesystem_detection: { enabled: false },  // disabled by default
 
+        // Advanced inspection (Phase 2+3)
+        tool_call_inspection: {
+            enabled: true,
+            scan_arguments: true,
+            block_credential_exfil: true,
+            action: "block",
+        },
+        output_policy: {
+            enabled: true,
+            blocked_entities: ["CompetitorCo"],
+            block_harmful_content: true,
+            harmful_categories: ["malware", "illegal"],
+            action: "warn",
+        },
+        secret_injection_detection: {
+            enabled: true,
+            action: "block",
+            sensitivity: "medium",
+        },
+        advanced_redaction: {
+            enabled: true,
+            detect_base64_encoded: true,
+            detect_split_secrets: true,
+            detect_prefix_leak: true,
+        },
+        semantic_policy: {
+            enabled: true,
+            allowed_topics: ["customer_support"],
+            denied_tasks: ["code_generation", "data_export"],
+            action: "warn",
+        },
+        flagged_request_retention_days: 30,
+
         // Global settings
         sanitization_mode: "block",     // block | surgical | log_only
         threat_logging: true,

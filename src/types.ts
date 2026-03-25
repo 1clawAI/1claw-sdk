@@ -294,6 +294,52 @@ export interface FilesystemDetectionConfig {
     blocked_paths?: string[];
 }
 
+/** Tool/function call inspection settings. */
+export interface ToolCallPolicy {
+    enabled?: boolean;
+    allowed_tool_names?: string[];
+    denied_tool_names?: string[];
+    scan_arguments?: boolean;
+    block_credential_exfil?: boolean;
+    action?: "block" | "sanitize" | "warn" | "log";
+}
+
+/** Output content policy settings for LLM responses. */
+export interface OutputPolicy {
+    enabled?: boolean;
+    blocked_patterns?: string[];
+    blocked_entities?: string[];
+    block_harmful_content?: boolean;
+    harmful_categories?: ("violence" | "self_harm" | "illegal" | "hate" | "sexual" | "malware")[];
+    action?: "block" | "sanitize" | "warn" | "log";
+}
+
+/** Detects credentials injected into prompts that are not from the vault. */
+export interface SecretInjectionConfig {
+    enabled?: boolean;
+    action?: "block" | "sanitize" | "warn" | "log";
+    sensitivity?: "low" | "medium" | "high";
+}
+
+/** Advanced secret redaction (base64-encoded, split, prefix leaks). */
+export interface AdvancedRedactionConfig {
+    enabled?: boolean;
+    detect_base64_encoded?: boolean;
+    detect_split_secrets?: boolean;
+    detect_prefix_leak?: boolean;
+    min_secret_length?: number;
+}
+
+/** Semantic/intent-level policy enforcement. */
+export interface SemanticPolicy {
+    enabled?: boolean;
+    allowed_topics?: string[];
+    denied_topics?: string[];
+    allowed_tasks?: string[];
+    denied_tasks?: string[];
+    action?: "block" | "sanitize" | "warn" | "log";
+}
+
 /** Per-agent Shroud LLM Proxy configuration. */
 export interface ShroudConfig {
     pii_policy?: "block" | "redact" | "warn" | "allow";
@@ -324,6 +370,18 @@ export interface ShroudConfig {
     sanitization_mode?: "block" | "surgical" | "log_only";
     /** Whether to log all detected threats to audit. */
     threat_logging?: boolean;
+    /** Tool/function call inspection. */
+    tool_call_inspection?: ToolCallPolicy;
+    /** Output content policies for LLM responses. */
+    output_policy?: OutputPolicy;
+    /** Detect credentials injected into prompts that are not from the vault. */
+    secret_injection_detection?: SecretInjectionConfig;
+    /** Advanced secret redaction (base64-encoded, split secrets, prefix leaks). */
+    advanced_redaction?: AdvancedRedactionConfig;
+    /** Semantic/intent-level policy enforcement. */
+    semantic_policy?: SemanticPolicy;
+    /** Number of days to retain flagged request bodies for replay/investigation. */
+    flagged_request_retention_days?: number;
 }
 
 export interface CreateAgentRequest {

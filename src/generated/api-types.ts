@@ -1704,6 +1704,96 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/shroud/activity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Shroud activity events
+         * @description Returns recent Shroud proxy activity for the organization (LLM requests, inspections, policy actions).
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Filter by agent ID */
+                    agent_id?: string;
+                    /** @description Filter by action (allowed, blocked, warned) */
+                    action?: string;
+                    /** @description Maximum events to return */
+                    limit?: number;
+                    /** @description Pagination offset */
+                    offset?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Activity events */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            events?: components["schemas"]["ShroudActivityEvent"][];
+                            total?: number;
+                        };
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Ingest Shroud activity event (internal)
+         * @description Called by the Shroud proxy to record activity events. Not intended for external use.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["IngestShroudActivityRequest"];
+                };
+            };
+            responses: {
+                /** @description Event recorded */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2255,6 +2345,13 @@ export interface components {
              * @default true
              */
             threat_logging: boolean;
+            tool_call_inspection?: components["schemas"]["ToolCallPolicy"];
+            output_policy?: components["schemas"]["OutputPolicy"];
+            secret_injection_detection?: components["schemas"]["SecretInjectionConfig"];
+            advanced_redaction?: components["schemas"]["AdvancedRedactionConfig"];
+            semantic_policy?: components["schemas"]["SemanticPolicy"];
+            /** @description Number of days to retain flagged request bodies for replay/investigation */
+            flagged_request_retention_days?: number;
         };
         /** @description Unicode normalization and homoglyph detection settings */
         UnicodeNormalizationConfig: {
@@ -2384,6 +2481,129 @@ export interface components {
             action: "block" | "sanitize" | "warn" | "log";
             /** @description Path patterns to block (e.g., /etc/passwd, ~/.ssh) */
             blocked_paths?: string[];
+        };
+        /** @description Tool/function call inspection settings */
+        ToolCallPolicy: {
+            /**
+             * @description Enable tool call inspection
+             * @default false
+             */
+            enabled: boolean;
+            /** @description Allowed tool/function names (empty = all allowed) */
+            allowed_tool_names?: string[];
+            /** @description Denied tool/function names */
+            denied_tool_names?: string[];
+            /**
+             * @description Scan tool call arguments for credential exfiltration
+             * @default true
+             */
+            scan_arguments: boolean;
+            /**
+             * @description Block tool calls that appear to exfiltrate credentials
+             * @default true
+             */
+            block_credential_exfil: boolean;
+            /**
+             * @description Action when a tool call violation is detected
+             * @default block
+             * @enum {string}
+             */
+            action: "block" | "sanitize" | "warn" | "log";
+        };
+        /** @description Output content policy settings for LLM responses */
+        OutputPolicy: {
+            /**
+             * @description Enable output content policies
+             * @default false
+             */
+            enabled: boolean;
+            /** @description Custom regex patterns to block in responses */
+            blocked_patterns?: string[];
+            /** @description Named entities to block (e.g., competitor names) */
+            blocked_entities?: string[];
+            /**
+             * @description Block responses containing harmful content categories
+             * @default false
+             */
+            block_harmful_content: boolean;
+            /** @description Harm categories to block */
+            harmful_categories?: ("violence" | "self_harm" | "illegal" | "hate" | "sexual" | "malware")[];
+            /**
+             * @description Action when output policy is violated
+             * @default warn
+             * @enum {string}
+             */
+            action: "block" | "sanitize" | "warn" | "log";
+        };
+        /** @description Detects credentials injected into prompts that are not from the vault */
+        SecretInjectionConfig: {
+            /**
+             * @description Enable secret injection detection
+             * @default false
+             */
+            enabled: boolean;
+            /**
+             * @description Action when injected credentials are detected
+             * @default block
+             * @enum {string}
+             */
+            action: "block" | "sanitize" | "warn" | "log";
+            /**
+             * @description Detection sensitivity level
+             * @default medium
+             * @enum {string}
+             */
+            sensitivity: "low" | "medium" | "high";
+        };
+        /** @description Advanced secret redaction settings (base64-encoded, split, prefix leaks) */
+        AdvancedRedactionConfig: {
+            /**
+             * @description Enable advanced redaction checks
+             * @default false
+             */
+            enabled: boolean;
+            /**
+             * @description Detect base64-encoded vault secrets
+             * @default false
+             */
+            detect_base64_encoded: boolean;
+            /**
+             * @description Detect secrets split across tokens or messages
+             * @default false
+             */
+            detect_split_secrets: boolean;
+            /**
+             * @description Detect partial/prefix leaks of vault secrets
+             * @default false
+             */
+            detect_prefix_leak: boolean;
+            /**
+             * @description Minimum secret length to consider for advanced matching
+             * @default 16
+             */
+            min_secret_length: number;
+        };
+        /** @description Semantic/intent-level policy enforcement */
+        SemanticPolicy: {
+            /**
+             * @description Enable semantic policy enforcement
+             * @default false
+             */
+            enabled: boolean;
+            /** @description Topics the agent is allowed to discuss (empty = all) */
+            allowed_topics?: string[];
+            /** @description Topics to block */
+            denied_topics?: string[];
+            /** @description Tasks the agent is allowed to perform (empty = all) */
+            allowed_tasks?: string[];
+            /** @description Tasks to block (e.g., code_generation, data_export) */
+            denied_tasks?: string[];
+            /**
+             * @description Action when semantic policy is violated
+             * @default warn
+             * @enum {string}
+             */
+            action: "block" | "sanitize" | "warn" | "log";
         };
         AgentCreatedResponse: {
             agent: components["schemas"]["AgentResponse"];
@@ -2972,6 +3192,46 @@ export interface components {
                 requiredDeadlineSeconds?: number;
             }[];
             description?: string;
+        };
+        ShroudActivityEvent: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            org_id?: string;
+            agent_id?: string;
+            provider?: string;
+            model?: string;
+            /** @description Action taken (allowed, blocked, warned) */
+            action?: string;
+            request_tokens?: number;
+            response_tokens?: number;
+            latency_ms?: number;
+            had_secrets_redacted?: boolean;
+            had_pii_detected?: boolean;
+            injection_score?: number;
+            policy_violations?: string[];
+            metadata?: Record<string, never>;
+            /** Format: date-time */
+            timestamp?: string;
+        };
+        IngestShroudActivityRequest: {
+            agent_id: string;
+            provider?: string;
+            model?: string;
+            action: string;
+            /** @default 0 */
+            request_tokens: number;
+            /** @default 0 */
+            response_tokens: number;
+            latency_ms?: number;
+            /** @default false */
+            had_secrets_redacted: boolean;
+            /** @default false */
+            had_pii_detected: boolean;
+            /** @default 0 */
+            injection_score: number;
+            policy_violations?: string[];
+            metadata?: Record<string, never>;
         };
         HealthResponse: {
             /** @enum {string} */

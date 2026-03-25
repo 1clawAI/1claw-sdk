@@ -153,6 +153,19 @@ export type {
     SettingResponse,
     SettingsListResponse,
     X402ConfigResponse,
+    // Shroud Config
+    ShroudConfig,
+    ToolCallPolicy,
+    OutputPolicy,
+    SecretInjectionConfig,
+    AdvancedRedactionConfig,
+    SemanticPolicy,
+    UnicodeNormalizationConfig,
+    CommandInjectionConfig,
+    SocialEngineeringConfig,
+    EncodingDetectionConfig,
+    NetworkDetectionConfig,
+    FilesystemDetectionConfig,
     // Health
     HealthResponse,
     // MCP
