@@ -84,6 +84,7 @@ export type {
     // Vaults
     CreateVaultRequest,
     EnableCmekRequest,
+    EnableMpcRequest,
     CmekRotationJobResponse,
     VaultResponse,
     VaultListResponse,

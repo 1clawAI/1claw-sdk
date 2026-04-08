@@ -147,6 +147,10 @@ export interface ApiKeyListResponse {
 
 export type CreateVaultRequest = ApiSchemas["CreateVaultRequest"];
 
+export interface EnableMpcRequest {
+    mpc_custody: string;
+}
+
 export interface VaultResponse {
     id: string;
     name: string;
@@ -156,6 +160,9 @@ export interface VaultResponse {
     created_at: string;
     cmek_enabled?: boolean;
     cmek_fingerprint?: string;
+    mpc_custody?: string;
+    mpc_threshold?: number;
+    mpc_providers?: string[];
 }
 
 export interface VaultListResponse {

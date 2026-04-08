@@ -540,6 +540,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/vaults/{vault_id}/mpc": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Enable MPC custody on a vault
+         * @description Enable MPC custody on an existing vault. Requires Business or Enterprise plan.
+         *     Splits secret encryption keys across multiple providers using the specified
+         *     custody mode (e.g. 2-of-2, 2-of-3).
+         */
+        post: operations["enableMpc"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/vaults/{vault_id}/secrets": {
         parameters: {
             query?: never;
@@ -1794,6 +1816,62 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/shroud/threat-summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Shroud threat analytics summary
+         * @description Aggregated threat metrics for the organization from `shroud_activity` (detectors, blocked counts, recent flagged requests). Query `period` selects the window; the previous window of equal length is used for request volume trend.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Rolling window ending now */
+                    period?: "1h" | "24h" | "7d" | "30d";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Threat summary */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ShroudThreatSummary"];
+                    };
+                };
+                /** @description Invalid period */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1992,6 +2070,8 @@ export interface components {
         CreateVaultRequest: {
             name: string;
             description?: string;
+            /** @description MPC custody mode to enable at creation (e.g. "2-of-2", "2-of-3") */
+            mpc_custody?: string;
         };
         VaultResponse: {
             /** Format: uuid */
@@ -2006,6 +2086,12 @@ export interface components {
             cmek_enabled?: boolean;
             /** @description SHA-256 fingerprint of the CMEK key (64 hex chars) */
             cmek_fingerprint?: string;
+            /** @description MPC custody mode (e.g. "2-of-2", "2-of-3"), absent when MPC is not enabled */
+            mpc_custody?: string;
+            /** @description Number of shares required to reconstruct the key */
+            mpc_threshold?: number;
+            /** @description List of MPC share providers (e.g. ["server", "client"]) */
+            mpc_providers?: string[];
         };
         VaultListResponse: {
             vaults?: components["schemas"]["VaultResponse"][];
@@ -2037,6 +2123,10 @@ export interface components {
             /** Format: date-time */
             created_at: string;
         };
+        EnableMpcRequest: {
+            /** @description MPC custody mode (e.g. "2-of-2", "2-of-3") */
+            mpc_custody: string;
+        };
         PutSecretRequest: {
             /**
              * @description Secret type (generic, password, api_key, certificate, private_key, ssh_key, env)
@@ -2067,6 +2157,23 @@ export interface components {
             created_at: string;
             /** Format: date-time */
             expires_at?: string;
+        };
+        /** @description Returned when a secret is created or updated. Extends SecretMetadataResponse with an optional client_share for MPC vaults. */
+        SecretCreatedResponse: {
+            /** Format: uuid */
+            id: string;
+            path: string;
+            type: string;
+            version: number;
+            metadata?: {
+                [key: string]: unknown;
+            };
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            expires_at?: string;
+            /** @description Base64-encoded client key share. Returned only for MPC 2-of-2 vaults. The client must store this share securely — it is not persisted server-side. */
+            client_share?: string;
         };
         SecretResponse: {
             /** Format: uuid */
@@ -3233,6 +3340,46 @@ export interface components {
             policy_violations?: string[];
             metadata?: Record<string, never>;
         };
+        ShroudThreatSummary: {
+            /** Format: int64 */
+            total_requests?: number;
+            /** Format: int64 */
+            total_requests_prev?: number;
+            /** Format: int64 */
+            blocked_requests?: number;
+            /** Format: int64 */
+            detectors_triggered?: number;
+            /** Format: int64 */
+            active_agents?: number;
+            detectors?: components["schemas"]["ShroudDetectorStats"][];
+            flagged_requests?: components["schemas"]["ShroudFlaggedRequest"][];
+        };
+        ShroudDetectorStats: {
+            detector?: string;
+            /** Format: int64 */
+            detections?: number;
+            /** Format: int64 */
+            blocks?: number;
+            actions?: {
+                /** Format: int64 */
+                blocked?: number;
+                /** Format: int64 */
+                warned?: number;
+                /** Format: int64 */
+                logged?: number;
+            };
+        };
+        ShroudFlaggedRequest: {
+            id?: string;
+            /** Format: date-time */
+            timestamp?: string;
+            agent_id?: string;
+            agent_name?: string;
+            score?: number;
+            reason?: string;
+            /** @enum {string} */
+            action?: "blocked" | "warned" | "logged";
+        };
         HealthResponse: {
             /** @enum {string} */
             status?: "healthy" | "degraded";
@@ -4155,6 +4302,35 @@ export interface operations {
             404: components["responses"]["NotFound"];
         };
     };
+    enableMpc: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                vault_id: components["parameters"]["VaultId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EnableMpcRequest"];
+            };
+        };
+        responses: {
+            /** @description MPC custody enabled */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VaultResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
     listSecrets: {
         parameters: {
             query?: {
@@ -4184,7 +4360,10 @@ export interface operations {
     getSecret: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Base64-encoded client key share for MPC 2-of-2 vaults. Required when the vault uses 2-of-2 MPC custody. */
+                "x-client-share"?: string;
+            };
             path: {
                 vault_id: components["parameters"]["VaultId"];
                 /** @description Secret path (e.g. "db/credentials") */
@@ -4230,7 +4409,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SecretMetadataResponse"];
+                    "application/json": components["schemas"]["SecretCreatedResponse"];
                 };
             };
             400: components["responses"]["BadRequest"];

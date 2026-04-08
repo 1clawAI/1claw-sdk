@@ -76,7 +76,7 @@ await client.auth.resetPassword({ token: "...", new_password: "..." });
 
 | Resource           | Methods                                                                                                             |
 | ------------------ | ------------------------------------------------------------------------------------------------------------------- |
-| `client.vault`     | `create`, `get`, `list`, `delete`                                                                                   |
+| `client.vault`     | `create`, `get`, `list`, `delete`, `enableMpc`, `disableMpc`                                                        |
 | `client.secrets`   | `set`, `get`, `delete`, `list`, `rotate`                                                                            |
 | `client.access`    | `grantHuman`, `grantAgent`, `update`, `revoke`, `listGrants`                                                        |
 | `client.agents`    | `create`, `getSelf`, `get`, `list`, `update`, `delete`, `rotateKey`, `submitTransaction`, `signTransaction`, `getTransaction`, `listTransactions`, `simulateTransaction`, `simulateBundle` |
@@ -264,6 +264,30 @@ The server re-encrypts all secrets in batches of 100. Poll rotation status:
 const job = await client.vault.getRotationJobStatus(vaultId, jobId);
 console.log(job.data?.status, job.data?.processed, "/", job.data?.total_secrets);
 ```
+
+## MPC Vault Support
+
+Vaults can optionally use multi-party computation (MPC) for secret splitting. When MPC is enabled, the server holds one share and the client holds another — neither party can reconstruct the secret alone.
+
+```typescript
+// Enable MPC on a vault
+await client.vault.enableMpc(vaultId);
+
+// Store a secret — response includes the client_share
+const res = await client.secrets.set(vaultId, "my-key", "secret-value");
+const clientShare = res.data?.client_share; // Save this securely on your side
+
+// Retrieve a secret — pass client_share to reconstruct
+const secret = await client.secrets.get(vaultId, "my-key", {
+    client_share: clientShare,
+});
+console.log(secret.data?.value);
+
+// Disable MPC (converts back to standard encryption)
+await client.vault.disableMpc(vaultId);
+```
+
+When MPC is enabled, `set` responses include a `client_share` field that must be stored client-side. The `get` method accepts an optional `client_share` parameter to reconstruct the full secret. Without the client share, the server returns only its share.
 
 ## Agent Token Auto-Refresh
 

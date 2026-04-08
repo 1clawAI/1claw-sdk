@@ -2,6 +2,7 @@ import type { HttpClient } from "../core/http";
 import type {
     CreateVaultRequest,
     EnableCmekRequest,
+    EnableMpcRequest,
     CmekRotationJobResponse,
     VaultResponse,
     VaultListResponse,
@@ -14,16 +15,18 @@ import type {
 export class VaultResource {
     constructor(private readonly http: HttpClient) {}
 
-    /** Create a new vault. */
+    /** Create a new vault. Optionally pass `mpc_custody` to enable MPC at creation time. */
     async create(
         options: CreateVaultRequest,
     ): Promise<OneclawResponse<VaultResponse>> {
-        return this.http.request<VaultResponse>("POST", "/v1/vaults", {
-            body: {
-                name: options.name,
-                description: options.description ?? "",
-            },
-        });
+        const body: Record<string, unknown> = {
+            name: options.name,
+            description: options.description ?? "",
+        };
+        if ((options as Record<string, unknown>).mpc_custody) {
+            body.mpc_custody = (options as Record<string, unknown>).mpc_custody;
+        }
+        return this.http.request<VaultResponse>("POST", "/v1/vaults", { body });
     }
 
     /** Fetch a single vault by ID. */
@@ -60,6 +63,18 @@ export class VaultResource {
         return this.http.request<VaultResponse>(
             "DELETE",
             `/v1/vaults/${vaultId}/cmek`,
+        );
+    }
+
+    /** Enable MPC on a vault (Business/Enterprise only). */
+    async enableMpc(
+        vaultId: string,
+        request: EnableMpcRequest,
+    ): Promise<OneclawResponse<VaultResponse>> {
+        return this.http.request<VaultResponse>(
+            "POST",
+            `/v1/vaults/${vaultId}/mpc`,
+            { body: request },
         );
     }
 
