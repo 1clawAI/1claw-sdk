@@ -201,6 +201,17 @@ export interface SecretMetadataResponse {
     metadata: Record<string, unknown>;
     created_at: string;
     expires_at?: string;
+    is_disabled?: boolean;
+}
+
+export interface SecretVersionListResponse {
+    versions: SecretMetadataResponse[];
+}
+
+export interface RotateSecretRequest {
+    length?: number;
+    charset?: "hex" | "base64" | "alphanumeric" | "ascii";
+    type?: string;
 }
 
 export interface SecretResponse {

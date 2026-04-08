@@ -1,9 +1,11 @@
 import type { HttpClient } from "../core/http";
 import type {
     PutSecretRequest,
+    RotateSecretRequest,
     SecretResponse,
     SecretMetadataResponse,
     SecretListResponse,
+    SecretVersionListResponse,
     OneclawResponse,
 } from "../types";
 
@@ -90,7 +92,7 @@ export class SecretsResource {
 
     /**
      * Rotate a secret by writing a new value at the same path.
-     * This increments the version and overwrites the previous value.
+     * This increments the version.
      */
     async rotate(
         vaultId: string,
@@ -99,5 +101,57 @@ export class SecretsResource {
         options: SetSecretOptions = {},
     ): Promise<OneclawResponse<SecretMetadataResponse>> {
         return this.set(vaultId, key, newValue, options);
+    }
+
+    /**
+     * Server-side rotation: the vault generates a cryptographically random
+     * value and stores it as the next version. The caller never sees or
+     * transmits the raw secret.
+     */
+    async rotateGenerate(
+        vaultId: string,
+        key: string,
+        options: RotateSecretRequest = {},
+    ): Promise<OneclawResponse<SecretMetadataResponse>> {
+        return this.http.request<SecretMetadataResponse>(
+            "POST",
+            `/v1/vaults/${vaultId}/secret-rotate/${key}`,
+            { body: options },
+        );
+    }
+
+    /** List all versions of a secret at the given path. */
+    async listVersions(
+        vaultId: string,
+        key: string,
+    ): Promise<OneclawResponse<SecretVersionListResponse>> {
+        return this.http.request<SecretVersionListResponse>(
+            "GET",
+            `/v1/vaults/${vaultId}/secret-versions/${key}`,
+        );
+    }
+
+    /** Retrieve a specific version of a secret. */
+    async getVersion(
+        vaultId: string,
+        key: string,
+        version: number,
+    ): Promise<OneclawResponse<SecretResponse>> {
+        return this.http.request<SecretResponse>(
+            "GET",
+            `/v1/vaults/${vaultId}/secret-version/${key}/${version}`,
+        );
+    }
+
+    /** Disable a specific version so it can no longer be read (retained for audit). */
+    async disableVersion(
+        vaultId: string,
+        key: string,
+        version: number,
+    ): Promise<OneclawResponse<void>> {
+        return this.http.request<void>(
+            "POST",
+            `/v1/vaults/${vaultId}/secret-version/${key}/${version}/disable`,
+        );
     }
 }
