@@ -440,6 +440,8 @@ export interface AgentResponse {
     tx_to_allowlist?: string[];
     tx_max_value_eth?: string;
     tx_daily_limit_eth?: string;
+    /** ETH already spent today (UTC) per recorded txs; pairs with tx_daily_limit_eth. */
+    tx_spent_today_eth?: string;
     tx_allowed_chains?: string[];
     token_ttl_seconds?: number | null;
     vault_ids?: string[];

@@ -598,6 +598,83 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/vaults/{vault_id}/secret-versions/{path}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List all versions of a secret */
+        get: operations["listSecretVersions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/vaults/{vault_id}/secret-version/{path}/{version}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Retrieve a specific version of a secret */
+        get: operations["getSecretVersion"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/vaults/{vault_id}/secret-version/{path}/{version}/disable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Disable a specific secret version
+         * @description Disables a version so it can no longer be read. The version is
+         *     retained for audit purposes but returns 410 on read attempts.
+         */
+        post: operations["disableSecretVersion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/vaults/{vault_id}/secret-rotate/{path}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Server-side secret rotation
+         * @description Generates a cryptographically random value and stores it as a new
+         *     version of the secret. The previous version is preserved in history.
+         *     Requires rotate or write permission.
+         */
+        post: operations["rotateSecret"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/vaults/{vault_id}/policies": {
         parameters: {
             query?: never;
@@ -2157,6 +2234,8 @@ export interface components {
             created_at: string;
             /** Format: date-time */
             expires_at?: string;
+            /** @description Whether this version has been disabled (retained for audit but unreadable) */
+            is_disabled?: boolean;
         };
         /** @description Returned when a secret is created or updated. Extends SecretMetadataResponse with an optional client_share for MPC vaults. */
         SecretCreatedResponse: {
@@ -2195,6 +2274,20 @@ export interface components {
         };
         SecretListResponse: {
             secrets?: components["schemas"]["SecretMetadataResponse"][];
+        };
+        SecretVersionListResponse: {
+            versions?: components["schemas"]["SecretMetadataResponse"][];
+        };
+        RotateSecretRequest: {
+            /** @description Length of the generated value (default 32) */
+            length?: number;
+            /**
+             * @description Character set for the generated value (default hex)
+             * @enum {string}
+             */
+            charset?: "hex" | "base64" | "alphanumeric" | "ascii";
+            /** @description Override the secret type (defaults to existing secret's type) */
+            type?: string;
         };
         CreatePolicyRequest: {
             secret_path_pattern: string;
@@ -2323,6 +2416,8 @@ export interface components {
             tx_to_allowlist?: string[];
             tx_max_value_eth?: string;
             tx_daily_limit_eth?: string;
+            /** @description ETH value already spent today (UTC) from recorded transactions; used with daily limit guardrails */
+            tx_spent_today_eth?: string;
             tx_allowed_chains?: string[];
             token_ttl_seconds?: number | null;
             vault_ids?: string[];
@@ -4436,6 +4531,118 @@ export interface operations {
                 };
                 content?: never;
             };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listSecretVersions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                vault_id: components["parameters"]["VaultId"];
+                /** @description Secret path (e.g. "db/credentials") */
+                path: components["parameters"]["SecretPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Version list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SecretVersionListResponse"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getSecretVersion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                vault_id: components["parameters"]["VaultId"];
+                /** @description Secret path (e.g. "db/credentials") */
+                path: components["parameters"]["SecretPath"];
+                version: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Decrypted secret value at the specified version */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SecretResponse"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+            /** @description Version has been disabled or expired */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    disableSecretVersion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                vault_id: components["parameters"]["VaultId"];
+                /** @description Secret path (e.g. "db/credentials") */
+                path: components["parameters"]["SecretPath"];
+                version: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Version disabled */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    rotateSecret: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                vault_id: components["parameters"]["VaultId"];
+                /** @description Secret path (e.g. "db/credentials") */
+                path: components["parameters"]["SecretPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["RotateSecretRequest"];
+            };
+        };
+        responses: {
+            /** @description New version created with server-generated value */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SecretCreatedResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
             404: components["responses"]["NotFound"];
         };
     };
