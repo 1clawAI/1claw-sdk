@@ -895,6 +895,20 @@ export interface X402ConfigResponse {
 }
 
 // ---------------------------------------------------------------------------
+// GDPR Data Export
+// ---------------------------------------------------------------------------
+
+export interface ExportDataResponse {
+    export_version: string;
+    exported_at: string;
+    user: Record<string, unknown>;
+    vaults: Record<string, unknown>[];
+    agents: Record<string, unknown>[];
+    secrets_metadata: Record<string, unknown>[];
+    policies: Record<string, unknown>[];
+}
+
+// ---------------------------------------------------------------------------
 // Health
 // ---------------------------------------------------------------------------
 

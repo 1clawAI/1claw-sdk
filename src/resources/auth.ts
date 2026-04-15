@@ -14,6 +14,7 @@ import type {
     UserProfileResponse,
     UpdateProfileRequest,
     DeleteAccountRequest,
+    ExportDataResponse,
     OneclawResponse,
 } from "../types";
 
@@ -178,5 +179,13 @@ export class AuthResource {
         return this.http.request<void>("DELETE", "/v1/auth/me", {
             body: request,
         });
+    }
+
+    /** Export the current user's personal data (GDPR/data-portability). */
+    async exportData(): Promise<OneclawResponse<ExportDataResponse>> {
+        return this.http.request<ExportDataResponse>(
+            "POST",
+            "/v1/auth/export-data",
+        );
     }
 }
