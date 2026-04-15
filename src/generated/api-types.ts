@@ -439,6 +439,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/auth/export-data": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Export user data (GDPR)
+         * @description Returns a full export of the authenticated user's data including
+         *     profile, vaults, agents, secrets metadata, and policies. Intended
+         *     for GDPR data-portability requests. Only available to human users
+         *     (not agents).
+         */
+        post: operations["exportUserData"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/vaults": {
         parameters: {
             query?: never;
@@ -4199,6 +4222,78 @@ export interface operations {
                 content?: never;
             };
             404: components["responses"]["NotFound"];
+        };
+    };
+    exportUserData: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description User data export */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example 1.0 */
+                        export_version: string;
+                        /** Format: date-time */
+                        exported_at: string;
+                        user: {
+                            /** Format: uuid */
+                            id: string;
+                            /** Format: email */
+                            email: string;
+                            display_name: string;
+                            auth_method: string;
+                            /** Format: date-time */
+                            created_at: string;
+                        };
+                        vaults: {
+                            /** Format: uuid */
+                            id: string;
+                            name: string;
+                            /** Format: date-time */
+                            created_at: string;
+                        }[];
+                        agents: {
+                            /** Format: uuid */
+                            id: string;
+                            name: string;
+                            /** Format: date-time */
+                            created_at: string;
+                        }[];
+                        secrets_metadata: {
+                            /** Format: uuid */
+                            vault_id: string;
+                            path: string;
+                            type: string;
+                            version: number;
+                            /** Format: date-time */
+                            created_at: string;
+                        }[];
+                        policies: {
+                            /** Format: uuid */
+                            id: string;
+                            /** Format: uuid */
+                            vault_id: string;
+                            principal_type: string;
+                            /** Format: uuid */
+                            principal_id: string;
+                            secret_path_pattern: string;
+                            permissions: string[];
+                            /** Format: date-time */
+                            created_at: string;
+                        }[];
+                    };
+                };
+            };
+            403: components["responses"]["Forbidden"];
         };
     };
     listVaults: {
