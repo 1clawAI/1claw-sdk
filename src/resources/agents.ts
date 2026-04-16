@@ -42,7 +42,10 @@ export class AgentsResource {
 
     /**
      * Self-enroll an agent (public, no auth required).
-     * Credentials are emailed to the human — they are NOT returned in the response.
+     *
+     * With `human_email`, credentials are emailed after approval; the response may include
+     * `approval_url` as a fallback. With name only (omit `human_email`), the response includes
+     * `approval_url` for the human to open while signed in.
      */
     async enroll(
         options: EnrollAgentRequest,

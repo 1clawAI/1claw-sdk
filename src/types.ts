@@ -478,16 +478,8 @@ export interface AgentKeyRotatedResponse {
     api_key: string;
 }
 
-export interface EnrollAgentRequest {
-    name: string;
-    human_email: string;
-    description?: string;
-}
-
-export interface EnrollAgentResponse {
-    agent_id: string;
-    message: string;
-}
+export type EnrollAgentRequest = ApiSchemas["EnrollAgentRequest"];
+export type EnrollAgentResponse = ApiSchemas["EnrollAgentResponse"];
 
 export interface AgentSelfResponse {
     id: string;

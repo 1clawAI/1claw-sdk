@@ -745,9 +745,17 @@ export interface paths {
         put?: never;
         /**
          * Self-enroll an agent
-         * @description Public endpoint (no auth required). Creates an agent under the human's org
-         *     and emails the credentials to the specified human email. The API key is NOT
-         *     returned in the response. Anti-spam: IP rate limiting + per-email cooldown.
+         * @description Public endpoint (no auth required).
+         *
+         *     **With `human_email`:** Creates a pending enrollment for that account's org,
+         *     emails Allow/Deny links, and returns `approval_url` in the JSON body (use if email
+         *     is delayed). The API key is NOT returned until the human approves.
+         *
+         *     **Name only (omit `human_email`):** Creates a link-only pending enrollment.
+         *     The response includes `approval_url`; the human opens it while signed in to
+         *     approve the agent into their org.
+         *
+         *     Anti-spam: IP rate limiting, per-email cooldown, caps on pending rows.
          */
         post: operations["enrollAgent"];
         delete?: never;
@@ -2359,20 +2367,28 @@ export interface components {
             name: string;
             /**
              * Format: email
-             * @description Email of the human who will receive the agent credentials
+             * @description Optional. If set, pending enrollment is bound to that 1Claw account email
+             *     and Allow/Deny links are emailed. If omitted, only `approval_url` is used
+             *     (link-only enrollment; human must open the URL while signed in).
              */
-            human_email: string;
+            human_email?: string;
             /** @description Optional agent description */
             description?: string;
         };
         EnrollAgentResponse: {
             /**
              * Format: uuid
-             * @description UUID of the created agent (nil UUID when email not found — uniform response)
+             * @description UUID of the created agent (nil UUID until approved — uniform response)
              */
             agent_id?: string;
-            /** @description Status message (always generic to prevent email enumeration) */
+            /** @description Status message (worded to limit email enumeration where applicable) */
             message?: string;
+            /**
+             * Format: uri
+             * @description Present when a pending enrollment was created and the client should show
+             *     this link (email flow includes it as a fallback; name-only flow requires it).
+             */
+            approval_url?: string;
         };
         CreateAgentRequest: {
             name: string;
