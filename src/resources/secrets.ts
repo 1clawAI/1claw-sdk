@@ -151,7 +151,7 @@ export class SecretsResource {
     ): Promise<OneclawResponse<void>> {
         return this.http.request<void>(
             "POST",
-            `/v1/vaults/${vaultId}/secret-version/${key}/${version}/disable`,
+            `/v1/vaults/${vaultId}/secret-version-disable/${key}/${version}`,
         );
     }
 }
