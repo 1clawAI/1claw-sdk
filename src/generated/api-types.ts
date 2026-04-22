@@ -3451,6 +3451,18 @@ export interface components {
             had_pii_detected?: boolean;
             injection_score?: number;
             policy_violations?: string[];
+            /** @description Response-side prompt-injection score (0.0–1.0). */
+            response_injection_score?: number;
+            /** @description Response-side context-injection score (0.0–1.0). */
+            response_context_injection_score?: number;
+            /** @description Category tags emitted by the response-side filters (e.g. `markdown_image_exfil`, `data_uri_blob`, `echoed_instruction`). */
+            response_injection_categories?: string[];
+            /** @description URLs emitted by the model that were flagged as potential exfil / callback targets. */
+            external_urls_flagged?: string[];
+            /** @description Number of code fences in the response that were not expected for the agent's allowed task set. */
+            unexpected_code_blocks?: number;
+            /** @description True when Shroud rewrote or blocked response content before returning it to the agent. */
+            content_filtered?: boolean;
             metadata?: Record<string, never>;
             /** Format: date-time */
             timestamp?: string;
@@ -3473,6 +3485,16 @@ export interface components {
             injection_score: number;
             policy_violations?: string[];
             metadata?: Record<string, never>;
+            /** @default 0 */
+            response_injection_score: number;
+            /** @default 0 */
+            response_context_injection_score: number;
+            response_injection_categories?: string[];
+            external_urls_flagged?: string[];
+            /** @default 0 */
+            unexpected_code_blocks: number;
+            /** @default false */
+            content_filtered: boolean;
         };
         ShroudThreatSummary: {
             /** Format: int64 */
