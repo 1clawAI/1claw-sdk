@@ -655,7 +655,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/vaults/{vault_id}/secret-version/{path}/{version}/disable": {
+    "/v1/vaults/{vault_id}/secret-version-disable/{path}/{version}": {
         parameters: {
             query?: never;
             header?: never;
