@@ -115,6 +115,30 @@ export interface TokenResponse {
     refresh_token?: string;
 }
 
+// RFC 8693 token-exchange (OIDC federation, e.g. Anthropic WIF).
+export interface TokenExchangeRequest {
+    /** Required `aud` value for the federation token (e.g. `https://api.anthropic.com`). */
+    audience: string;
+    /**
+     * Optional 1claw subject token. When omitted, the SDK uses the current
+     * client token (or `apiKey`) as the subject_token automatically.
+     */
+    subjectToken?: string;
+    /**
+     * Optional space-separated subset of scopes. Cannot escalate beyond
+     * the agent's existing scopes.
+     */
+    scope?: string;
+}
+
+export interface TokenExchangeResponse {
+    access_token: string;
+    issued_token_type: string;
+    token_type: string;
+    expires_in: number;
+    scope?: string;
+}
+
 // ---------------------------------------------------------------------------
 // API Keys — request types from generated spec, responses hand-written
 // ---------------------------------------------------------------------------

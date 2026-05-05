@@ -71,6 +71,8 @@ export type {
     GoogleAuthRequest,
     SignupRequest,
     TokenResponse,
+    TokenExchangeRequest,
+    TokenExchangeResponse,
     ChangePasswordRequest,
     // Account management
     UserProfileResponse,

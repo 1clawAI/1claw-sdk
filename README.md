@@ -79,14 +79,14 @@ await client.auth.resetPassword({ token: "...", new_password: "..." });
 | `client.vault`     | `create`, `get`, `list`, `delete`, `enableMpc`, `disableMpc`                                                        |
 | `client.secrets`   | `set`, `get`, `delete`, `list`, `rotate`                                                                            |
 | `client.access`    | `grantHuman`, `grantAgent`, `update`, `revoke`, `listGrants`                                                        |
-| `client.agents`    | `create`, `getSelf`, `get`, `list`, `update`, `delete`, `rotateKey`, `submitTransaction`, `signTransaction`, `getTransaction`, `listTransactions`, `simulateTransaction`, `simulateBundle` |
+| `client.agents`    | `enroll` (also `AgentsResource.enroll(baseUrl, …)` static), `create`, `getSelf`, `get`, `list`, `update`, `delete`, `rotateKey`, `rotateIdentityKeys`, `submitTransaction`, `signTransaction`, `getTransaction`, `listTransactions`, `simulateTransaction`, `simulateBundle` |
 | `client.chains`    | `list`, `get`, `adminList`, `create`, `update`, `delete`                                                            |
 | `client.sharing`   | `create`, `access`, `listOutbound`, `listInbound`, `accept`, `decline`, `revoke`                                    |
 | `client.approvals` | `request`, `list`, `approve`, `deny`, `check`, `subscribe`                                                          |
 | `client.billing`   | `usage`, `history`, `llmTokenBilling`, `subscribeLlmTokenBilling`, `disableLlmTokenBilling` (LLM token billing / Stripe AI Gateway) |
 | `client.audit`     | `query`                                                                                                             |
 | `client.org`       | `listMembers`, `getAgentKeysVault`, `updateMemberRole`, `removeMember`                                              |
-| `client.auth`      | `login`, `signup`, `agentToken`, `apiKeyToken`, `google`, `changePassword`, `logout`, `getMe`, `updateMe`, `deleteMe` |
+| `client.auth`      | `login`, `signup`, `agentToken`, `apiKeyToken`, `google`, `changePassword`, `forgotPassword`, `resetPassword`, `exportData`, `exchangeFederatedToken`, `logout`, `getMe`, `updateMe`, `deleteMe` |
 | `client.apiKeys`   | `create`, `list`, `revoke`                                                                                          |
 | `client.treasury`  | `create`, `list`, `get`, `update`, `delete`, `addSigner`, `removeSigner`, `requestAccess`, `listAccessRequests`, `approveAccess`, `denyAccess` |
 | `client.x402`      | `getPaymentRequirement`, `pay`, `verifyReceipt`, `withPayment`                                                      |
@@ -224,6 +224,29 @@ Key properties:
 - **Idempotent by default** — each submission includes an auto-generated `Idempotency-Key` header
 - **Every transaction is audit-logged** with full calldata
 - **Revocable instantly** — set `intents_api_enabled: false` to cut off access
+
+## OIDC Federation (Anthropic WIF, GCP STS, AWS STS)
+
+`https://api.1claw.xyz` is a fully OpenID Connect–compliant issuer. External relying parties — Anthropic Workload Identity Federation, GCP STS, AWS STS, Stytch, etc. — can validate 1claw-issued JWTs by fetching:
+
+- `GET https://api.1claw.xyz/.well-known/openid-configuration`
+- `GET https://api.1claw.xyz/.well-known/jwks.json`
+
+The SDK exposes one method to mint a federation token:
+
+```typescript
+const tokenRes = await client.auth.exchangeFederatedToken({
+    audience: "https://api.anthropic.com",
+    // subjectToken? — defaults to the client's current login or apiKey
+    // scope? — optional space-separated subset of agent's scopes
+});
+
+const oidcJwt = tokenRes.data?.access_token; // RS256-signed; ~15 min default TTL, hard cap 1h
+```
+
+The acting agent must have `federation_enabled: true` and the `audience` must be on its `federation_audiences` allowlist (set via dashboard or `client.agents.update`). Every active KMS key version is published in JWKS, so verifiers reject unknown `kid`s automatically when 1claw rotates keys.
+
+End-to-end Anthropic WIF demo: [`examples/anthropic-wif`](https://github.com/1clawAI/1claw-examples/tree/main/anthropic-wif).
 
 ## Customer-Managed Encryption Keys (CMEK)
 

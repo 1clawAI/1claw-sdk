@@ -99,8 +99,98 @@ export interface paths {
          * @description Returns the Ed25519 public key used to sign JWTs.
          *     Use this to verify tokens independently (e.g. in a TEE proxy or
          *     gateway). No authentication required.
+         *
+         *     For OIDC-compliant relying parties (Anthropic Workload Identity
+         *     Federation, etc.) prefer the JWKS endpoint at
+         *     `/.well-known/jwks.json` together with the discovery document
+         *     at `/.well-known/openid-configuration` — those advertise both
+         *     Ed25519 and RS256 keys keyed by `kid` and survive key rotation.
          */
         get: operations["getJwtPublicKey"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/federated-token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Exchange a 1claw token for an OIDC federation token (RFC 8693)
+         * @description Mints a short-lived RS256-signed JWT targeted at an external
+         *     relying party (e.g. Anthropic Workload Identity Federation).
+         *     The relying party validates the token via this issuer's JWKS
+         *     URL (`/.well-known/jwks.json`) and exchanges it for its own
+         *     short-lived service credentials.
+         *
+         *     Requirements:
+         *     - The agent that owns the `subject_token` must have
+         *       `federation_enabled = true` and the requested `audience`
+         *       must appear in `federation_audiences`.
+         *     - The `subject_token` must be a valid 1claw agent JWT or
+         *       `ocv_` API key.
+         *     - Optional `scope` narrows the agent's existing scopes — it
+         *       cannot escalate.
+         *
+         *     Returns 503 when `ONECLAW_JWT_RS256_SIGNING_KEY_ID` is not
+         *     configured on the server.
+         */
+        post: operations["exchangeFederatedToken"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/.well-known/openid-configuration": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * OIDC discovery document
+         * @description Standard OpenID Connect discovery document advertising the
+         *     issuer URL, JWKS URL, supported algorithms (`EdDSA`, `RS256`),
+         *     and the RFC 8693 token-exchange endpoint. External IdPs
+         *     (Anthropic WIF, Okta, Auth0, etc.) read this URL to learn
+         *     where 1claw publishes its JWKS.
+         */
+        get: operations["openidConfiguration"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/.well-known/jwks.json": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * JSON Web Key Set
+         * @description Public keys for every active version of every JWT signing
+         *     key (Ed25519 + RSA-2048). Each entry includes a `kid` so
+         *     consumers can validate tokens issued before the most recent
+         *     key rotation. Cached for 5 minutes via `Cache-Control` and
+         *     CORS-permissive for browser-based IdP consoles.
+         */
+        get: operations["jwks"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2043,6 +2133,38 @@ export interface components {
         UserApiKeyTokenRequest: {
             api_key: string;
         };
+        /**
+         * @description RFC 8693 token-exchange request body. `subject_token_type`
+         *     accepts the standard JWT URI or 1claw's API-key URI:
+         *       - `urn:ietf:params:oauth:token-type:jwt`
+         *       - `urn:1claw:params:oauth:token-type:api-key`
+         */
+        TokenExchangeRequest: {
+            /** @enum {string} */
+            grant_type: "urn:ietf:params:oauth:grant-type:token-exchange";
+            /** @description 1claw JWT or `ocv_` API key authorising the exchange. */
+            subject_token: string;
+            /** @enum {string} */
+            subject_token_type: "urn:ietf:params:oauth:token-type:jwt" | "urn:1claw:params:oauth:token-type:api-key";
+            /**
+             * Format: uri
+             * @description Required `aud` claim for the issued federation token (must be in agent's allowlist).
+             * @example https://api.anthropic.com
+             */
+            audience: string;
+            /** @description Optional space-separated subset of the agent's existing scopes. */
+            scope?: string;
+            /** @description Optional. Defaults to `urn:ietf:params:oauth:token-type:jwt`. */
+            requested_token_type?: string;
+        };
+        TokenExchangeResponse: {
+            /** @description RS256-signed federation JWT. */
+            access_token: string;
+            issued_token_type: string;
+            token_type: string;
+            expires_in: number;
+            scope?: string;
+        };
         SignupRequest: {
             /** Format: email */
             email: string;
@@ -2441,6 +2563,24 @@ export interface components {
             /** @description Enable/disable Shroud LLM Proxy */
             shroud_enabled?: boolean;
             shroud_config?: components["schemas"]["ShroudConfig"];
+            /**
+             * @description Enable OIDC federation (RFC 8693 token-exchange) for this agent.
+             *     When true, the agent may call POST /v1/auth/federated-token to mint
+             *     federation tokens for the audiences listed in `federation_audiences`.
+             */
+            federation_enabled?: boolean;
+            /**
+             * @description Allowlist of `aud` values the federation token-exchange may issue
+             *     tokens for (e.g. `["https://api.anthropic.com"]`). Empty array
+             *     blocks all federation requests (zero-trust default).
+             */
+            federation_audiences?: string[];
+            /**
+             * @description Per-agent TTL override for federation tokens (seconds). NULL falls
+             *     back to the global default (`ONECLAW_JWT_FEDERATED_TOKEN_EXPIRY_SECS`).
+             *     Hard-capped at 3600 seconds.
+             */
+            federated_token_ttl_seconds?: number | null;
         };
         AgentResponse: {
             /** Format: uuid */
@@ -2473,6 +2613,15 @@ export interface components {
             /** @description Whether this agent routes LLM traffic through the Shroud TEE proxy */
             shroud_enabled: boolean;
             shroud_config?: components["schemas"]["ShroudConfig"];
+            /**
+             * @description Whether this agent may mint OIDC federation tokens via
+             *     POST /v1/auth/federated-token. False by default.
+             */
+            federation_enabled?: boolean;
+            /** @description Allowlist of audience URIs the agent may federate to. */
+            federation_audiences?: string[];
+            /** @description Per-agent TTL override for federation tokens (60..=3600). */
+            federated_token_ttl_seconds?: number | null;
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
@@ -3745,6 +3894,83 @@ export interface operations {
                         alg: string;
                         /** @description Base64-encoded Ed25519 public key */
                         public_key_base64: string;
+                    };
+                };
+            };
+        };
+    };
+    exchangeFederatedToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TokenExchangeRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["TokenExchangeRequest"];
+            };
+        };
+        responses: {
+            /** @description Federation token issued */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TokenExchangeResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description RS256 signing key not configured */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    openidConfiguration: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Discovery document */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>;
+                };
+            };
+        };
+    };
+    jwks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description JWK Set */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/jwk-set+json": {
+                        keys?: Record<string, never>[];
                     };
                 };
             };

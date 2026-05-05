@@ -11,6 +11,8 @@ import type {
     ResetPasswordRequest,
     ResetPasswordResponse,
     TokenResponse,
+    TokenExchangeRequest,
+    TokenExchangeResponse,
     UserProfileResponse,
     UpdateProfileRequest,
     DeleteAccountRequest,
@@ -186,6 +188,50 @@ export class AuthResource {
         return this.http.request<ExportDataResponse>(
             "POST",
             "/v1/auth/export-data",
+        );
+    }
+
+    /**
+     * Exchange a 1claw subject token for a short-lived OIDC federation JWT
+     * (RFC 8693). The returned `access_token` is signed with RS256 and is
+     * meant for external relying parties such as Anthropic Workload Identity
+     * Federation, GCP STS, AWS STS, etc.
+     *
+     * If `subjectToken` is omitted, the SDK uses the current client token.
+     * The agent must have `federation_enabled = true` and the `audience`
+     * must be on its `federation_audiences` allowlist.
+     */
+    async exchangeFederatedToken(
+        request: TokenExchangeRequest,
+    ): Promise<OneclawResponse<TokenExchangeResponse>> {
+        const subjectToken = request.subjectToken ?? this.http.getToken();
+        if (!subjectToken) {
+            return {
+                data: null,
+                error: {
+                    type: "invalid_request",
+                    message:
+                        "exchangeFederatedToken requires either an explicit subjectToken or an authenticated client.",
+                },
+                meta: { status: 400 },
+            };
+        }
+        const subjectTokenType = subjectToken.startsWith("ocv_")
+            ? "urn:1claw:params:oauth:token-type:api-key"
+            : "urn:ietf:params:oauth:token-type:jwt";
+        const body: Record<string, string> = {
+            grant_type: "urn:ietf:params:oauth:grant-type:token-exchange",
+            subject_token: subjectToken,
+            subject_token_type: subjectTokenType,
+            audience: request.audience,
+        };
+        if (request.scope) {
+            body.scope = request.scope;
+        }
+        return this.http.request<TokenExchangeResponse>(
+            "POST",
+            "/v1/auth/federated-token",
+            { body, skipAuth: true },
         );
     }
 }
