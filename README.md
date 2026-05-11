@@ -79,7 +79,7 @@ await client.auth.resetPassword({ token: "...", new_password: "..." });
 | `client.vault`     | `create`, `get`, `list`, `delete`, `enableMpc`, `disableMpc`                                                        |
 | `client.secrets`   | `set`, `get`, `delete`, `list`, `rotate`                                                                            |
 | `client.access`    | `grantHuman`, `grantAgent`, `update`, `revoke`, `listGrants`                                                        |
-| `client.agents`    | `enroll` (also `AgentsResource.enroll(baseUrl, …)` static), `create`, `getSelf`, `get`, `list`, `update`, `delete`, `rotateKey`, `rotateIdentityKeys`, `submitTransaction`, `signTransaction`, `getTransaction`, `listTransactions`, `simulateTransaction`, `simulateBundle` |
+| `client.agents`    | `enroll` (also `AgentsResource.enroll(baseUrl, …)` static), `create`, `getSelf`, `get`, `list`, `update`, `delete`, `rotateKey`, `rotateIdentityKeys`, `submitTransaction`, `signTransaction`, `getTransaction`, `listTransactions`, `simulateTransaction`, `simulateBundle`, `sign` |
 | `client.chains`    | `list`, `get`, `adminList`, `create`, `update`, `delete`                                                            |
 | `client.sharing`   | `create`, `access`, `listOutbound`, `listInbound`, `accept`, `decline`, `revoke`                                    |
 | `client.approvals` | `request`, `list`, `approve`, `deny`, `check`, `subscribe`                                                          |
@@ -89,6 +89,7 @@ await client.auth.resetPassword({ token: "...", new_password: "..." });
 | `client.auth`      | `login`, `signup`, `agentToken`, `apiKeyToken`, `google`, `changePassword`, `forgotPassword`, `resetPassword`, `exportData`, `exchangeFederatedToken`, `logout`, `getMe`, `updateMe`, `deleteMe` |
 | `client.apiKeys`   | `create`, `list`, `revoke`                                                                                          |
 | `client.treasury`  | `create`, `list`, `get`, `update`, `delete`, `addSigner`, `removeSigner`, `requestAccess`, `listAccessRequests`, `approveAccess`, `denyAccess` |
+| `client.signingKeys` | `create`, `list`, `rotate`, `deactivate`                                                                          |
 | `client.x402`      | `getPaymentRequirement`, `pay`, `verifyReceipt`, `withPayment`                                                      |
 
 **Agent create response:** `agents.create()` returns `{ agent: AgentResponse, api_key?: string }`. The `api_key` is only present for `auth_method: "api_key"` and is shown once — use `data.agent.id` and `data.api_key` from the response.

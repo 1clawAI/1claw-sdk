@@ -1068,6 +1068,75 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/agents/{agent_id}/signing-keys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List signing keys for an agent */
+        get: operations["listSigningKeys"];
+        put?: never;
+        /** Provision a signing key for a chain */
+        post: operations["createSigningKey"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/signing-keys/{chain}/rotate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Rotate a signing key for a chain */
+        post: operations["rotateSigningKey"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/signing-keys/{chain}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Deactivate a signing key for a chain */
+        delete: operations["deactivateSigningKey"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/sign": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Unified signing intent (EIP-191, EIP-712, EIP-2718 types 0-4) */
+        post: operations["signIntent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/chains": {
         parameters: {
             query?: never;
@@ -2622,6 +2691,17 @@ export interface components {
             federation_audiences?: string[];
             /** @description Per-agent TTL override for federation tokens (60..=3600). */
             federated_token_ttl_seconds?: number | null;
+            /** @description Chains for which this agent has provisioned signing keys. */
+            signing_chains?: string[];
+            /** @description JSON array of allowed EIP-712 domain entries. */
+            eip712_domain_allowlist?: Record<string, never>[];
+            /**
+             * @description Default EIP-712 policy (deny blocks all unless allowlisted).
+             * @enum {string}
+             */
+            eip712_default_policy?: "deny" | "allow";
+            /** @description Whether EIP-191 personal_sign is enabled. */
+            message_signing_enabled?: boolean;
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
@@ -3076,6 +3156,64 @@ export interface components {
         };
         SimulateBundleRequest: {
             transactions: components["schemas"]["SimulateTransactionRequest"][];
+        };
+        CreateSigningKeyRequest: {
+            /** @enum {string} */
+            chain: "ethereum" | "bitcoin" | "solana" | "xrp" | "cardano" | "tron";
+        };
+        SigningKeyResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            agent_id?: string;
+            chain?: string;
+            curve?: string;
+            public_key?: string;
+            address?: string | null;
+            key_version?: number;
+            is_active?: boolean;
+            /** Format: date-time */
+            created_at?: string;
+            /** Format: date-time */
+            rotated_at?: string | null;
+        };
+        SigningKeyListResponse: {
+            keys?: components["schemas"]["SigningKeyResponse"][];
+        };
+        SignIntentRequest: {
+            /** @enum {string} */
+            intent_type: "personal_sign" | "typed_data" | "transaction";
+            chain: string;
+            signing_key_path?: string;
+            /** @description Hex-encoded message bytes (for personal_sign) */
+            message?: string;
+            /** @description EIP-712 typed data JSON (for typed_data) */
+            typed_data?: Record<string, never>;
+            /** @description EIP-2718 type: 0=legacy, 1=2930, 2=1559, 3=4844, 4=7702 */
+            tx_type?: number;
+            to?: string;
+            value?: string;
+            data?: string;
+            nonce?: number;
+            gas_limit?: number;
+            gas_price?: string;
+            max_fee_per_gas?: string;
+            max_priority_fee_per_gas?: string;
+            access_list?: Record<string, never>[];
+            max_fee_per_blob_gas?: string;
+            blob_versioned_hashes?: string[];
+            authorization_list?: Record<string, never>[];
+        };
+        SignIntentResponse: {
+            intent_type?: string;
+            chain?: string;
+            from?: string;
+            signature?: string | null;
+            signed_tx?: string | null;
+            tx_hash?: string | null;
+            message_hash?: string | null;
+            typed_data_hash?: string | null;
+            tx_type?: number | null;
         };
         TransactionResponse: {
             /** Format: uuid */
@@ -3735,6 +3873,15 @@ export interface components {
             };
             content: {
                 "application/json": components["schemas"]["PaymentRequirement"];
+            };
+        };
+        /** @description Resource already exists or conflict */
+        Conflict: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ProblemDetails"];
             };
         };
     };
@@ -5542,6 +5689,130 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             402: components["responses"]["PaymentRequired"];
+        };
+    };
+    listSigningKeys: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Signing keys list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SigningKeyListResponse"];
+                };
+            };
+        };
+    };
+    createSigningKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateSigningKeyRequest"];
+            };
+        };
+        responses: {
+            /** @description Signing key created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SigningKeyResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    rotateSigningKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+                chain: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Rotated signing key */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SigningKeyResponse"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deactivateSigningKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+                chain: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Key deactivated */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    signIntent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SignIntentRequest"];
+            };
+        };
+        responses: {
+            /** @description Signed result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SignIntentResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
         };
     };
     listChains: {
