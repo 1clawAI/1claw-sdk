@@ -451,7 +451,30 @@ export interface CreateAgentRequest {
     shroud_config?: ShroudConfig;
 }
 
-export type UpdateAgentRequest = ApiSchemas["UpdateAgentRequest"];
+export interface UpdateAgentRequest {
+    name?: string;
+    description?: string;
+    scopes?: string[];
+    is_active?: boolean;
+    intents_api_enabled?: boolean;
+    tx_to_allowlist?: string[];
+    tx_max_value_eth?: string | null;
+    tx_daily_limit_eth?: string | null;
+    tx_allowed_chains?: string[];
+    token_ttl_seconds?: number | null;
+    vault_ids?: string[];
+    shroud_enabled?: boolean;
+    shroud_config?: ShroudConfig | null;
+    expires_at?: string | null;
+    /** Chains this agent may create signing keys for (e.g. ["evm", "solana"]). */
+    signing_chains?: string[];
+    /** Allowed EIP-712 domain names/verifyingContract pairs for typed-data signing. */
+    eip712_domain_allowlist?: string[];
+    /** Default policy when an EIP-712 domain is not in the allowlist: "allow" | "block". */
+    eip712_default_policy?: "allow" | "block";
+    /** Whether personal_sign / message signing is enabled for this agent. */
+    message_signing_enabled?: boolean;
+}
 
 export interface AgentResponse {
     id: string;
@@ -483,6 +506,14 @@ export interface AgentResponse {
     shroud_enabled: boolean;
     /** Per-agent Shroud policy (PII, injection, providers, token limits, etc.). */
     shroud_config?: ShroudConfig | null;
+    /** Chains this agent may create signing keys for (e.g. ["evm", "solana"]). */
+    signing_chains?: string[];
+    /** Allowed EIP-712 domain names/verifyingContract pairs for typed-data signing. */
+    eip712_domain_allowlist?: string[];
+    /** Default policy when an EIP-712 domain is not in the allowlist. */
+    eip712_default_policy?: "allow" | "block";
+    /** Whether personal_sign / message signing is enabled for this agent. */
+    message_signing_enabled?: boolean;
     created_at: string;
     expires_at?: string;
     last_active_at?: string;
@@ -678,6 +709,67 @@ export interface TransactionResponse {
 
 export interface TransactionListResponse {
     transactions: TransactionResponse[];
+}
+
+// ---------------------------------------------------------------------------
+// Signing Keys (Multi-chain) — hand-written
+// ---------------------------------------------------------------------------
+
+export interface CreateSigningKeyRequest {
+    chain: string;
+}
+
+export interface SigningKeyResponse {
+    id: string;
+    agent_id: string;
+    chain: string;
+    curve: string;
+    public_key: string;
+    address?: string;
+    key_version: number;
+    is_active: boolean;
+    created_at: string;
+    rotated_at?: string;
+}
+
+export interface SigningKeyListResponse {
+    keys: SigningKeyResponse[];
+}
+
+// ---------------------------------------------------------------------------
+// Unified Sign Intent — hand-written
+// ---------------------------------------------------------------------------
+
+export interface SignIntentRequest {
+    intent_type: "personal_sign" | "typed_data" | "transaction";
+    chain: string;
+    /** Raw message bytes (hex) or UTF-8 string for personal_sign. */
+    message?: string;
+    /** EIP-712 typed data object for typed_data signing. */
+    typed_data?: unknown;
+    /** EVM tx type: 0 (legacy) or 2 (EIP-1559). */
+    tx_type?: number;
+    to?: string;
+    value?: string;
+    data?: string;
+    nonce?: number;
+    gas_limit?: number;
+    gas_price?: string;
+    max_fee_per_gas?: string;
+    max_priority_fee_per_gas?: string;
+    signing_key_path?: string;
+}
+
+export interface SignIntentResponse {
+    intent_type: "personal_sign" | "typed_data" | "transaction";
+    chain: string;
+    from: string;
+    signature?: string;
+    signed_tx?: string;
+    tx_hash?: string;
+    message_hash?: string;
+    typed_data_hash?: string;
+    tx_type?: number;
 }
 
 // ---------------------------------------------------------------------------

@@ -23,6 +23,7 @@ export type {
     TreasuryListResponse,
     AccessRequestListResponse,
 } from "./resources/treasury";
+export { SigningKeysResource } from "./resources/signing-keys";
 
 // CMEK (Customer-Managed Encryption Keys)
 export {
@@ -125,6 +126,13 @@ export type {
     BalanceChange,
     TransactionResponse,
     TransactionListResponse,
+    // Signing Keys (Multi-chain)
+    CreateSigningKeyRequest,
+    SigningKeyResponse,
+    SigningKeyListResponse,
+    // Unified Sign Intent
+    SignIntentRequest,
+    SignIntentResponse,
     // Sharing
     CreateShareRequest,
     ShareResponse,

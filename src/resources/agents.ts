@@ -18,6 +18,8 @@ import type {
     BundleSimulationResponse,
     TransactionResponse,
     TransactionListResponse,
+    SignIntentRequest,
+    SignIntentResponse,
     OneclawResponse,
 } from "../types";
 
@@ -228,6 +230,24 @@ export class AgentsResource {
             "POST",
             `/v1/agents/${agentId}/transactions/simulate-bundle`,
             { body: bundle },
+        );
+    }
+
+    // ── Unified Sign ────────────────────────────────────────────────
+
+    /**
+     * Sign a message, typed data, or transaction using the agent's
+     * multi-chain signing key. Supports personal_sign (EIP-191),
+     * typed_data (EIP-712), and raw transaction signing across chains.
+     */
+    async sign(
+        agentId: string,
+        params: SignIntentRequest,
+    ): Promise<OneclawResponse<SignIntentResponse>> {
+        return this.http.request<SignIntentResponse>(
+            "POST",
+            `/v1/agents/${agentId}/sign`,
+            { body: params },
         );
     }
 }
