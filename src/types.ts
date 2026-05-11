@@ -747,7 +747,7 @@ export interface SignIntentRequest {
     message?: string;
     /** EIP-712 typed data object for typed_data signing. */
     typed_data?: unknown;
-    /** EVM tx type: 0 (legacy) or 2 (EIP-1559). */
+    /** EVM tx type: 0 (legacy), 1 (EIP-2930), 2 (EIP-1559), 3 (EIP-4844), 4 (EIP-7702). */
     tx_type?: number;
     to?: string;
     value?: string;
@@ -757,6 +757,14 @@ export interface SignIntentRequest {
     gas_price?: string;
     max_fee_per_gas?: string;
     max_priority_fee_per_gas?: string;
+    /** EIP-2930 / EIP-1559+ access list. */
+    access_list?: Array<{ address: string; storage_keys: string[] }>;
+    /** EIP-4844 max fee per blob gas. */
+    max_fee_per_blob_gas?: string;
+    /** EIP-4844 blob versioned hashes. */
+    blob_versioned_hashes?: string[];
+    /** EIP-7702 authorization list. */
+    authorization_list?: unknown;
     signing_key_path?: string;
 }
 
