@@ -2361,7 +2361,16 @@ export interface components {
             email: string;
         };
         ForgotPasswordResponse: {
-            message?: string;
+            message: string;
+            /**
+             * @description Outcome of the reset request:
+             *     - email_sent: password reset email dispatched
+             *     - no_account: no account found for the email
+             *     - social_account: account uses Google/SSO sign-in
+             *     - invalid: request was malformed
+             * @enum {string}
+             */
+            status: "email_sent" | "no_account" | "social_account" | "invalid";
         };
         ResetPasswordRequest: {
             token: string;
