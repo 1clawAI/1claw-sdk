@@ -1787,6 +1787,108 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/treasury/wallets/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate multi-chain wallets for the authenticated user
+         * @description Generates keypairs for the requested chains (or all supported chains if omitted).
+         *     Private keys are stored in a per-org `__treasury-keys` vault with tier-appropriate
+         *     MPC custody. Skips chains where the user already has an active wallet. Requires
+         *     Pro or higher billing tier. Human users only — agents get 403.
+         */
+        post: operations["generateTreasuryWallets"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/treasury/wallets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the authenticated user's treasury wallets */
+        get: operations["listTreasuryWallets"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/treasury/wallets/{chain}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get the user's active wallet for a specific chain */
+        get: operations["getTreasuryWallet"];
+        put?: never;
+        post?: never;
+        /** Deactivate the user's wallet for a specific chain */
+        delete: operations["deactivateTreasuryWallet"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/treasury/wallets/{chain}/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Export the private key for a treasury wallet
+         * @description Returns the raw private key hex for the user's active wallet on
+         *     the given chain. Audit-logged as `treasury_wallet.export`.
+         *     Human users only.
+         */
+        post: operations["exportTreasuryWallet"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/treasury/wallets/{chain}/rotate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Rotate the user's wallet key for a chain
+         * @description Generates a new keypair, deactivates the old wallet, and creates a
+         *     new active wallet. The old private key version is retained in the
+         *     vault for audit. Requires Pro or higher.
+         */
+        post: operations["rotateTreasuryWallet"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/settings": {
         parameters: {
             query?: never;
@@ -3709,6 +3811,31 @@ export interface components {
             resolved_by?: string;
             /** Format: date-time */
             resolved_at?: string;
+        };
+        GenerateTreasuryWalletsRequest: {
+            /** @description Chains to generate wallets for (e.g. ["ethereum", "solana"]). Omit for all supported chains. */
+            chains?: string[];
+        };
+        TreasuryWalletResponse: {
+            /** Format: uuid */
+            id?: string;
+            chain?: string;
+            /** @description Cryptographic curve (e.g. secp256k1, ed25519) */
+            curve?: string;
+            public_key_hex?: string;
+            address?: string;
+            is_active?: boolean;
+            /** Format: date-time */
+            created_at?: string;
+        };
+        TreasuryWalletListResponse: {
+            wallets?: components["schemas"]["TreasuryWalletResponse"][];
+        };
+        TreasuryWalletExportResponse: {
+            chain?: string;
+            address?: string;
+            /** @description Raw private key in hex encoding. Handle with extreme care. */
+            private_key_hex?: string;
         };
         PaymentRequirement: {
             x402Version?: number;
@@ -6842,6 +6969,154 @@ export interface operations {
                 };
                 content?: never;
             };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    generateTreasuryWallets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerateTreasuryWalletsRequest"];
+            };
+        };
+        responses: {
+            /** @description Wallets generated */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TreasuryWalletListResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    listTreasuryWallets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Wallet list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TreasuryWalletListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    getTreasuryWallet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Chain name (e.g. ethereum, solana, bitcoin) */
+                chain: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Wallet details */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TreasuryWalletResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deactivateTreasuryWallet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                chain: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Wallet deactivated */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    exportTreasuryWallet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                chain: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Private key exported */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TreasuryWalletExportResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    rotateTreasuryWallet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                chain: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Wallet rotated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TreasuryWalletResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
         };
     };

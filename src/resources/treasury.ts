@@ -19,6 +19,8 @@ export interface AccessRequestListResponse {
 /**
  * Treasury (Safe multisig) management — create, update, delete treasuries;
  * signers; agent access requests (approve/deny).
+ *
+ * For multi-chain wallet operations, see TreasuryWalletsResource.
  */
 export class TreasuryResource {
     constructor(private readonly http: HttpClient) {}

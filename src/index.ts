@@ -24,6 +24,13 @@ export type {
     AccessRequestListResponse,
 } from "./resources/treasury";
 export { SigningKeysResource } from "./resources/signing-keys";
+export { TreasuryWalletsResource } from "./resources/treasury-wallets";
+export type {
+    GenerateTreasuryWalletsRequest,
+    TreasuryWalletResponse,
+    TreasuryWalletListResponse,
+    TreasuryWalletExportResponse,
+} from "./resources/treasury-wallets";
 
 // CMEK (Customer-Managed Encryption Keys)
 export {

@@ -7,29 +7,24 @@ import type {
 } from "../types";
 
 /**
- * Signing keys resource — create, list, rotate, and deactivate
- * per-agent multi-chain signing keys.
+ * Multi-chain signing keys — provision, list, rotate, and deactivate
+ * per-agent signing keys. Keys are generated server-side; the private
+ * key never leaves the HSM.
  */
 export class SigningKeysResource {
     constructor(private readonly http: HttpClient) {}
 
-    /**
-     * Create a new signing key for the given chain.
-     * The key's curve and derivation are determined by the chain
-     * (e.g. secp256k1 for EVM, ed25519 for Solana).
-     */
     async create(
         agentId: string,
-        params: CreateSigningKeyRequest,
+        body: CreateSigningKeyRequest,
     ): Promise<OneclawResponse<SigningKeyResponse>> {
         return this.http.request<SigningKeyResponse>(
             "POST",
             `/v1/agents/${agentId}/signing-keys`,
-            { body: params },
+            { body },
         );
     }
 
-    /** List all signing keys for an agent. */
     async list(
         agentId: string,
     ): Promise<OneclawResponse<SigningKeyListResponse>> {
@@ -39,28 +34,23 @@ export class SigningKeysResource {
         );
     }
 
-    /**
-     * Rotate the signing key for a specific chain.
-     * Creates a new key version and deactivates the previous one.
-     */
     async rotate(
         agentId: string,
         chain: string,
     ): Promise<OneclawResponse<SigningKeyResponse>> {
         return this.http.request<SigningKeyResponse>(
             "POST",
-            `/v1/agents/${agentId}/signing-keys/${encodeURIComponent(chain)}/rotate`,
+            `/v1/agents/${agentId}/signing-keys/${chain}/rotate`,
         );
     }
 
-    /** Deactivate the signing key for a specific chain. */
     async deactivate(
         agentId: string,
         chain: string,
     ): Promise<OneclawResponse<void>> {
         return this.http.request<void>(
             "DELETE",
-            `/v1/agents/${agentId}/signing-keys/${encodeURIComponent(chain)}`,
+            `/v1/agents/${agentId}/signing-keys/${chain}`,
         );
     }
 }

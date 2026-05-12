@@ -89,6 +89,7 @@ await client.auth.resetPassword({ token: "...", new_password: "..." });
 | `client.auth`      | `login`, `signup`, `agentToken`, `apiKeyToken`, `google`, `changePassword`, `forgotPassword`, `resetPassword`, `exportData`, `exchangeFederatedToken`, `logout`, `getMe`, `updateMe`, `deleteMe` |
 | `client.apiKeys`   | `create`, `list`, `revoke`                                                                                          |
 | `client.treasury`  | `create`, `list`, `get`, `update`, `delete`, `addSigner`, `removeSigner`, `requestAccess`, `listAccessRequests`, `approveAccess`, `denyAccess` |
+| `client.treasuryWallets` | `generateWallets`, `listWallets`, `getWallet`, `exportWallet`, `rotateWallet`, `deactivateWallet`               |
 | `client.signingKeys` | `create`, `list`, `rotate`, `deactivate`                                                                          |
 | `client.x402`      | `getPaymentRequirement`, `pay`, `verifyReceipt`, `withPayment`                                                      |
 
