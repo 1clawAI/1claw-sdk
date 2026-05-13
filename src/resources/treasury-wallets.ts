@@ -61,12 +61,19 @@ export class TreasuryWalletsResource {
         );
     }
 
+    /**
+     * Export wallet private key. Requires re-authentication via password.
+     * @param chain - Chain name (e.g. "ethereum", "solana")
+     * @param password - Account password for re-authentication
+     */
     async exportWallet(
         chain: string,
+        password: string,
     ): Promise<OneclawResponse<TreasuryWalletExportResponse>> {
         return this.http.request<TreasuryWalletExportResponse>(
             "POST",
             `/v1/treasury/wallets/${chain}/export`,
+            { headers: { "X-Auth-Confirm": password } },
         );
     }
 
