@@ -16,6 +16,7 @@ import { X402Resource } from "../resources/x402";
 import { TreasuryResource } from "../resources/treasury";
 import { SigningKeysResource } from "../resources/signing-keys";
 import { TreasuryWalletsResource } from "../resources/treasury-wallets";
+import { PlatformResource } from "../resources/platform";
 
 /**
  * The main 1Claw SDK client. All API resources are exposed as
@@ -73,6 +74,8 @@ export class OneclawClient {
     readonly signingKeys: SigningKeysResource;
     /** Treasury wallets — multi-chain wallet generation for human users. */
     readonly treasuryWallets: TreasuryWalletsResource;
+    /** Platform API — build multi-tenant apps on top of 1Claw. */
+    readonly platform: PlatformResource;
 
     constructor(config: OneclawClientConfig) {
         this.http = new HttpClient(config);
@@ -101,6 +104,7 @@ export class OneclawClient {
         this.treasury = new TreasuryResource(this.http);
         this.signingKeys = new SigningKeysResource(this.http);
         this.treasuryWallets = new TreasuryWalletsResource(this.http);
+        this.platform = new PlatformResource(this.http);
     }
 
     private autoAuthenticateUserKey(config: OneclawClientConfig): void {

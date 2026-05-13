@@ -2241,6 +2241,522 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/platform/apps": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List platform apps
+         * @description List all platform apps in the organization.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description List of platform apps */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PlatformAppResponse"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Register a platform app
+         * @description Register a new platform app for building on top of 1Claw. Returns an API key (plt_ prefix) that must be saved immediately.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreatePlatformAppRequest"];
+                };
+            };
+            responses: {
+                /** @description Platform app created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PlatformAppCreatedResponse"];
+                    };
+                };
+                /** @description Invalid request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Only human users can register platform apps */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/apps/{appId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get platform app details */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    appId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Platform app details */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PlatformAppResponse"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        /** Delete platform app */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    appId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Deleted */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Only human users can delete platform apps */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        /** Update platform app */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    appId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdatePlatformAppRequest"];
+                };
+            };
+            responses: {
+                /** @description Updated platform app */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PlatformAppResponse"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/v1/platform/apps/{appId}/templates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List templates */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    appId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description List of templates */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PlatformTemplateResponse"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Create bootstrap template
+         * @description Create a template that defines what vault, agents, and policies to bootstrap for each connected user.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    appId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateTemplateRequest"];
+                };
+            };
+            responses: {
+                /** @description Template created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PlatformTemplateResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/users/upsert": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Provision or look up a platform user
+         * @description Upserts a user using either an OIDC subject_token (verified against the platform app's JWKS) or an email address. Returns the user handle and connection ID.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpsertPlatformUserRequest"];
+                };
+            };
+            responses: {
+                /** @description Existing user found */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PlatformUserResponse"];
+                    };
+                };
+                /** @description New user created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PlatformUserResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/apps/{appId}/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List connected users
+         * @description List all users connected to this platform app.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    appId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Connected users */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PlatformConnectedUserResponse"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/connections/{connectionId}/bootstrap": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Bootstrap resources for a connected user
+         * @description Executes a template to create vault, agent, and policies for the connected user. Returns a claim URL and token for the user to claim their resources.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    connectionId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["BootstrapRequest"];
+                };
+            };
+            responses: {
+                /** @description Resources bootstrapped */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BootstrapResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/apps/{appId}/audit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Platform audit log
+         * @description Returns audit events related to this platform app.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    limit?: number;
+                    offset?: number;
+                };
+                header?: never;
+                path: {
+                    appId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Audit events */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            events?: Record<string, never>[];
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/connected-apps": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List connected apps (user side)
+         * @description Returns platform apps connected to the calling user's account.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Connected apps */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            connected_apps?: components["schemas"]["ConnectedAppResponse"][];
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/connected-apps/{connectionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Disconnect a platform app
+         * @description Disconnect the calling user from a platform app.
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    connectionId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Disconnected */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Connection not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -3967,6 +4483,162 @@ export interface components {
             /** @enum {string} */
             status?: "healthy" | "degraded";
             version?: string;
+        };
+        CreatePlatformAppRequest: {
+            name: string;
+            slug: string;
+            description?: string;
+            /** Format: uri */
+            oidc_jwks_url?: string;
+            /** Format: uri */
+            oidc_issuer?: string;
+            redirect_uris?: string[];
+            /**
+             * @default platform_pays
+             * @enum {string}
+             */
+            billing_model: "platform_pays" | "user_pays" | "hybrid";
+            /**
+             * @default silent
+             * @enum {string}
+             */
+            auth_mode: "silent" | "user_signin" | "configurable";
+            max_connected_users?: number | null;
+        };
+        UpdatePlatformAppRequest: {
+            name?: string;
+            description?: string;
+            logo_url?: string;
+            oidc_jwks_url?: string;
+            oidc_issuer?: string;
+            redirect_uris?: string[];
+            webhook_url?: string;
+            /** @enum {string} */
+            billing_model?: "platform_pays" | "user_pays" | "hybrid";
+            /** @enum {string} */
+            auth_mode?: "silent" | "user_signin" | "configurable";
+            max_connected_users?: number | null;
+            is_active?: boolean;
+        };
+        PlatformAppResponse: {
+            /** Format: uuid */
+            id?: string;
+            name?: string;
+            slug?: string;
+            description?: string;
+            logo_url?: string | null;
+            api_key_prefix?: string;
+            oidc_jwks_url?: string | null;
+            oidc_issuer?: string | null;
+            redirect_uris?: string[];
+            webhook_url?: string | null;
+            is_active?: boolean;
+            billing_model?: string;
+            auth_mode?: string;
+            max_connected_users?: number | null;
+            connected_users?: number;
+            /** Format: date-time */
+            created_at?: string;
+            /** Format: date-time */
+            updated_at?: string;
+        };
+        PlatformAppCreatedResponse: components["schemas"]["PlatformAppResponse"] & {
+            /** @description The platform API key. Save immediately - it cannot be retrieved again. */
+            api_key: string;
+        };
+        CreateTemplateRequest: {
+            name: string;
+            description?: string;
+            /** @description Template specification defining vault, agents, and policies to bootstrap. */
+            spec: Record<string, never>;
+        };
+        PlatformTemplateResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            platform_app_id?: string;
+            name?: string;
+            description?: string;
+            version?: number;
+            spec?: Record<string, never>;
+            is_active?: boolean;
+            /** Format: date-time */
+            created_at?: string;
+            /** Format: date-time */
+            updated_at?: string;
+        };
+        UpsertPlatformUserRequest: {
+            /** @description OIDC JWT from the platform's IdP (verified against JWKS) */
+            subject_token?: string;
+            /** @default urn:ietf:params:oauth:token-type:jwt */
+            subject_token_type: string;
+            /**
+             * Format: email
+             * @description Fallback when subject_token is not provided
+             */
+            email?: string;
+            display_name?: string;
+        };
+        PlatformUserResponse: {
+            /** Format: uuid */
+            user_handle?: string;
+            is_new?: boolean;
+            /** Format: uuid */
+            connection_id?: string;
+            email?: string;
+        };
+        PlatformConnectedUserResponse: {
+            /** Format: uuid */
+            connection_id?: string;
+            /** Format: uuid */
+            user_id?: string;
+            external_subject?: string;
+            status?: string;
+            vault_ids?: string[];
+            agent_ids?: string[];
+            /** Format: date-time */
+            created_at?: string;
+            /** Format: date-time */
+            claimed_at?: string | null;
+        };
+        BootstrapRequest: {
+            /**
+             * Format: uuid
+             * @description Template to use. Falls back to the app's default template.
+             */
+            template_id?: string;
+            /**
+             * Format: uri
+             * @description URL to redirect the user to after claiming resources.
+             */
+            return_to?: string;
+        };
+        BootstrapResponse: {
+            /** Format: uri */
+            claim_url?: string;
+            claim_token?: string;
+            /** @description Seconds until the claim token expires */
+            expires_in?: number;
+            /** Format: uuid */
+            connection_id?: string;
+            summary?: {
+                /** Format: uuid */
+                vault_id?: string | null;
+                /** Format: uuid */
+                agent_id?: string | null;
+                policy_ids?: string[];
+            };
+        };
+        ConnectedAppResponse: {
+            /** Format: uuid */
+            connection_id?: string;
+            app_name?: string;
+            app_slug?: string;
+            status?: string;
+            vault_ids?: string[];
+            agent_ids?: string[];
+            /** Format: date-time */
+            created_at?: string;
         };
     };
     responses: {

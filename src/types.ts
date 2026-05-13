@@ -1025,6 +1025,146 @@ export interface ExportDataResponse {
 }
 
 // ---------------------------------------------------------------------------
+// Platform API
+// ---------------------------------------------------------------------------
+
+export interface CreatePlatformAppRequest {
+    name: string;
+    slug: string;
+    description?: string;
+    oidc_jwks_url?: string;
+    oidc_issuer?: string;
+    redirect_uris?: string[];
+    billing_model?: string;
+    auth_mode?: string;
+    max_connected_users?: number;
+}
+
+export interface UpdatePlatformAppRequest {
+    name?: string;
+    description?: string;
+    logo_url?: string;
+    oidc_jwks_url?: string;
+    oidc_issuer?: string;
+    redirect_uris?: string[];
+    webhook_url?: string;
+    billing_model?: string;
+    auth_mode?: string;
+    max_connected_users?: number | null;
+    is_active?: boolean;
+}
+
+export interface PlatformAppResponse {
+    id: string;
+    name: string;
+    slug: string;
+    description: string;
+    logo_url?: string;
+    api_key_prefix: string;
+    oidc_jwks_url?: string;
+    oidc_issuer?: string;
+    redirect_uris: string[];
+    webhook_url?: string;
+    is_active: boolean;
+    billing_model: string;
+    auth_mode: string;
+    max_connected_users?: number;
+    connected_users: number;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface PlatformAppCreatedResponse extends PlatformAppResponse {
+    api_key: string;
+}
+
+export interface PlatformAppListResponse {
+    apps: PlatformAppResponse[];
+}
+
+export interface CreateTemplateRequest {
+    name: string;
+    description?: string;
+    spec: Record<string, unknown>;
+}
+
+export interface TemplateResponse {
+    id: string;
+    platform_app_id: string;
+    name: string;
+    description: string;
+    version: number;
+    spec: Record<string, unknown>;
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface TemplateListResponse {
+    templates: TemplateResponse[];
+}
+
+export interface UpsertPlatformUserRequest {
+    subject_token?: string;
+    subject_token_type?: string;
+    email?: string;
+    display_name?: string;
+}
+
+export interface PlatformUserResponse {
+    user_handle: string;
+    is_new: boolean;
+    connection_id: string;
+    email: string;
+}
+
+export interface PlatformConnectedUserResponse {
+    connection_id: string;
+    user_id: string;
+    external_subject: string;
+    status: string;
+    vault_ids: string[];
+    agent_ids: string[];
+    created_at: string;
+    claimed_at?: string;
+}
+
+export interface PlatformConnectedUserListResponse {
+    users: PlatformConnectedUserResponse[];
+}
+
+export interface BootstrapRequest {
+    template_id?: string;
+    return_to?: string;
+}
+
+export interface BootstrapResponse {
+    claim_url: string;
+    claim_token: string;
+    expires_in: number;
+    connection_id: string;
+    summary: {
+        vault_id?: string;
+        agent_id?: string;
+        policy_ids: string[];
+    };
+}
+
+export interface ConnectedAppResponse {
+    connection_id: string;
+    app_name: string;
+    app_slug: string;
+    app_logo_url?: string;
+    status: string;
+    created_at: string;
+    claimed_at?: string;
+}
+
+export interface ConnectedAppListResponse {
+    apps: ConnectedAppResponse[];
+}
+
+// ---------------------------------------------------------------------------
 // Health
 // ---------------------------------------------------------------------------
 

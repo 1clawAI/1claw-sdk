@@ -91,6 +91,7 @@ await client.auth.resetPassword({ token: "...", new_password: "..." });
 | `client.treasury`  | `create`, `list`, `get`, `update`, `delete`, `addSigner`, `removeSigner`, `requestAccess`, `listAccessRequests`, `approveAccess`, `denyAccess` |
 | `client.treasuryWallets` | `generateWallets`, `listWallets`, `getWallet`, `exportWallet`, `rotateWallet`, `deactivateWallet`               |
 | `client.signingKeys` | `create`, `list`, `rotate`, `deactivate`                                                                          |
+| `client.platform`  | `createApp`, `listApps`, `getApp`, `updateApp`, `deleteApp`, `createTemplate`, `listTemplates`, `upsertUser`, `bootstrapUser`, `listConnectedApps` |
 | `client.x402`      | `getPaymentRequirement`, `pay`, `verifyReceipt`, `withPayment`                                                      |
 
 **Agent create response:** `agents.create()` returns `{ agent: AgentResponse, api_key?: string }`. The `api_key` is only present for `auth_method: "api_key"` and is shown once — use `data.agent.id` and `data.api_key` from the response.
