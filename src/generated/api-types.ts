@@ -3206,6 +3206,7 @@ export interface components {
             chain: string;
             /** @description Hex-encoded calldata */
             data?: string;
+            /** @description Vault path to signing key. Auto-resolves per-chain signing key if provisioned, otherwise keys/{chain}-signer. */
             signing_key_path?: string;
             nonce?: number;
             gas_price?: string;
@@ -3230,6 +3231,7 @@ export interface components {
             chain: string;
             /** @description Hex-encoded calldata */
             data?: string;
+            /** @description Vault path to signing key. Auto-resolves per-chain signing key if provisioned, otherwise keys/{chain}-signer. */
             signing_key_path?: string;
             nonce?: number;
             gas_price?: string;
@@ -3262,6 +3264,7 @@ export interface components {
             value: string;
             chain: string;
             data?: string;
+            /** @description Vault path to signing key. Auto-resolves per-chain signing key if provisioned, otherwise keys/{chain}-signer. */
             signing_key_path?: string;
             gas_limit?: number;
         };
@@ -3295,6 +3298,7 @@ export interface components {
             /** @enum {string} */
             intent_type: "personal_sign" | "typed_data" | "transaction";
             chain: string;
+            /** @description Vault path to signing key. Auto-resolves per-chain signing key if provisioned, otherwise keys/{chain}-signer. */
             signing_key_path?: string;
             /** @description Hex-encoded message bytes (for personal_sign) */
             message?: string;
