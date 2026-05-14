@@ -736,6 +736,16 @@ export interface SigningKeyListResponse {
     keys: SigningKeyResponse[];
 }
 
+export interface SigningKeyExportResponse {
+    chain: string;
+    curve: string;
+    public_key: string;
+    address?: string;
+    private_key: string;
+    key_version: number;
+    agent_id: string;
+}
+
 // ---------------------------------------------------------------------------
 // Unified Sign Intent — hand-written
 // ---------------------------------------------------------------------------

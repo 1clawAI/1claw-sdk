@@ -2,6 +2,7 @@ import type { HttpClient } from "../core/http";
 import type {
     CreateSigningKeyRequest,
     SigningKeyResponse,
+    SigningKeyExportResponse,
     SigningKeyListResponse,
     OneclawResponse,
 } from "../types";
@@ -51,6 +52,19 @@ export class SigningKeysResource {
         return this.http.request<void>(
             "DELETE",
             `/v1/agents/${agentId}/signing-keys/${chain}`,
+        );
+    }
+
+    /** Export a signing key's private key. Requires re-authentication via password. */
+    async export(
+        agentId: string,
+        chain: string,
+        password: string,
+    ): Promise<OneclawResponse<SigningKeyExportResponse>> {
+        return this.http.request<SigningKeyExportResponse>(
+            "POST",
+            `/v1/agents/${agentId}/signing-keys/${chain}/export`,
+            { headers: { "X-Auth-Confirm": password } },
         );
     }
 }
