@@ -1034,6 +1034,7 @@ export interface CreatePlatformAppRequest {
     description?: string;
     oidc_jwks_url?: string;
     oidc_issuer?: string;
+    oidc_audience?: string;
     redirect_uris?: string[];
     billing_model?: string;
     auth_mode?: string;
@@ -1046,6 +1047,7 @@ export interface UpdatePlatformAppRequest {
     logo_url?: string;
     oidc_jwks_url?: string;
     oidc_issuer?: string;
+    oidc_audience?: string;
     redirect_uris?: string[];
     webhook_url?: string;
     billing_model?: string;
@@ -1063,6 +1065,7 @@ export interface PlatformAppResponse {
     api_key_prefix: string;
     oidc_jwks_url?: string;
     oidc_issuer?: string;
+    oidc_audience?: string;
     redirect_uris: string[];
     webhook_url?: string;
     is_active: boolean;
