@@ -1120,6 +1120,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/agents/{agent_id}/signing-keys/{chain}/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Export a signing key (private key included)
+         * @description Export the private key for an agent's signing key. Requires re-authentication
+         *     via the X-Auth-Confirm header containing the user's account password.
+         *     Human users only — agents cannot export keys.
+         */
+        post: operations["exportSigningKey"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/agents/{agent_id}/sign": {
         parameters: {
             query?: never;
@@ -1857,7 +1879,8 @@ export interface paths {
         /**
          * Export the private key for a treasury wallet
          * @description Returns the raw private key hex for the user's active wallet on
-         *     the given chain. Audit-logged as `treasury_wallet.export`.
+         *     the given chain. Requires re-authentication via the `X-Auth-Confirm`
+         *     header (account password). Audit-logged as `treasury_wallet.export`.
          *     Human users only.
          */
         post: operations["exportTreasuryWallet"];
@@ -4492,6 +4515,8 @@ export interface components {
             oidc_jwks_url?: string;
             /** Format: uri */
             oidc_issuer?: string;
+            /** @description Expected audience claim for OIDC token validation */
+            oidc_audience?: string;
             redirect_uris?: string[];
             /**
              * @default platform_pays
@@ -4511,6 +4536,8 @@ export interface components {
             logo_url?: string;
             oidc_jwks_url?: string;
             oidc_issuer?: string;
+            /** @description Expected audience claim for OIDC token validation */
+            oidc_audience?: string;
             redirect_uris?: string[];
             webhook_url?: string;
             /** @enum {string} */
@@ -4530,6 +4557,8 @@ export interface components {
             api_key_prefix?: string;
             oidc_jwks_url?: string | null;
             oidc_issuer?: string | null;
+            /** @description Expected audience claim for OIDC token validation */
+            oidc_audience?: string | null;
             redirect_uris?: string[];
             webhook_url?: string | null;
             is_active?: boolean;
@@ -4549,7 +4578,15 @@ export interface components {
         CreateTemplateRequest: {
             name: string;
             description?: string;
-            /** @description Template specification defining vault, agents, and policies to bootstrap. */
+            /**
+             * @description Template specification defining vault, agents, policies, and signing keys to bootstrap.
+             *     Top-level fields: `vault` (object with name, description), `agents` (array of agent specs
+             *     with name, description, shroud_enabled, intents, shroud_config), `policies` (array with
+             *     vault_ref, principal_ref, paths, permissions, conditions), and `signing_keys` (array of
+             *     `{ chain }` objects — supported chains: ethereum, bitcoin, solana, xrp, cardano, tron).
+             *     When `signing_keys` is present, HSM-backed signing keys are auto-provisioned for the
+             *     bootstrapped agent.
+             */
             spec: Record<string, never>;
         };
         PlatformTemplateResponse: {
@@ -6599,6 +6636,43 @@ export interface operations {
             404: components["responses"]["NotFound"];
         };
     };
+    exportSigningKey: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Account password for re-authentication */
+                "X-Auth-Confirm": string;
+            };
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+                chain: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Signing key exported successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        chain: string;
+                        curve: string;
+                        public_key: string;
+                        address?: string;
+                        private_key: string;
+                        key_version: number;
+                        /** Format: uuid */
+                        agent_id: string;
+                    };
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
     signIntent: {
         parameters: {
             query?: never;
@@ -7757,7 +7831,10 @@ export interface operations {
     exportTreasuryWallet: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Account password for re-authentication */
+                "X-Auth-Confirm": string;
+            };
             path: {
                 chain: string;
             };

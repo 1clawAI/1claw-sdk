@@ -79,7 +79,7 @@ await client.auth.resetPassword({ token: "...", new_password: "..." });
 | `client.vault`     | `create`, `get`, `list`, `delete`, `enableMpc`, `disableMpc`                                                        |
 | `client.secrets`   | `set`, `get`, `delete`, `list`, `rotate`                                                                            |
 | `client.access`    | `grantHuman`, `grantAgent`, `update`, `revoke`, `listGrants`                                                        |
-| `client.agents`    | `enroll` (also `AgentsResource.enroll(baseUrl, …)` static), `create`, `getSelf`, `get`, `list`, `update`, `delete`, `rotateKey`, `rotateIdentityKeys`, `submitTransaction`, `signTransaction`, `getTransaction`, `listTransactions`, `simulateTransaction`, `simulateBundle`, `sign` |
+| `client.agents`    | `enroll` (also `AgentsResource.enroll(baseUrl, …)` static), `create`, `getSelf`, `get`, `list`, `update`, `delete`, `rotateKey`, `submitTransaction`, `signTransaction`, `getTransaction`, `listTransactions`, `simulateTransaction`, `simulateBundle`, `sign` |
 | `client.chains`    | `list`, `get`, `adminList`, `create`, `update`, `delete`                                                            |
 | `client.sharing`   | `create`, `access`, `listOutbound`, `listInbound`, `accept`, `decline`, `revoke`                                    |
 | `client.approvals` | `request`, `list`, `approve`, `deny`, `check`, `subscribe`                                                          |
@@ -91,7 +91,7 @@ await client.auth.resetPassword({ token: "...", new_password: "..." });
 | `client.treasury`  | `create`, `list`, `get`, `update`, `delete`, `addSigner`, `removeSigner`, `requestAccess`, `listAccessRequests`, `approveAccess`, `denyAccess` |
 | `client.treasuryWallets` | `generateWallets`, `listWallets`, `getWallet`, `exportWallet`, `rotateWallet`, `deactivateWallet`               |
 | `client.signingKeys` | `create`, `list`, `rotate`, `deactivate`, `export`                                                               |
-| `client.platform`  | `createApp`, `listApps`, `getApp`, `updateApp`, `deleteApp`, `createTemplate`, `listTemplates`, `upsertUser`, `bootstrapUser`, `listConnectedApps` |
+| `client.platform`  | `createApp`, `listApps`, `getApp`, `updateApp`, `deleteApp`, `createTemplate`, `listTemplates`, `upsertUser`, `listUsers`, `bootstrapUser`, `listConnectedApps`, `disconnectApp` |
 | `client.x402`      | `getPaymentRequirement`, `pay`, `verifyReceipt`, `withPayment`                                                      |
 
 **Agent create response:** `agents.create()` returns `{ agent: AgentResponse, api_key?: string }`. The `api_key` is only present for `auth_method: "api_key"` and is shown once — use `data.agent.id` and `data.api_key` from the response.
@@ -249,7 +249,7 @@ const oidcJwt = tokenRes.data?.access_token; // RS256-signed; ~15 min default TT
 
 The acting agent must have `federation_enabled: true` and the `audience` must be on its `federation_audiences` allowlist (set via dashboard or `client.agents.update`). Every active KMS key version is published in JWKS, so verifiers reject unknown `kid`s automatically when 1claw rotates keys.
 
-End-to-end Anthropic WIF demo: [`examples/anthropic-wif`](https://github.com/1clawAI/1claw-examples/tree/main/anthropic-wif).
+End-to-end Anthropic WIF demo: see the [`examples/anthropic-wif`](https://github.com/1clawAI/1claw-examples/tree/main/anthropic-wif) repo and [`internal-docs/runbooks/oidc-federation.md`](../../internal-docs/runbooks/oidc-federation.md).
 
 ## Customer-Managed Encryption Keys (CMEK)
 
