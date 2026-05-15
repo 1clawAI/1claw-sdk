@@ -90,7 +90,7 @@ await client.auth.resetPassword({ token: "...", new_password: "..." });
 | `client.apiKeys`   | `create`, `list`, `revoke`                                                                                          |
 | `client.treasury`  | `create`, `list`, `get`, `update`, `delete`, `addSigner`, `removeSigner`, `requestAccess`, `listAccessRequests`, `approveAccess`, `denyAccess` |
 | `client.treasuryWallets` | `generateWallets`, `listWallets`, `getWallet`, `exportWallet`, `rotateWallet`, `deactivateWallet`               |
-| `client.signingKeys` | `create`, `list`, `rotate`, `deactivate`                                                                          |
+| `client.signingKeys` | `create`, `list`, `rotate`, `deactivate`, `export`                                                               |
 | `client.platform`  | `createApp`, `listApps`, `getApp`, `updateApp`, `deleteApp`, `createTemplate`, `listTemplates`, `upsertUser`, `bootstrapUser`, `listConnectedApps` |
 | `client.x402`      | `getPaymentRequirement`, `pay`, `verifyReceipt`, `withPayment`                                                      |
 
