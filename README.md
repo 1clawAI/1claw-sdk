@@ -91,7 +91,9 @@ await client.auth.resetPassword({ token: "...", new_password: "..." });
 | `client.treasury`  | `create`, `list`, `get`, `update`, `delete`, `addSigner`, `removeSigner`, `requestAccess`, `listAccessRequests`, `approveAccess`, `denyAccess` |
 | `client.treasuryWallets` | `generateWallets`, `listWallets`, `getWallet`, `exportWallet`, `rotateWallet`, `deactivateWallet`               |
 | `client.signingKeys` | `create`, `list`, `rotate`, `deactivate`, `export`                                                               |
-| `client.platform`  | `createApp`, `listApps`, `getApp`, `updateApp`, `deleteApp`, `createTemplate`, `listTemplates`, `upsertUser`, `listUsers`, `bootstrapUser`, `listConnectedApps`, `disconnectApp` |
+| `client.platform`  | `createApp`, `listApps`, `getApp`, `updateApp`, `deleteApp`, `createTemplate`, `listTemplates`, `upsertUser`, `listUsers`, `bootstrapUser`, `claimPreview`, `claimRedeem`, `listConnectedApps`, `disconnectApp` |
+
+**Platform bootstrap response:** `bootstrapUser()` returns a `summary` object containing `agent_api_key` (one-time, not retrievable later) and `signing_keys[]` (with chain, address, and public_key for each provisioned key).
 | `client.x402`      | `getPaymentRequirement`, `pay`, `verifyReceipt`, `withPayment`                                                      |
 
 **Agent create response:** `agents.create()` returns `{ agent: AgentResponse, api_key?: string }`. The `api_key` is only present for `auth_method: "api_key"` and is shown once — use `data.agent.id` and `data.api_key` from the response.
@@ -148,7 +150,7 @@ Toggle `intents_api_enabled` when creating or updating an agent:
 const { data } = await client.agents.create({
     name: "defi-bot",
     auth_method: "api_key", // "api_key" | "mtls" | "oidc_client_credentials"
-    scopes: ["vault:read", "tx:sign"],
+    scopes: ["keys/*", "api-keys/*"],
     intents_api_enabled: true,
 });
 // data.api_key is only returned for auth_method: "api_key"
