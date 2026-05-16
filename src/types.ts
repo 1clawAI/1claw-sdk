@@ -1151,6 +1151,13 @@ export interface BootstrapRequest {
     return_to?: string;
 }
 
+export interface BootstrapSigningKey {
+    chain: string;
+    curve: string;
+    public_key: string;
+    address: string;
+}
+
 export interface BootstrapResponse {
     claim_url: string;
     claim_token: string;
@@ -1160,6 +1167,9 @@ export interface BootstrapResponse {
         vault_id?: string;
         agent_id?: string;
         policy_ids: string[];
+        signing_key_chains?: string[];
+        agent_api_key?: string;
+        signing_keys?: BootstrapSigningKey[];
     };
 }
 

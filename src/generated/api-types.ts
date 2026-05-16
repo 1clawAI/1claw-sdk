@@ -4762,6 +4762,17 @@ export interface components {
                 /** Format: uuid */
                 agent_id?: string | null;
                 policy_ids?: string[];
+                /** @description Chains with provisioned signing keys */
+                signing_key_chains?: string[];
+                /** @description One-time agent API key (ocv_ prefix). Store securely — not retrievable later. */
+                agent_api_key?: string | null;
+                /** @description Provisioned signing key details (chain, address, public key) */
+                signing_keys?: {
+                    chain?: string;
+                    curve?: string;
+                    public_key?: string;
+                    address?: string;
+                }[];
             };
         };
         ConnectedAppResponse: {
