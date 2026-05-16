@@ -2780,6 +2780,104 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/platform/claim/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Preview a claim token
+         * @description Verify a claim token and preview what was provisioned (app name, vaults, agents, policies).
+         *     Public endpoint — the token itself is the authentication.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description The `ct_` prefixed claim token from the bootstrap response */
+                    token: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Claim preview */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ClaimPreviewResponse"];
+                    };
+                };
+                /** @description Invalid or expired claim token */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Redeem a claim token
+         * @description Redeem a one-time claim token, marking the connection as claimed.
+         *     Public endpoint — the token itself is the authentication. Returns 409 if already claimed, 410 if expired.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description The `ct_` prefixed claim token from the bootstrap response */
+                    token: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Claim redeemed */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ClaimRedeemResponse"];
+                    };
+                };
+                /** @description Invalid claim token */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Claim token already used */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Claim token has expired */
+                410: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -4676,6 +4774,28 @@ export interface components {
             agent_ids?: string[];
             /** Format: date-time */
             created_at?: string;
+        };
+        ClaimPreviewResponse: {
+            app_name?: string;
+            app_slug?: string;
+            app_logo_url?: string | null;
+            auth_mode?: string;
+            vault_ids?: string[];
+            agent_ids?: string[];
+            policy_count?: number;
+            status?: string;
+            already_claimed?: boolean;
+            expired?: boolean;
+            return_to?: string | null;
+        };
+        ClaimRedeemResponse: {
+            status?: string;
+            /** Format: uuid */
+            connection_id?: string;
+            vault_ids?: string[];
+            agent_ids?: string[];
+            return_to?: string | null;
+            dashboard_url?: string;
         };
     };
     responses: {

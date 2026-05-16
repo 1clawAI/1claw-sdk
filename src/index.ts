@@ -24,6 +24,7 @@ export type {
     AccessRequestListResponse,
 } from "./resources/treasury";
 export { SigningKeysResource } from "./resources/signing-keys";
+export { PlatformResource } from "./resources/platform";
 export { TreasuryWalletsResource } from "./resources/treasury-wallets";
 export type {
     GenerateTreasuryWalletsRequest,
@@ -184,6 +185,24 @@ export type {
     EncodingDetectionConfig,
     NetworkDetectionConfig,
     FilesystemDetectionConfig,
+    // Platform API
+    CreatePlatformAppRequest,
+    UpdatePlatformAppRequest,
+    PlatformAppResponse,
+    PlatformAppCreatedResponse,
+    PlatformAppListResponse,
+    CreateTemplateRequest,
+    TemplateResponse,
+    TemplateListResponse,
+    UpsertPlatformUserRequest,
+    PlatformUserResponse,
+    PlatformConnectedUserListResponse,
+    BootstrapRequest,
+    BootstrapResponse,
+    ConnectedAppResponse,
+    ConnectedAppListResponse,
+    ClaimPreviewResponse,
+    ClaimRedeemResponse,
     // Health
     HealthResponse,
     // MCP

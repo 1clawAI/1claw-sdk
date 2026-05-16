@@ -14,6 +14,8 @@ import type {
     BootstrapRequest,
     BootstrapResponse,
     ConnectedAppListResponse,
+    ClaimPreviewResponse,
+    ClaimRedeemResponse,
     OneclawResponse,
 } from "../types";
 
@@ -141,6 +143,24 @@ export class PlatformResource {
         return this.http.request<void>(
             "DELETE",
             `/v1/platform/connected-apps/${connectionId}`,
+        );
+    }
+
+    /** Preview a claim token (public, no auth required). */
+    async claimPreview(token: string): Promise<OneclawResponse<ClaimPreviewResponse>> {
+        return this.http.request<ClaimPreviewResponse>(
+            "GET",
+            `/v1/platform/claim/${encodeURIComponent(token)}`,
+            { skipAuth: true },
+        );
+    }
+
+    /** Redeem a claim token to claim bootstrapped resources (public, no auth required). */
+    async claimRedeem(token: string): Promise<OneclawResponse<ClaimRedeemResponse>> {
+        return this.http.request<ClaimRedeemResponse>(
+            "POST",
+            `/v1/platform/claim/${encodeURIComponent(token)}`,
+            { skipAuth: true },
         );
     }
 }

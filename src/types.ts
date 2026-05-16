@@ -1177,6 +1177,29 @@ export interface ConnectedAppListResponse {
     apps: ConnectedAppResponse[];
 }
 
+export interface ClaimPreviewResponse {
+    app_name: string;
+    app_slug: string;
+    app_logo_url: string | null;
+    auth_mode: string;
+    vault_ids: string[];
+    agent_ids: string[];
+    policy_count: number;
+    status: string;
+    already_claimed: boolean;
+    expired: boolean;
+    return_to: string | null;
+}
+
+export interface ClaimRedeemResponse {
+    status: string;
+    connection_id: string;
+    vault_ids: string[];
+    agent_ids: string[];
+    return_to: string | null;
+    dashboard_url: string;
+}
+
 // ---------------------------------------------------------------------------
 // Health
 // ---------------------------------------------------------------------------
