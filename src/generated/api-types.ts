@@ -552,6 +552,115 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/auth/devices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List devices for current user
+         * @description Returns all registered mobile devices for the authenticated user.
+         */
+        get: operations["listDevices"];
+        put?: never;
+        /**
+         * Register a mobile device
+         * @description Register a new mobile device for the authenticated user. Human-only.
+         *     The device public key is used for step-up authentication challenges.
+         */
+        post: operations["registerDevice"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/devices/{device_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Revoke a device
+         * @description Removes a registered device, invalidating its keys and push tokens.
+         */
+        delete: operations["revokeDevice"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/devices/{device_id}/challenge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create step-up auth challenge
+         * @description Creates a cryptographic challenge bound to a specific action (e.g. approving
+         *     a high-risk transaction). The device signs the challenge nonce to prove
+         *     possession of the private key.
+         */
+        post: operations["createDeviceChallenge"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/devices/{device_id}/attest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attest device challenge
+         * @description Submit a signed challenge nonce to complete step-up authentication.
+         *     Returns a short-lived step-up token that can be used for the bound action.
+         */
+        post: operations["attestDeviceChallenge"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/devices/{device_id}/push-token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Register push notification token
+         * @description Associates a push notification token (APNs or FCM) with a registered device
+         *     so the server can send approval requests and alerts.
+         */
+        post: operations["registerPushToken"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/vaults": {
         parameters: {
             query?: never;
@@ -2878,6 +2987,68 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/approvals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List pending approvals
+         * @description Returns approvals for the authenticated user's organization.
+         *     Human-only. Supports filtering by status and pagination.
+         */
+        get: operations["listApprovals"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/approvals/{approval_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get approval details
+         * @description Returns details for a single approval by ID.
+         */
+        get: operations["getApproval"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/approvals/{approval_id}/decide": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Approve or reject
+         * @description Submit a decision (approve or reject) for a pending approval.
+         *     Human-only. The approval must be in `pending` status.
+         */
+        post: operations["decideApproval"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -4808,6 +4979,102 @@ export interface components {
             return_to?: string | null;
             dashboard_url?: string;
         };
+        RegisterDeviceRequest: {
+            /**
+             * @description Human-readable device name (e.g. "Kevin's iPhone")
+             * @example My iPhone
+             */
+            name: string;
+            /** @enum {string} */
+            platform: "ios" | "android";
+            /** @description PEM-encoded public key for step-up challenge signing */
+            public_key_pem: string;
+            /** @description Optional platform attestation (Apple DeviceCheck / Android SafetyNet) */
+            attestation_blob?: string;
+        };
+        RegisterDeviceResponse: {
+            /** Format: uuid */
+            device_id: string;
+            attestation_verified: boolean;
+        };
+        DeviceListResponse: {
+            devices: components["schemas"]["DeviceResponse"][];
+        };
+        DeviceResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            platform: string;
+            attestation_verified: boolean;
+            /** Format: date-time */
+            last_used_at?: string | null;
+            /** Format: date-time */
+            created_at: string;
+        };
+        CreateDeviceChallengeRequest: {
+            /** @description The action this challenge authorizes (e.g. "approve_transaction") */
+            action: string;
+            /** @description ID of the resource the action targets */
+            target_id: string;
+        };
+        DeviceChallengeResponse: {
+            challenge_nonce: string;
+            /** Format: date-time */
+            expires_at: string;
+            /** @description SHA-256 binding the challenge to the requested action and target */
+            action_bound_hash: string;
+        };
+        AttestDeviceChallengeRequest: {
+            challenge_nonce: string;
+            /** @description Signature over the challenge nonce using the device's private key */
+            signature: string;
+        };
+        AttestDeviceChallengeResponse: {
+            /** @description Short-lived token authorizing the bound action */
+            step_up_token: string;
+            /** Format: date-time */
+            expires_at: string;
+        };
+        RegisterPushTokenRequest: {
+            /** @description Push notification token from APNs or FCM */
+            token: string;
+            /** @enum {string} */
+            platform: "apns" | "fcm";
+        };
+        DecideApprovalRequest: {
+            /** @enum {string} */
+            decision: "approve" | "reject";
+            /** @description Optional human-readable reason for the decision */
+            reason?: string;
+        };
+        ApprovalResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            org_id: string;
+            /** Format: uuid */
+            user_id: string;
+            /** Format: uuid */
+            agent_id?: string | null;
+            action: string;
+            target_type: string;
+            target_id: string;
+            risk_tier: number;
+            /** @enum {string} */
+            status: "pending" | "approved" | "rejected" | "expired";
+            /** @description Structured summary of the action requiring approval */
+            summary: Record<string, never>;
+            reason?: string | null;
+            decision_reason?: string | null;
+            /** Format: uuid */
+            decided_by?: string | null;
+            /** Format: date-time */
+            decided_at?: string | null;
+            /** Format: date-time */
+            expires_at?: string | null;
+            /** Format: date-time */
+            created_at: string;
+        };
     };
     responses: {
         /** @description Invalid request */
@@ -5685,6 +5952,154 @@ export interface operations {
                 };
             };
             403: components["responses"]["Forbidden"];
+        };
+    };
+    listDevices: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Device list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceListResponse"];
+                };
+            };
+        };
+    };
+    registerDevice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterDeviceRequest"];
+            };
+        };
+        responses: {
+            /** @description Device registered */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RegisterDeviceResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    revokeDevice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                device_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Device revoked */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createDeviceChallenge: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                device_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDeviceChallengeRequest"];
+            };
+        };
+        responses: {
+            /** @description Challenge created */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceChallengeResponse"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    attestDeviceChallenge: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                device_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttestDeviceChallengeRequest"];
+            };
+        };
+        responses: {
+            /** @description Attestation successful */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttestDeviceChallengeResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    registerPushToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                device_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterPushTokenRequest"];
+            };
+        };
+        responses: {
+            /** @description Push token registered */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            404: components["responses"]["NotFound"];
         };
     };
     listVaults: {
@@ -8326,6 +8741,85 @@ export interface operations {
                     };
                 };
             };
+        };
+    };
+    listApprovals: {
+        parameters: {
+            query?: {
+                /** @description Filter by approval status */
+                status?: "pending" | "approved" | "rejected" | "expired";
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Approval list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        approvals: components["schemas"]["ApprovalResponse"][];
+                    };
+                };
+            };
+        };
+    };
+    getApproval: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                approval_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Approval details */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApprovalResponse"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    decideApproval: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                approval_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DecideApprovalRequest"];
+            };
+        };
+        responses: {
+            /** @description Decision recorded */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApprovalResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
         };
     };
 }
