@@ -26,6 +26,30 @@ export type {
 export { SigningKeysResource } from "./resources/signing-keys";
 export { PlatformResource } from "./resources/platform";
 export { TreasuryWalletsResource } from "./resources/treasury-wallets";
+export { DevicesResource } from "./resources/devices";
+export type {
+    RegisterDeviceRequest,
+    RegisterDeviceResponse,
+    DeviceResponse,
+    DeviceListResponse,
+    DeviceChallengeRequest,
+    DeviceChallengeResponse,
+    DeviceAttestRequest,
+    DeviceAttestResponse,
+    PushTokenRequest,
+} from "./resources/devices";
+export { PasskeysResource } from "./resources/passkeys";
+export type {
+    PasskeyRegisterBeginResponse,
+    PasskeyRegisterCompleteRequest,
+    PasskeyRegisterCompleteResponse,
+    PasskeyAssertBeginRequest,
+    PasskeyAssertBeginResponse,
+    PasskeyAssertCompleteRequest,
+    PasskeyAssertCompleteResponse,
+    PasskeyResponse,
+    PasskeyListResponse,
+} from "./resources/passkeys";
 export type {
     GenerateTreasuryWalletsRequest,
     TreasuryWalletResponse,

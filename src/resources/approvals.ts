@@ -66,6 +66,38 @@ export class ApprovalsResource {
     }
 
     /**
+     * Decide on a pending approval (approve or reject).
+     * Used by the mobile app's step-up authentication flow.
+     *
+     * @param requestId - The approval ID
+     * @param decision - "approved" or "rejected"
+     * @param options - Optional reason and auth headers (X-Auth-Confirm, X-MFA-Token)
+     */
+    async decide(
+        requestId: string,
+        decision: "approved" | "rejected",
+        options?: {
+            reason?: string;
+            stepUpToken?: string;
+            mfaToken?: string;
+        },
+    ): Promise<OneclawResponse<ApprovalRequest>> {
+        const headers: Record<string, string> = {};
+        if (options?.stepUpToken)
+            headers["X-Auth-Confirm"] = options.stepUpToken;
+        if (options?.mfaToken) headers["X-MFA-Token"] = options.mfaToken;
+
+        return this.http.request<ApprovalRequest>(
+            "POST",
+            `/v1/approvals/${requestId}/decide`,
+            {
+                body: { decision, reason: options?.reason },
+                headers: Object.keys(headers).length > 0 ? headers : undefined,
+            },
+        );
+    }
+
+    /**
      * Poll for the status of a specific approval request.
      * Returns the current state — useful for agents waiting on approval.
      */

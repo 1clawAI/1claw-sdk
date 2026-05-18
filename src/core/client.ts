@@ -17,6 +17,8 @@ import { TreasuryResource } from "../resources/treasury";
 import { SigningKeysResource } from "../resources/signing-keys";
 import { TreasuryWalletsResource } from "../resources/treasury-wallets";
 import { PlatformResource } from "../resources/platform";
+import { DevicesResource } from "../resources/devices";
+import { PasskeysResource } from "../resources/passkeys";
 
 /**
  * The main 1Claw SDK client. All API resources are exposed as
@@ -76,6 +78,10 @@ export class OneclawClient {
     readonly treasuryWallets: TreasuryWalletsResource;
     /** Platform API — build multi-tenant apps on top of 1Claw. */
     readonly platform: PlatformResource;
+    /** Mobile device attestation — register devices, step-up auth. */
+    readonly devices: DevicesResource;
+    /** WebAuthn passkeys — register and assert FIDO2 credentials. */
+    readonly passkeys: PasskeysResource;
 
     constructor(config: OneclawClientConfig) {
         this.http = new HttpClient(config);
@@ -105,6 +111,8 @@ export class OneclawClient {
         this.signingKeys = new SigningKeysResource(this.http);
         this.treasuryWallets = new TreasuryWalletsResource(this.http);
         this.platform = new PlatformResource(this.http);
+        this.devices = new DevicesResource(this.http);
+        this.passkeys = new PasskeysResource(this.http);
     }
 
     private autoAuthenticateUserKey(config: OneclawClientConfig): void {
