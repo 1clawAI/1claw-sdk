@@ -449,6 +449,8 @@ export interface CreateAgentRequest {
     shroud_enabled?: boolean;
     /** Shroud per-agent policy (PII, injection, providers, token limits, etc.). */
     shroud_config?: ShroudConfig;
+    /** ISO 8601 expiration timestamp for the agent's API key. Null = never expires. */
+    api_key_expires_at?: string | null;
 }
 
 export interface UpdateAgentRequest {
@@ -474,6 +476,8 @@ export interface UpdateAgentRequest {
     eip712_default_policy?: "allow" | "block";
     /** Whether personal_sign / message signing is enabled for this agent. */
     message_signing_enabled?: boolean;
+    /** ISO 8601 expiration timestamp for the agent's API key. Null = never expires. */
+    api_key_expires_at?: string | null;
 }
 
 export interface AgentResponse {
@@ -514,6 +518,8 @@ export interface AgentResponse {
     eip712_default_policy?: "allow" | "block";
     /** Whether personal_sign / message signing is enabled for this agent. */
     message_signing_enabled?: boolean;
+    /** ISO 8601 expiration timestamp for the agent's API key. Null = never expires. */
+    api_key_expires_at?: string | null;
     created_at: string;
     expires_at?: string;
     last_active_at?: string;
@@ -1052,6 +1058,8 @@ export interface CreatePlatformAppRequest {
     billing_model?: string;
     auth_mode?: string;
     max_connected_users?: number;
+    /** ISO 8601 expiration timestamp for the platform app's API key. Null = never expires. */
+    api_key_expires_at?: string | null;
 }
 
 export interface UpdatePlatformAppRequest {
@@ -1067,6 +1075,8 @@ export interface UpdatePlatformAppRequest {
     auth_mode?: string;
     max_connected_users?: number | null;
     is_active?: boolean;
+    /** ISO 8601 expiration timestamp for the platform app's API key. Null = never expires. */
+    api_key_expires_at?: string | null;
 }
 
 export interface PlatformAppResponse {
@@ -1086,12 +1096,27 @@ export interface PlatformAppResponse {
     auth_mode: string;
     max_connected_users?: number;
     connected_users: number;
+    /** ISO 8601 expiration timestamp for the platform app's API key. Null = never expires. */
+    api_key_expires_at?: string | null;
+    /** ISO 8601 timestamp of the last API key rotation. */
+    api_key_rotated_at?: string | null;
     created_at: string;
     updated_at: string;
 }
 
 export interface PlatformAppCreatedResponse extends PlatformAppResponse {
     api_key: string;
+}
+
+export interface RotatePlatformKeyRequest {
+    /** ISO 8601 expiration timestamp for the new API key. Omit or null for no expiration. */
+    api_key_expires_at?: string | null;
+}
+
+export interface RotatePlatformKeyResponse {
+    api_key: string;
+    api_key_prefix: string;
+    api_key_expires_at?: string | null;
 }
 
 export interface PlatformAppListResponse {

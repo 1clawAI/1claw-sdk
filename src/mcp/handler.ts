@@ -172,13 +172,17 @@ export class McpHandler {
     }
 
     private async requestApproval(args: ToolArgs): Promise<McpToolResult> {
-        const vaultId = args.vault_id as string;
-        const secretPath = args.secret_path as string;
+        const action = (args.action as string) || "policy_change";
+        const targetType = (args.target_type as string) || "policy";
+        const targetId = (args.target_id as string) || "";
+        const summary = (args.summary as Record<string, unknown>) || {};
         const reason = args.reason as string | undefined;
 
         const res = await this.client.approvals.request({
-            vault_id: vaultId,
-            secret_path: secretPath,
+            action,
+            target_type: targetType,
+            target_id: targetId,
+            summary,
             reason,
         });
         if (res.error) return this.error(res.error.message);

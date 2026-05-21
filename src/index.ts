@@ -227,6 +227,8 @@ export type {
     ConnectedAppListResponse,
     ClaimPreviewResponse,
     ClaimRedeemResponse,
+    RotatePlatformKeyRequest,
+    RotatePlatformKeyResponse,
     // Health
     HealthResponse,
     // MCP

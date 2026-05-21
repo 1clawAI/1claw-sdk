@@ -18,6 +18,8 @@ import type {
     ConnectedAppListResponse,
     ClaimPreviewResponse,
     ClaimRedeemResponse,
+    RotatePlatformKeyRequest,
+    RotatePlatformKeyResponse,
     OneclawResponse,
 } from "../types";
 
@@ -74,6 +76,18 @@ export class PlatformResource {
         return this.http.request<void>(
             "DELETE",
             `/v1/platform/apps/${appId}`,
+        );
+    }
+
+    /** Rotate a platform app's API key. Returns the new one-time key. */
+    async rotateKey(
+        appId: string,
+        data?: RotatePlatformKeyRequest,
+    ): Promise<OneclawResponse<RotatePlatformKeyResponse>> {
+        return this.http.request<RotatePlatformKeyResponse>(
+            "POST",
+            `/v1/platform/apps/${appId}/rotate-key`,
+            { body: data ?? {} },
         );
     }
 

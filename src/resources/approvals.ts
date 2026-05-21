@@ -20,13 +20,13 @@ export class ApprovalsResource {
     constructor(private readonly http: HttpClient) {}
 
     /**
-     * Request human approval to access a secret.
-     * Typically called by an agent that encounters a gated secret.
+     * Request human approval for a policy change or sensitive action.
+     * Called by agents — routed to the agent's creator for review.
      */
     async request(
         options: CreateApprovalRequest,
     ): Promise<OneclawResponse<ApprovalRequest>> {
-        return this.http.request<ApprovalRequest>("POST", "/v1/approvals", {
+        return this.http.request<ApprovalRequest>("POST", "/v1/approvals/request", {
             body: options,
         });
     }

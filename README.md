@@ -70,6 +70,13 @@ await client.auth.google({ id_token: "..." });
 // Password reset (public; no Bearer token — use a client without stored JWT)
 await client.auth.forgotPassword({ email: "user@example.com" });
 await client.auth.resetPassword({ token: "...", new_password: "..." });
+
+// Set password (platform OIDC users who don't have one)
+await client.auth.setPassword({ password: "...", password_confirm: "..." });
+
+// Change email (sends verification code to new address)
+await client.auth.changeEmail({ new_email: "new@example.com" });
+await client.auth.verifyEmailChange({ code: "123456" });
 ```
 
 ## API Resources
@@ -86,7 +93,7 @@ await client.auth.resetPassword({ token: "...", new_password: "..." });
 | `client.billing`   | `usage`, `history`, `llmTokenBilling`, `subscribeLlmTokenBilling`, `disableLlmTokenBilling` (LLM token billing / Stripe AI Gateway) |
 | `client.audit`     | `query`                                                                                                             |
 | `client.org`       | `listMembers`, `getAgentKeysVault`, `updateMemberRole`, `removeMember`                                              |
-| `client.auth`      | `login`, `signup`, `agentToken`, `apiKeyToken`, `google`, `changePassword`, `forgotPassword`, `resetPassword`, `exportData`, `exchangeFederatedToken`, `logout`, `getMe`, `updateMe`, `deleteMe` |
+| `client.auth`      | `login`, `signup`, `agentToken`, `apiKeyToken`, `google`, `changePassword`, `setPassword`, `changeEmail`, `verifyEmailChange`, `forgotPassword`, `resetPassword`, `exportData`, `exchangeFederatedToken`, `logout`, `getMe`, `updateMe`, `deleteMe` |
 | `client.apiKeys`   | `create`, `list`, `revoke`                                                                                          |
 | `client.treasury`  | `create`, `list`, `get`, `update`, `delete`, `addSigner`, `removeSigner`, `requestAccess`, `listAccessRequests`, `approveAccess`, `denyAccess` |
 | `client.treasuryWallets` | `generateWallets`, `listWallets`, `getWallet`, `exportWallet`, `rotateWallet`, `deactivateWallet`               |

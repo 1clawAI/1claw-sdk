@@ -129,6 +129,44 @@ export class AuthResource {
     }
 
     /**
+     * Set a password for a platform_oidc user (no current password required).
+     * Only works when the user has never set a password before.
+     */
+    async setPassword(
+        request: { password: string; password_confirm: string },
+    ): Promise<OneclawResponse<{ message: string }>> {
+        return this.http.request<{ message: string }>("POST", "/v1/auth/set-password", {
+            body: request,
+        });
+    }
+
+    /**
+     * Request an email change. Sends a verification code to the new email.
+     */
+    async changeEmail(
+        request: { new_email: string },
+    ): Promise<OneclawResponse<{ message: string; new_email: string; expires_in_seconds: number }>> {
+        return this.http.request<{ message: string; new_email: string; expires_in_seconds: number }>(
+            "POST",
+            "/v1/auth/change-email",
+            { body: request },
+        );
+    }
+
+    /**
+     * Verify an email change with the code sent to the new address.
+     */
+    async verifyEmailChange(
+        request: { code: string },
+    ): Promise<OneclawResponse<{ message: string; email: string }>> {
+        return this.http.request<{ message: string; email: string }>(
+            "POST",
+            "/v1/auth/verify-email-change",
+            { body: request },
+        );
+    }
+
+    /**
      * Request a password reset email (email/password accounts only).
      * Always returns a generic success message (no email enumeration).
      */
