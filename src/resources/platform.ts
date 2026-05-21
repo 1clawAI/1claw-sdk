@@ -13,6 +13,8 @@ import type {
     PlatformConnectedUserListResponse,
     BootstrapRequest,
     BootstrapResponse,
+    ReissueClaimRequest,
+    ReissueClaimResponse,
     ConnectedAppListResponse,
     ClaimPreviewResponse,
     ClaimRedeemResponse,
@@ -135,6 +137,18 @@ export class PlatformResource {
         return this.http.request<ConnectedAppListResponse>(
             "GET",
             "/v1/platform/connected-apps",
+        );
+    }
+
+    /** Reissue a claim URL for an existing bootstrapped connection (no re-provisioning). */
+    async reissueClaim(
+        connectionId: string,
+        data?: ReissueClaimRequest,
+    ): Promise<OneclawResponse<ReissueClaimResponse>> {
+        return this.http.request<ReissueClaimResponse>(
+            "POST",
+            `/v1/platform/connections/${connectionId}/reissue-claim`,
+            { body: data ?? {} },
         );
     }
 

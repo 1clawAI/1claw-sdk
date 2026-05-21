@@ -988,9 +988,12 @@ export interface ApprovalRequest {
 }
 
 export interface CreateApprovalRequest {
-    vault_id: string;
-    secret_path: string;
+    action: string;
+    target_type: string;
+    target_id: string;
+    summary: Record<string, unknown>;
     reason?: string;
+    risk_tier?: number;
 }
 
 export interface ApprovalListResponse {
@@ -1171,6 +1174,17 @@ export interface BootstrapResponse {
         agent_api_key?: string;
         signing_keys?: BootstrapSigningKey[];
     };
+}
+
+export interface ReissueClaimRequest {
+    return_to?: string;
+}
+
+export interface ReissueClaimResponse {
+    claim_url: string;
+    claim_token: string;
+    expires_in: number;
+    connection_id: string;
 }
 
 export interface ConnectedAppResponse {
