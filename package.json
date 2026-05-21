@@ -1,57 +1,57 @@
 {
-    "name": "@1claw/sdk",
-    "version": "0.25.0",
-    "description": "TypeScript SDK for 1Claw Vault — secret management for AI agents",
-    "type": "module",
-    "main": "dist/index.js",
-    "types": "dist/index.d.ts",
-    "exports": {
-        ".": {
-            "types": "./dist/index.d.ts",
-            "import": "./dist/index.js"
-        },
-        "./mcp": {
-            "types": "./dist/mcp/index.d.ts",
-            "import": "./dist/mcp/index.js"
-        }
+  "name": "@1claw/sdk",
+  "version": "0.27.0",
+  "description": "TypeScript SDK for 1Claw Vault \u2014 secret management for AI agents",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     },
-    "files": [
-        "dist",
-        "README.md"
-    ],
-    "scripts": {
-        "generate": "openapi-typescript ../openapi-spec/openapi.yaml -o src/generated/api-types.ts",
-        "build": "tsc",
-        "clean": "rm -rf dist",
-        "test": "vitest",
-        "prepublishOnly": "npm run generate && npm run clean && npm run build"
-    },
-    "keywords": [
-        "1claw",
-        "secrets",
-        "vault",
-        "ai-agents",
-        "x402",
-        "hsm",
-        "mcp",
-        "model-context-protocol",
-        "claude",
-        "cursor",
-        "typescript",
-        "api-keys",
-        "zero-trust"
-    ],
-    "publishConfig": {
-        "access": "public"
-    },
-    "license": "MIT",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/1clawAI/1claw-sdk.git"
-    },
-    "devDependencies": {
-        "openapi-typescript": "^7.13.0",
-        "typescript": "^5.0.0",
-        "vitest": "^3.0.0"
+    "./mcp": {
+      "types": "./dist/mcp/index.d.ts",
+      "import": "./dist/mcp/index.js"
     }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "generate": "openapi-typescript ../openapi-spec/openapi.yaml -o src/generated/api-types.ts",
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "test": "vitest",
+    "prepublishOnly": "npm run generate && npm run clean && npm run build"
+  },
+  "keywords": [
+    "1claw",
+    "secrets",
+    "vault",
+    "ai-agents",
+    "x402",
+    "hsm",
+    "mcp",
+    "model-context-protocol",
+    "claude",
+    "cursor",
+    "typescript",
+    "api-keys",
+    "zero-trust"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/1clawAI/1claw-sdk.git"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^7.13.0",
+    "typescript": "^5.0.0",
+    "vitest": "^3.0.0"
+  }
 }
