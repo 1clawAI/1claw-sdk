@@ -2733,6 +2733,70 @@ export interface paths {
         };
         trace?: never;
     };
+    "/v1/platform/apps/{appId}/rotate-key": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Rotate platform API key
+         * @description Generate a new API key for the platform app. The old key is immediately invalidated. Returns the new key (one-time).
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    appId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /**
+                         * Format: date-time
+                         * @description Optional expiration for the new key.
+                         */
+                        api_key_expires_at?: string | null;
+                    };
+                };
+            };
+            responses: {
+                /** @description New key generated */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description The new API key (shown once) */
+                            api_key?: string;
+                            api_key_prefix?: string;
+                            /** Format: date-time */
+                            api_key_expires_at?: string | null;
+                        };
+                    };
+                };
+                /** @description Only human users can rotate platform keys */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/platform/apps/{appId}/templates": {
         parameters: {
             query?: never;
@@ -3785,6 +3849,11 @@ export interface components {
              */
             shroud_enabled: boolean;
             shroud_config?: components["schemas"]["ShroudConfig"];
+            /**
+             * Format: date-time
+             * @description Optional expiration time for the agent's API key.
+             */
+            api_key_expires_at?: string | null;
         };
         UpdateAgentRequest: {
             name?: string;
@@ -3820,6 +3889,11 @@ export interface components {
              *     Hard-capped at 3600 seconds.
              */
             federated_token_ttl_seconds?: number | null;
+            /**
+             * Format: date-time
+             * @description Optional expiration time for the agent's API key. Set to null to clear.
+             */
+            api_key_expires_at?: string | null;
         };
         AgentResponse: {
             /** Format: uuid */
@@ -3872,6 +3946,11 @@ export interface components {
             eip712_default_policy?: "deny" | "allow";
             /** @description Whether EIP-191 personal_sign is enabled. */
             message_signing_enabled?: boolean;
+            /**
+             * Format: date-time
+             * @description Optional expiration time for the agent's API key.
+             */
+            api_key_expires_at?: string | null;
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
@@ -5049,6 +5128,11 @@ export interface components {
              */
             auth_mode: "silent" | "user_signin" | "configurable";
             max_connected_users?: number | null;
+            /**
+             * Format: date-time
+             * @description Optional expiration time for the platform API key.
+             */
+            api_key_expires_at?: string | null;
         };
         UpdatePlatformAppRequest: {
             name?: string;
@@ -5066,6 +5150,11 @@ export interface components {
             auth_mode?: "silent" | "user_signin" | "configurable";
             max_connected_users?: number | null;
             is_active?: boolean;
+            /**
+             * Format: date-time
+             * @description Optional expiration time for the platform API key. Set to null to clear.
+             */
+            api_key_expires_at?: string | null;
         };
         PlatformAppResponse: {
             /** Format: uuid */
@@ -5086,6 +5175,16 @@ export interface components {
             auth_mode?: string;
             max_connected_users?: number | null;
             connected_users?: number;
+            /**
+             * Format: date-time
+             * @description When the platform API key expires.
+             */
+            api_key_expires_at?: string | null;
+            /**
+             * Format: date-time
+             * @description When the platform API key was last rotated.
+             */
+            api_key_rotated_at?: string | null;
             /** Format: date-time */
             created_at?: string;
             /** Format: date-time */
