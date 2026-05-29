@@ -124,4 +124,101 @@ export class TreasuryResource {
             `/v1/treasury/${treasuryId}/access-requests/${requestId}/deny`,
         );
     }
+
+    // ── Proposals (Multisig) ──────────────────────────────────────────
+
+    async propose(
+        treasuryId: string,
+        body: {
+            to: string;
+            value_wei?: string;
+            data?: string;
+            operation?: number;
+            safe_tx_hash: string;
+            nonce: number;
+        },
+    ): Promise<OneclawResponse<ProposalResponse>> {
+        return this.http.request<ProposalResponse>(
+            "POST",
+            `/v1/treasury/${treasuryId}/proposals`,
+            { body },
+        );
+    }
+
+    async listProposals(
+        treasuryId: string,
+        options?: { status?: string },
+    ): Promise<OneclawResponse<ProposalListResponse>> {
+        const qs = options?.status ? `?status=${options.status}` : "";
+        return this.http.request<ProposalListResponse>(
+            "GET",
+            `/v1/treasury/${treasuryId}/proposals${qs}`,
+        );
+    }
+
+    async getProposal(
+        treasuryId: string,
+        proposalId: string,
+    ): Promise<OneclawResponse<ProposalResponse>> {
+        return this.http.request<ProposalResponse>(
+            "GET",
+            `/v1/treasury/${treasuryId}/proposals/${proposalId}`,
+        );
+    }
+
+    async signProposal(
+        treasuryId: string,
+        proposalId: string,
+        body: { signature: string; signer_address: string; decision?: "approve" | "reject" },
+    ): Promise<OneclawResponse<ProposalResponse>> {
+        return this.http.request<ProposalResponse>(
+            "POST",
+            `/v1/treasury/${treasuryId}/proposals/${proposalId}/sign`,
+            { body },
+        );
+    }
+
+    async executeProposal(
+        treasuryId: string,
+        proposalId: string,
+    ): Promise<OneclawResponse<ProposalResponse>> {
+        return this.http.request<ProposalResponse>(
+            "POST",
+            `/v1/treasury/${treasuryId}/proposals/${proposalId}/execute`,
+        );
+    }
+}
+
+export interface ProposalResponse {
+    id: string;
+    treasury_id: string;
+    proposed_by: string;
+    proposed_by_type: string;
+    chain: string;
+    chain_id: number;
+    safe_address: string;
+    to_address: string;
+    value_wei: string;
+    data_hex: string;
+    operation: number;
+    safe_tx_hash: string;
+    nonce: number;
+    status: string;
+    threshold: number;
+    expires_at?: string;
+    executed_tx_hash?: string;
+    executed_at?: string;
+    signatures: {
+        id: string;
+        signer_id: string;
+        signer_type: string;
+        signer_address: string;
+        decision: string;
+        created_at: string;
+    }[];
+    created_at: string;
+}
+
+export interface ProposalListResponse {
+    proposals: ProposalResponse[];
 }

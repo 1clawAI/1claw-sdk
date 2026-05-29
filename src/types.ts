@@ -520,6 +520,16 @@ export interface AgentResponse {
     message_signing_enabled?: boolean;
     /** ISO 8601 expiration timestamp for the agent's API key. Null = never expires. */
     api_key_expires_at?: string | null;
+    /** Agent's Ethereum EOA address (used as Safe signer for smart accounts). */
+    evm_address?: string | null;
+    /** Per-chain smart accounts (Safe multisigs) registered for this agent. */
+    smart_accounts?: AgentSmartAccount[];
+    /** Legacy single Smart Account address (prefer smart_accounts[]). */
+    smart_account_address?: string | null;
+    /** Legacy single Smart Account chain name. */
+    smart_account_chain?: string | null;
+    /** Legacy single Smart Account chain ID. */
+    smart_account_chain_id?: number | null;
     created_at: string;
     expires_at?: string;
     last_active_at?: string;
@@ -529,6 +539,30 @@ export interface AgentCreatedResponse {
     agent: AgentResponse;
     /** Only present for api_key auth method */
     api_key?: string;
+}
+
+export interface AgentSmartAccount {
+    chain: string;
+    chain_id: number;
+    safe_address: string;
+    nonce?: number;
+    init_data?: string;
+}
+
+export interface AddSmartAccountRequest {
+    chain: string;
+    chain_id: number;
+    safe_address: string;
+    nonce?: number;
+    init_data?: string;
+}
+
+export interface GenerateEoaResponse {
+    evm_address: string;
+}
+
+export interface RotateSignerKeyResponse {
+    new_evm_address: string;
 }
 
 export interface AgentListResponse {
@@ -621,6 +655,10 @@ export interface SubmitTransactionRequest {
     max_fee_per_gas?: string;
     max_priority_fee_per_gas?: string;
     simulate_first?: boolean;
+    /** Transaction mode: "eoa" (default), "smart_account" (ERC-4337), or "treasury" (treasury delegation). */
+    mode?: "eoa" | "smart_account" | "treasury";
+    /** Treasury ID for mode "treasury". Routes signing through treasury delegation. */
+    treasury_id?: string;
 }
 
 /**

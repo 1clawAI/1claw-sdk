@@ -20,6 +20,10 @@ import type {
     TransactionListResponse,
     SignIntentRequest,
     SignIntentResponse,
+    AddSmartAccountRequest,
+    AgentSmartAccount,
+    GenerateEoaResponse,
+    RotateSignerKeyResponse,
     OneclawResponse,
 } from "../types";
 
@@ -248,6 +252,62 @@ export class AgentsResource {
             "POST",
             `/v1/agents/${agentId}/sign`,
             { body: params },
+        );
+    }
+
+    // ── Smart Accounts ──────────────────────────────────────────────
+
+    /**
+     * Generate a secp256k1 EOA for the agent. The private key is stored
+     * in the __agent-keys vault and the derived address set on the agent record.
+     */
+    async generateEoa(
+        agentId: string,
+    ): Promise<OneclawResponse<GenerateEoaResponse>> {
+        return this.http.request<GenerateEoaResponse>(
+            "POST",
+            `/v1/agents/${agentId}/eoa`,
+        );
+    }
+
+    /**
+     * Register a Smart Account (Safe) for the agent on a specific chain.
+     * The Safe must already be deployed on-chain.
+     */
+    async createSmartAccount(
+        agentId: string,
+        account: AddSmartAccountRequest,
+    ): Promise<OneclawResponse<AgentSmartAccount>> {
+        return this.http.request<AgentSmartAccount>(
+            "POST",
+            `/v1/agents/${agentId}/smart-accounts`,
+            { body: account },
+        );
+    }
+
+    /**
+     * Remove a Smart Account record from the agent (does not affect on-chain state).
+     */
+    async deleteSmartAccount(
+        agentId: string,
+        chainId: number,
+    ): Promise<OneclawResponse<void>> {
+        return this.http.request<void>(
+            "DELETE",
+            `/v1/agents/${agentId}/smart-accounts/${chainId}`,
+        );
+    }
+
+    /**
+     * Rotate the agent's EOA signer key. Submits a swapOwner UserOp on the
+     * agent's Safe and stores the new private key in the vault.
+     */
+    async rotateSigner(
+        agentId: string,
+    ): Promise<OneclawResponse<RotateSignerKeyResponse>> {
+        return this.http.request<RotateSignerKeyResponse>(
+            "POST",
+            `/v1/agents/${agentId}/rotate-signer-key`,
         );
     }
 }
