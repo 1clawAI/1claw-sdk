@@ -1433,6 +1433,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/agents/{agent_id}/signing-keys/{chain}/balance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get signing key balance
+         * @description Returns the native token balance for the agent's signing key address
+         *     on the specified chain.
+         */
+        get: operations["getSigningKeyBalance"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/agents/{agent_id}/sign": {
         parameters: {
             query?: never;
@@ -2100,6 +2121,88 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/treasury/{treasury_id}/proposals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List proposals for a treasury */
+        get: operations["listTreasuryProposals"];
+        put?: never;
+        /**
+         * Create a multisig proposal
+         * @description Create a new Safe multisig transaction proposal. The proposer must be a
+         *     treasury signer or an agent with an active delegation for the treasury.
+         *     If auto-approve rules match, the agent's signature is auto-inserted and
+         *     auto-execute fires if threshold is met.
+         */
+        post: operations["createTreasuryProposal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/treasury/{treasury_id}/proposals/{proposal_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a proposal with collected signatures */
+        get: operations["getTreasuryProposal"];
+        put?: never;
+        post?: never;
+        /** Cancel a pending proposal (proposer only) */
+        delete: operations["cancelTreasuryProposal"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/treasury/{treasury_id}/proposals/{proposal_id}/sign": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Sign a proposal (approve or reject)
+         * @description Submit an EIP-712 signature for a pending proposal. When approve signatures
+         *     reach the Safe threshold, auto-execute fires: signatures are collected in
+         *     address-sorted order, `execTransaction` calldata is built, and the transaction
+         *     is broadcast via RPC.
+         */
+        post: operations["signTreasuryProposal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/treasury/{treasury_id}/proposals/{proposal_id}/execute": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Force-execute a proposal if threshold is met (user-only) */
+        post: operations["executeTreasuryProposal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/treasury/wallets/generate": {
         parameters: {
             query?: never;
@@ -2201,6 +2304,108 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/v1/treasury/wallets/{chain}/balance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get wallet balance
+         * @description Returns the native and token balances for the user's active wallet
+         *     on the specified chain.
+         */
+        get: operations["getTreasuryWalletBalance"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/treasury/wallets/{chain}/send": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send from treasury wallet
+         * @description Signs and broadcasts a transaction from the user's active wallet on
+         *     the specified chain. Requires re-authentication via `X-Auth-Confirm`
+         *     header (account password). Human users only.
+         */
+        post: operations["sendFromTreasuryWallet"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/treasury/wallets/{chain}/swap": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Swap tokens via DEX aggregator
+         * @description Executes a token swap through a DEX aggregator from the user's active
+         *     wallet on the specified chain. Requires re-authentication via
+         *     `X-Auth-Confirm` header (account password). Human users only.
+         */
+        post: operations["swapFromTreasuryWallet"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/webhooks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List webhooks */
+        get: operations["listWebhooks"];
+        put?: never;
+        /** Register a webhook */
+        post: operations["createWebhook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/webhooks/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get webhook */
+        get: operations["getWebhook"];
+        put?: never;
+        post?: never;
+        /** Delete webhook */
+        delete: operations["deleteWebhook"];
+        options?: never;
+        head?: never;
+        /** Update webhook */
+        patch: operations["updateWebhook"];
         trace?: never;
     };
     "/v1/admin/settings": {
@@ -3951,6 +4156,8 @@ export interface components {
              * @description Optional expiration time for the agent's API key.
              */
             api_key_expires_at?: string | null;
+            /** @description Agent's Ethereum EOA address (used as Safe signer for smart accounts and Intents API). */
+            evm_address?: string | null;
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
@@ -4359,6 +4566,11 @@ export interface components {
              * @enum {string}
              */
             mode: "eoa" | "smart_account";
+            /**
+             * @description Whether to submit as a gasless (sponsored) transaction
+             * @default false
+             */
+            gasless: boolean;
         };
         SignTransactionRequest: {
             /** @description Destination address (0x-prefixed) */
@@ -4963,6 +5175,79 @@ export interface components {
             /** Format: date-time */
             resolved_at?: string;
         };
+        CreateTreasuryProposalRequest: {
+            /** @description Destination address (0x-prefixed) */
+            to_address: string;
+            /** @description Transaction value in wei */
+            value_wei: string;
+            /** @description Chain name (e.g. ethereum, base) */
+            chain: string;
+            /** @description Numeric chain ID (alternative to chain name) */
+            chain_id?: number;
+            /** @description Hex-encoded calldata (optional) */
+            data_hex?: string;
+            /**
+             * @description Safe operation type (0 = Call, 1 = DelegateCall)
+             * @default 0
+             */
+            operation: number;
+        };
+        SignTreasuryProposalRequest: {
+            /**
+             * @description Whether to approve or reject the proposal
+             * @enum {string}
+             */
+            decision: "approve" | "reject";
+            /** @description EIP-712 signature (hex). If omitted, server signs with caller's key. */
+            signature?: string;
+        };
+        TreasuryProposalResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            treasury_id?: string;
+            /** Format: uuid */
+            proposed_by?: string;
+            /** @enum {string} */
+            proposed_by_type?: "user" | "agent";
+            chain?: string;
+            chain_id?: number;
+            safe_address?: string;
+            to_address?: string;
+            value_wei?: string;
+            data_hex?: string | null;
+            operation?: number;
+            safe_tx_hash?: string | null;
+            nonce?: number | null;
+            /** @enum {string} */
+            status?: "pending" | "approved" | "executing" | "executed" | "rejected" | "expired";
+            threshold?: number;
+            /** Format: date-time */
+            expires_at?: string | null;
+            executed_tx_hash?: string | null;
+            /** Format: date-time */
+            executed_at?: string | null;
+            signatures?: components["schemas"]["ProposalSignatureResponse"][];
+            /** Format: date-time */
+            created_at?: string;
+        };
+        ProposalSignatureResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            signer_id?: string;
+            /** @enum {string} */
+            signer_type?: "user" | "agent";
+            signer_address?: string;
+            signature?: string;
+            /** @enum {string} */
+            decision?: "approve" | "reject";
+            /** Format: date-time */
+            created_at?: string;
+        };
+        TreasuryProposalListResponse: {
+            proposals?: components["schemas"]["TreasuryProposalResponse"][];
+        };
         GenerateTreasuryWalletsRequest: {
             /** @description Chains to generate wallets for (e.g. ["ethereum", "solana"]). Omit for all supported chains. */
             chains?: string[];
@@ -4987,6 +5272,102 @@ export interface components {
             address?: string;
             /** @description Raw private key in hex encoding. Handle with extreme care. */
             private_key_hex?: string;
+        };
+        TreasuryWalletBalanceResponse: {
+            chain: string;
+            address: string;
+            native: {
+                symbol: string;
+                balance_wei: string;
+                balance_display: string;
+            };
+            tokens?: {
+                contract_address: string;
+                balance_raw: string;
+            }[];
+        };
+        TreasuryWalletSendRequest: {
+            /** @description Destination address (0x-prefixed) */
+            to: string;
+            /** @description Value in wei */
+            value_wei: string;
+            /** @description Hex-encoded calldata (optional) */
+            data?: string;
+            /** @description Gas limit override */
+            gas_limit?: number;
+        };
+        TreasuryWalletSendResponse: {
+            tx_hash: string;
+            from: string;
+            to: string;
+            value_wei: string;
+            chain: string;
+            status: string;
+        };
+        TreasuryWalletSwapRequest: {
+            /** @description Address of the token to sell (or "native" for ETH) */
+            sell_token: string;
+            /** @description Address of the token to buy (or "native" for ETH) */
+            buy_token: string;
+            /** @description Amount to sell in token's smallest unit */
+            sell_amount: string;
+        };
+        TreasuryWalletSwapResponse: {
+            tx_hash: string;
+            sell_token: string;
+            buy_token: string;
+            sell_amount: string;
+            buy_amount: string;
+            chain: string;
+            status: string;
+        };
+        CreateWebhookRequest: {
+            /**
+             * Format: uri
+             * @description HTTPS URL to deliver webhook events to
+             */
+            url: string;
+            /** @description Event types to subscribe to */
+            events: string[];
+            description?: string;
+        };
+        UpdateWebhookRequest: {
+            /** Format: uri */
+            url?: string;
+            events?: string[];
+            is_active?: boolean;
+            description?: string;
+        };
+        WebhookCreatedResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uri */
+            url: string;
+            events: string[];
+            /** @description HMAC signing secret for verifying payloads (shown only once) */
+            secret: string;
+            /** Format: date-time */
+            created_at: string;
+        };
+        WebhookResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uri */
+            url: string;
+            events: string[];
+            is_active: boolean;
+            description?: string;
+            /** Format: date-time */
+            created_at: string;
+        };
+        WebhookListResponse: {
+            webhooks: components["schemas"]["WebhookResponse"][];
+        };
+        SigningKeyBalanceResponse: {
+            chain: string;
+            address: string;
+            balance_wei: string;
+            balance_display: string;
         };
         PaymentRequirement: {
             x402Version?: number;
@@ -7880,6 +8261,32 @@ export interface operations {
             404: components["responses"]["NotFound"];
         };
     };
+    getSigningKeyBalance: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+                chain: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Signing key balance */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SigningKeyBalanceResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
     signIntent: {
         parameters: {
             query?: never;
@@ -8938,6 +9345,167 @@ export interface operations {
             404: components["responses"]["NotFound"];
         };
     };
+    listTreasuryProposals: {
+        parameters: {
+            query?: {
+                status?: "pending" | "approved" | "executing" | "executed" | "rejected" | "expired";
+            };
+            header?: never;
+            path: {
+                treasury_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Proposal list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TreasuryProposalListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    createTreasuryProposal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                treasury_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTreasuryProposalRequest"];
+            };
+        };
+        responses: {
+            /** @description Proposal created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TreasuryProposalResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    getTreasuryProposal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                treasury_id: string;
+                proposal_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Proposal details */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TreasuryProposalResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    cancelTreasuryProposal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                treasury_id: string;
+                proposal_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Proposal cancelled */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    signTreasuryProposal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                treasury_id: string;
+                proposal_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SignTreasuryProposalRequest"];
+            };
+        };
+        responses: {
+            /** @description Signature recorded (may include executed_tx_hash if auto-executed) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TreasuryProposalResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    executeTreasuryProposal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                treasury_id: string;
+                proposal_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Proposal executed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TreasuryProposalResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
     generateTreasuryWallets: {
         parameters: {
             query?: never;
@@ -9086,6 +9654,222 @@ export interface operations {
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getTreasuryWalletBalance: {
+        parameters: {
+            query?: {
+                /** @description Optional list of ERC-20 contract addresses to query balances for */
+                tokens?: string[];
+            };
+            header?: never;
+            path: {
+                chain: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Wallet balance */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TreasuryWalletBalanceResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    sendFromTreasuryWallet: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Account password for re-authentication */
+                "X-Auth-Confirm": string;
+            };
+            path: {
+                chain: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TreasuryWalletSendRequest"];
+            };
+        };
+        responses: {
+            /** @description Transaction sent */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TreasuryWalletSendResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    swapFromTreasuryWallet: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Account password for re-authentication */
+                "X-Auth-Confirm": string;
+            };
+            path: {
+                chain: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TreasuryWalletSwapRequest"];
+            };
+        };
+        responses: {
+            /** @description Swap executed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TreasuryWalletSwapResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listWebhooks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Webhook list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    createWebhook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateWebhookRequest"];
+            };
+        };
+        responses: {
+            /** @description Webhook registered */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookCreatedResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    getWebhook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Webhook details */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deleteWebhook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Webhook deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateWebhook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateWebhookRequest"];
+            };
+        };
+        responses: {
+            /** @description Webhook updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
             404: components["responses"]["NotFound"];
         };
     };
