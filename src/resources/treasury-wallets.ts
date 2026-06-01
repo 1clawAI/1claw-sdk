@@ -44,6 +44,7 @@ export interface SendFromWalletRequest {
     to: string;
     amount: string;
     token_contract?: string;
+    gasless?: boolean;
 }
 
 export interface SendFromWalletResponse {
@@ -52,6 +53,8 @@ export interface SendFromWalletResponse {
     to: string;
     amount: string;
     chain: string;
+    status: string;
+    user_op_hash?: string;
 }
 
 export interface SwapFromWalletRequest {

@@ -19,6 +19,9 @@ import { TreasuryWalletsResource } from "../resources/treasury-wallets";
 import { PlatformResource } from "../resources/platform";
 import { DevicesResource } from "../resources/devices";
 import { PasskeysResource } from "../resources/passkeys";
+import { DepositDestinationsResource } from "../resources/deposit-destinations";
+import { InternalAccountsResource } from "../resources/internal-accounts";
+import { FiatResource } from "../resources/fiat";
 
 /**
  * The main 1Claw SDK client. All API resources are exposed as
@@ -82,6 +85,12 @@ export class OneclawClient {
     readonly devices: DevicesResource;
     /** WebAuthn passkeys — register and assert FIDO2 credentials. */
     readonly passkeys: PasskeysResource;
+    /** Deposit destinations — unique addresses for tracking incoming payments. */
+    readonly depositDestinations: DepositDestinationsResource;
+    /** Internal accounts — off-chain double-entry ledger for instant transfers. */
+    readonly internalAccounts: InternalAccountsResource;
+    /** Fiat on/off ramps — buy and sell crypto via partner integrations. */
+    readonly fiat: FiatResource;
 
     constructor(config: OneclawClientConfig) {
         this.http = new HttpClient(config);
@@ -113,6 +122,9 @@ export class OneclawClient {
         this.platform = new PlatformResource(this.http);
         this.devices = new DevicesResource(this.http);
         this.passkeys = new PasskeysResource(this.http);
+        this.depositDestinations = new DepositDestinationsResource(this.http);
+        this.internalAccounts = new InternalAccountsResource(this.http);
+        this.fiat = new FiatResource(this.http);
     }
 
     private autoAuthenticateUserKey(config: OneclawClientConfig): void {

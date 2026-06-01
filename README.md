@@ -97,6 +97,9 @@ await client.auth.verifyEmailChange({ code: "123456" });
 | `client.apiKeys`   | `create`, `list`, `revoke`                                                                                          |
 | `client.treasury`  | `create`, `list`, `get`, `update`, `delete`, `addSigner`, `removeSigner`, `requestAccess`, `listAccessRequests`, `approveAccess`, `denyAccess`, `propose`, `listProposals`, `getProposal`, `signProposal`, `executeProposal` |
 | `client.treasuryWallets` | `generateWallets`, `listWallets`, `getWallet`, `getWalletBalance`, `sendFromWallet`, `swapFromWallet`, `exportWallet`, `rotateWallet`, `deactivateWallet` |
+| `client.depositDestinations` | `create`, `list`, `get`, `update` |
+| `client.internalAccounts` | `create`, `list`, `get`, `transfer`, `getLedger` |
+| `client.fiat` | `createOnrampSession`, `initiateOfframp` |
 | `client.signingKeys` | `create`, `list`, `rotate`, `deactivate`, `export`                                                               |
 | `client.platform`  | `createApp`, `listApps`, `getApp`, `updateApp`, `deleteApp`, `createTemplate`, `listTemplates`, `upsertUser`, `listUsers`, `bootstrapUser`, `claimPreview`, `claimRedeem`, `listConnectedApps`, `disconnectApp` |
 | `client.devices`   | `register`, `list`, `delete`, `challenge`, `attest`, `setPushToken`                                                 |

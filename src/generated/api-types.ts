@@ -5295,6 +5295,11 @@ export interface components {
             data?: string;
             /** @description Gas limit override */
             gas_limit?: number;
+            /**
+             * @description When true, submits as a gasless (ERC-4337) transaction via Pimlico paymaster. The paymaster sponsors the gas cost.
+             * @default false
+             */
+            gasless: boolean;
         };
         TreasuryWalletSendResponse: {
             tx_hash: string;
@@ -5303,6 +5308,8 @@ export interface components {
             value_wei: string;
             chain: string;
             status: string;
+            /** @description UserOperation hash (only present for gasless sends via paymaster) */
+            user_op_hash?: string;
         };
         TreasuryWalletSwapRequest: {
             /** @description Address of the token to sell (or "native" for ETH) */

@@ -659,6 +659,8 @@ export interface SubmitTransactionRequest {
     mode?: "eoa" | "smart_account" | "treasury";
     /** Treasury ID for mode "treasury". Routes signing through treasury delegation. */
     treasury_id?: string;
+    /** When true, submits as a gasless (sponsored) transaction via ERC-4337 paymaster. */
+    gasless?: boolean;
 }
 
 /**
