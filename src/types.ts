@@ -579,7 +579,8 @@ export interface LeaseBankrKeyRequest {
 
 export interface LeaseBankrKeyResponse {
     lease_id: string;
-    api_key: string;
+    /** Present for human callers only; omitted for agent JWTs (key stored for Shroud resolution). */
+    api_key?: string;
     wallet_id: string;
     expires_at: string;
 }
