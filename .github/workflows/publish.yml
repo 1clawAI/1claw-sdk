@@ -28,7 +28,7 @@ jobs:
                   registry-url: https://registry.npmjs.org
 
             - working-directory: sdk
-              run: npm ci
+              run: npm install
 
             - working-directory: sdk
               run: npm publish --provenance --access public
