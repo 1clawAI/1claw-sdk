@@ -14,19 +14,23 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
+              with:
+                  path: sdk
 
             - uses: actions/checkout@v4
               with:
                   repository: 1clawAI/1claw-openapi-spec
-                  path: ../openapi-spec
+                  path: openapi-spec
 
             - uses: actions/setup-node@v4
               with:
                   node-version: 22
                   registry-url: https://registry.npmjs.org
 
-            - run: npm ci
+            - working-directory: sdk
+              run: npm ci
 
-            - run: npm publish --provenance --access public
+            - working-directory: sdk
+              run: npm publish --provenance --access public
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
