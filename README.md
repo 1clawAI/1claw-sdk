@@ -101,7 +101,7 @@ await client.auth.verifyEmailChange({ code: "123456" });
 | `client.internalAccounts` | `create`, `list`, `get`, `transfer`, `getLedger` |
 | `client.fiat` | `createOnrampSession`, `initiateOfframp` |
 | `client.signingKeys` | `create`, `list`, `rotate`, `deactivate`, `export`                                                               |
-| `client.agents` (Bankr) | `leaseBankrKey`, `listBankrKeys`, `revokeBankrKey` — dynamic short-lived Bankr wallet keys from partner key |
+| `client.agents` (Bankr) | `leaseBankrKey`, `listBankrKeys`, `revokeBankrKey` — privileged; `api_key` omitted for agent JWTs (use Shroud) |
 | `client.platform`  | `createApp`, `listApps`, `getApp`, `updateApp`, `deleteApp`, `rotateKey`, `createTemplate`, `listTemplates`, `upsertUser`, `listUsers`, `bootstrapUser`, `reissueClaim`, `claimPreview`, `claimRedeem`, `listConnectedApps`, `disconnectApp` |
 | `client.devices`   | `register`, `list`, `delete`, `challenge`, `attest`, `setPushToken`                                                 |
 | `client.passkeys`  | `list`, `registerBegin`, `registerComplete`, `assertBegin`, `assertComplete`, `delete`                               |
