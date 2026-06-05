@@ -1454,6 +1454,62 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/agents/{agent_id}/bankr-keys/lease": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Lease a short-lived Bankr wallet API key
+         * @description Provision a scoped, time-limited Bankr wallet API key for an agent.
+         *     Requires `BANKR_PARTNER_KEY` configured on the Vault service.
+         *     Default TTL 1 hour, max 24 hours. Max 5 concurrent leases per agent.
+         */
+        post: operations["leaseBankrKey"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/bankr-keys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List active Bankr key leases for an agent */
+        get: operations["listBankrKeys"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/bankr-keys/{lease_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Revoke an active Bankr key lease */
+        delete: operations["revokeBankrKey"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/agents/{agent_id}/sign": {
         parameters: {
             query?: never;
@@ -3734,7 +3790,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Begin passkey transaction authorization */
+        /**
+         * Begin passkey transaction authorization
+         * @description Requires `tx_digest` — SHA-256 hex of canonical `chain|to|value_wei|data`
+         *     for the treasury send being authorized. The server recomputes this digest
+         *     on send and rejects passkey tokens that do not match.
+         */
         post: operations["passkeyTxAssertBegin"];
         delete?: never;
         options?: never;
@@ -4833,6 +4894,44 @@ export interface components {
         };
         SigningKeyListResponse: {
             keys?: components["schemas"]["SigningKeyResponse"][];
+        };
+        LeaseBankrKeyRequest: {
+            /** @description Bankr wallet ID (wlt_...). Uses org default if omitted. */
+            wallet_id?: string;
+            /** @description Lease TTL in seconds (default 3600, max 86400). */
+            ttl_seconds?: number;
+            permissions?: components["schemas"]["LeaseBankrPermissions"];
+        };
+        LeaseBankrPermissions: {
+            /** @default true */
+            llm_gateway_enabled: boolean;
+            /** @default false */
+            agent_api_enabled: boolean;
+            /** @default true */
+            read_only: boolean;
+        };
+        LeaseBankrKeyResponse: {
+            /** Format: uuid */
+            lease_id?: string;
+            /** @description Ephemeral bk_usr_ key (one-time display). */
+            api_key?: string;
+            wallet_id?: string;
+            /** Format: date-time */
+            expires_at?: string;
+        };
+        BankrKeyLeaseResponse: {
+            /** Format: uuid */
+            id?: string;
+            wallet_id?: string;
+            bankr_key_id?: string;
+            permissions?: Record<string, never>;
+            /** Format: date-time */
+            expires_at?: string;
+            /** Format: date-time */
+            created_at?: string;
+        };
+        BankrKeyLeaseListResponse: {
+            leases?: components["schemas"]["BankrKeyLeaseResponse"][];
         };
         SignIntentRequest: {
             /** @enum {string} */
@@ -8484,6 +8583,79 @@ export interface operations {
             404: components["responses"]["NotFound"];
         };
     };
+    leaseBankrKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["LeaseBankrKeyRequest"];
+            };
+        };
+        responses: {
+            /** @description Bankr key leased */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeaseBankrKeyResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    listBankrKeys: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Active leases (no secret values) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BankrKeyLeaseListResponse"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    revokeBankrKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+                lease_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Lease revoked */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
     signIntent: {
         parameters: {
             query?: never;
@@ -10764,10 +10936,24 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description 64-char hex SHA-256 of canonical send params */
+                    tx_digest: string;
+                };
+            };
+        };
         responses: {
             /** @description WebAuthn challenge */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or invalid tx_digest */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };

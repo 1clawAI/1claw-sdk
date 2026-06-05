@@ -24,6 +24,9 @@ import type {
     AgentSmartAccount,
     GenerateEoaResponse,
     RotateSignerKeyResponse,
+    LeaseBankrKeyRequest,
+    LeaseBankrKeyResponse,
+    BankrKeyLeaseListResponse,
     OneclawResponse,
 } from "../types";
 
@@ -308,6 +311,47 @@ export class AgentsResource {
         return this.http.request<RotateSignerKeyResponse>(
             "POST",
             `/v1/agents/${agentId}/rotate-signer-key`,
+        );
+    }
+
+    /**
+     * Lease a short-lived Bankr wallet API key for an agent.
+     * The partner key is stored in the vault secure zone; the agent receives
+     * an ephemeral `bk_usr_` key with configured TTL and permissions.
+     */
+    async leaseBankrKey(
+        agentId: string,
+        options?: LeaseBankrKeyRequest,
+    ): Promise<OneclawResponse<LeaseBankrKeyResponse>> {
+        return this.http.request<LeaseBankrKeyResponse>(
+            "POST",
+            `/v1/agents/${agentId}/bankr-keys/lease`,
+            { body: options ?? {} },
+        );
+    }
+
+    /**
+     * List active Bankr key leases for an agent.
+     */
+    async listBankrKeys(
+        agentId: string,
+    ): Promise<OneclawResponse<BankrKeyLeaseListResponse>> {
+        return this.http.request<BankrKeyLeaseListResponse>(
+            "GET",
+            `/v1/agents/${agentId}/bankr-keys`,
+        );
+    }
+
+    /**
+     * Revoke an active Bankr key lease (early termination).
+     */
+    async revokeBankrKey(
+        agentId: string,
+        leaseId: string,
+    ): Promise<OneclawResponse<void>> {
+        return this.http.request<void>(
+            "DELETE",
+            `/v1/agents/${agentId}/bankr-keys/${leaseId}`,
         );
     }
 }

@@ -565,6 +565,38 @@ export interface RotateSignerKeyResponse {
     new_evm_address: string;
 }
 
+// ── Bankr Dynamic Key Vending ──
+
+export interface LeaseBankrKeyRequest {
+    wallet_id?: string;
+    ttl_seconds?: number;
+    permissions?: {
+        llm_gateway_enabled?: boolean;
+        agent_api_enabled?: boolean;
+        read_only?: boolean;
+    };
+}
+
+export interface LeaseBankrKeyResponse {
+    lease_id: string;
+    api_key: string;
+    wallet_id: string;
+    expires_at: string;
+}
+
+export interface BankrKeyLease {
+    id: string;
+    wallet_id: string;
+    bankr_key_id: string;
+    permissions: Record<string, unknown>;
+    expires_at: string;
+    created_at: string;
+}
+
+export interface BankrKeyLeaseListResponse {
+    leases: BankrKeyLease[];
+}
+
 export interface AgentListResponse {
     agents: AgentResponse[];
 }
