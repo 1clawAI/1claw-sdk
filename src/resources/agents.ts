@@ -316,8 +316,12 @@ export class AgentsResource {
 
     /**
      * Lease a short-lived Bankr wallet API key for an agent.
-     * The partner key is stored in the vault secure zone; the agent receives
-     * an ephemeral `bk_usr_` key with configured TTL and permissions.
+     * The partner key (`bk_ptr_`) stays in the vault secure zone. **Agent JWT
+     * callers** receive lease metadata only (`lease_id`, `wallet_id`, `expires_at`)
+     * — no `api_key` (use Shroud with `X-Shroud-Provider: bankr`). **Human
+     * callers** may receive `api_key` once when vending is configured.
+     * Requires a policy on `__agent-keys` granting `write` on
+     * `agents/{agent_id}/bankr/*` for agent callers.
      */
     async leaseBankrKey(
         agentId: string,
