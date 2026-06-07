@@ -20,6 +20,61 @@ import type {
     OneclawResponse,
 } from "../types";
 
+export interface EmailOtpSendRequest {
+    email: string;
+    platform_app_id?: string;
+}
+
+export interface EmailOtpSendResponse {
+    status: string;
+}
+
+export interface EmailOtpVerifyRequest {
+    email: string;
+    code: string;
+    platform_app_id?: string;
+    auto_provision_chains?: string[];
+}
+
+export interface EmailOtpVerifyResponse {
+    access_token: string;
+    token_type: string;
+    user_id: string;
+    org_id: string;
+    is_new: boolean;
+}
+
+export interface SocialLoginRequest {
+    provider: string;
+    id_token: string;
+    auto_provision_chains?: string[];
+    oauth_redirect_uri?: string;
+}
+
+export interface SocialLoginResponse {
+    access_token: string;
+    token_type: string;
+    user_id: string;
+    org_id: string;
+    is_new: boolean;
+}
+
+export interface OAuthTokenRequest {
+    grant_type?: string;
+    code: string;
+    client_id: string;
+    redirect_uri: string;
+    code_verifier?: string;
+}
+
+export interface OAuthTokenResponse {
+    access_token: string;
+    token_type: string;
+    expires_in: number;
+    refresh_token?: string;
+    id_token?: string;
+}
+
 /**
  * Auth resource — authenticate users and agents, manage sessions.
  * Successful authentication automatically stores the JWT on the client
@@ -271,5 +326,71 @@ export class AuthResource {
             "/v1/auth/federated-token",
             { body, skipAuth: true },
         );
+    }
+
+    /** Send a one-time passcode to an email address (no auth required). */
+    async sendEmailOtp(
+        params: EmailOtpSendRequest,
+    ): Promise<OneclawResponse<EmailOtpSendResponse>> {
+        return this.http.request<EmailOtpSendResponse>(
+            "POST",
+            "/v1/auth/email-otp/send",
+            { body: params, skipAuth: true },
+        );
+    }
+
+    /**
+     * Verify an email OTP code. Returns a JWT on success.
+     * Stores the resulting token for subsequent requests.
+     */
+    async verifyEmailOtp(
+        params: EmailOtpVerifyRequest,
+    ): Promise<OneclawResponse<EmailOtpVerifyResponse>> {
+        const res = await this.http.request<EmailOtpVerifyResponse>(
+            "POST",
+            "/v1/auth/email-otp/verify",
+            { body: params, skipAuth: true },
+        );
+        if (res.data?.access_token) {
+            this.http.setToken(res.data.access_token);
+        }
+        return res;
+    }
+
+    /**
+     * Authenticate via a social provider (Google, Apple, Discord).
+     * Stores the resulting JWT for subsequent requests.
+     */
+    async socialLogin(
+        params: SocialLoginRequest,
+    ): Promise<OneclawResponse<SocialLoginResponse>> {
+        const res = await this.http.request<SocialLoginResponse>(
+            "POST",
+            "/v1/auth/social-login",
+            { body: params, skipAuth: true },
+        );
+        if (res.data?.access_token) {
+            this.http.setToken(res.data.access_token);
+        }
+        return res;
+    }
+
+    /** Exchange an OAuth authorization code for tokens. */
+    async exchangeOAuthCode(
+        params: OAuthTokenRequest,
+    ): Promise<OneclawResponse<OAuthTokenResponse>> {
+        const body = {
+            grant_type: params.grant_type ?? "authorization_code",
+            ...params,
+        };
+        const res = await this.http.request<OAuthTokenResponse>(
+            "POST",
+            "/v1/oauth/token",
+            { body, skipAuth: true },
+        );
+        if (res.data?.access_token) {
+            this.http.setToken(res.data.access_token);
+        }
+        return res;
     }
 }

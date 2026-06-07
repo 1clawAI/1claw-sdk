@@ -93,16 +93,16 @@ await client.auth.verifyEmailChange({ code: "123456" });
 | `client.billing`   | `usage`, `history`, `llmTokenBilling`, `subscribeLlmTokenBilling`, `disableLlmTokenBilling` (LLM token billing / Stripe AI Gateway) |
 | `client.audit`     | `query`                                                                                                             |
 | `client.org`       | `listMembers`, `getAgentKeysVault`, `updateMemberRole`, `removeMember`                                              |
-| `client.auth`      | `login`, `signup`, `agentToken`, `apiKeyToken`, `google`, `changePassword`, `setPassword`, `changeEmail`, `verifyEmailChange`, `forgotPassword`, `resetPassword`, `exportData`, `exchangeFederatedToken`, `logout`, `getMe`, `updateMe`, `deleteMe` |
+| `client.auth`      | `login`, `signup`, `agentToken`, `apiKeyToken`, `google`, `socialLogin`, `sendEmailOtp`, `verifyEmailOtp`, `exchangeOAuthCode`, `changePassword`, `setPassword`, `changeEmail`, `verifyEmailChange`, `forgotPassword`, `resetPassword`, `exportData`, `exchangeFederatedToken`, `logout`, `getMe`, `updateMe`, `deleteMe` |
 | `client.apiKeys`   | `create`, `list`, `revoke`                                                                                          |
 | `client.treasury`  | `create`, `list`, `get`, `update`, `delete`, `addSigner`, `removeSigner`, `requestAccess`, `listAccessRequests`, `approveAccess`, `denyAccess`, `propose`, `listProposals`, `getProposal`, `signProposal`, `executeProposal` |
-| `client.treasuryWallets` | `generateWallets`, `listWallets`, `getWallet`, `getWalletBalance`, `sendFromWallet`, `swapFromWallet`, `exportWallet`, `rotateWallet`, `deactivateWallet` |
+| `client.treasuryWallets` | `generateWallets`, `listWallets`, `getWallet`, `getWalletBalance`, `sendFromWallet`, `swapFromWallet`, `exportWallet`, `rotateWallet`, `deactivateWallet`, `getEffectiveSpendPolicy` |
 | `client.depositDestinations` | `create`, `list`, `get`, `update` |
 | `client.internalAccounts` | `create`, `list`, `get`, `transfer`, `getLedger` |
 | `client.fiat` | `createOnrampSession`, `initiateOfframp` |
 | `client.signingKeys` | `create`, `list`, `rotate`, `deactivate`, `export`                                                               |
 | `client.agents` (Bankr) | `leaseBankrKey`, `listBankrKeys`, `revokeBankrKey` — privileged; `api_key` omitted for agent JWTs (use Shroud) |
-| `client.platform`  | `createApp`, `listApps`, `getApp`, `updateApp`, `deleteApp`, `rotateKey`, `createTemplate`, `listTemplates`, `upsertUser`, `listUsers`, `bootstrapUser`, `reissueClaim`, `claimPreview`, `claimRedeem`, `listConnectedApps`, `disconnectApp` |
+| `client.platform`  | `createApp`, `listApps`, `getApp`, `updateApp`, `deleteApp`, `rotateKey`, `createTemplate`, `listTemplates`, `upsertUser`, `listUsers`, `bootstrapUser`, `reissueClaim`, `claimPreview`, `claimRedeem`, `listConnectedApps`, `disconnectApp`, `createSpendPolicy`, `listSpendPolicies`, `setUserSpendPolicy`, `deleteSpendPolicy` |
 | `client.devices`   | `register`, `list`, `delete`, `challenge`, `attest`, `setPushToken`                                                 |
 | `client.passkeys`  | `list`, `registerBegin`, `registerComplete`, `assertBegin`, `assertComplete`, `delete`                               |
 | `client.x402`      | `getPaymentRequirement`, `pay`, `verifyReceipt`, `withPayment`                                                      |

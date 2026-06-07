@@ -73,6 +73,17 @@ export interface SwapFromWalletResponse {
     chain: string;
 }
 
+export interface SpendPolicyResponse {
+    to_allowlist?: string[];
+    to_denylist?: string[];
+    max_value_per_tx_eth?: string;
+    daily_limit_eth?: string;
+    allowed_chains?: string[];
+    allowed_tokens?: string[];
+    max_transactions_per_day?: number;
+    source: string;
+}
+
 /**
  * Treasury wallets — multi-chain wallet generation for human users.
  * Replaces CDP embedded wallets. Private keys are stored in a per-org
@@ -187,6 +198,14 @@ export class TreasuryWalletsResource {
             "POST",
             `/v1/treasury/wallets/${chain}/swap`,
             { body, headers: { "X-Auth-Confirm": password } },
+        );
+    }
+
+    /** Get the effective spend policy for the current user's wallets. */
+    async getEffectiveSpendPolicy(): Promise<OneclawResponse<SpendPolicyResponse>> {
+        return this.http.request<SpendPolicyResponse>(
+            "GET",
+            "/v1/treasury/wallets/spend-policy",
         );
     }
 }

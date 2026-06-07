@@ -23,6 +23,36 @@ import type {
     OneclawResponse,
 } from "../types";
 
+export interface CreateSpendPolicyRequest {
+    user_id?: string;
+    to_allowlist?: string[];
+    to_denylist?: string[];
+    max_value_per_tx_eth?: string;
+    daily_limit_eth?: string;
+    allowed_chains?: string[];
+    allowed_tokens?: string[];
+    max_transactions_per_day?: number;
+}
+
+export interface SpendPolicyResponse {
+    id: string;
+    platform_app_id: string;
+    user_id?: string;
+    to_allowlist?: string[];
+    to_denylist?: string[];
+    max_value_per_tx_eth?: string;
+    daily_limit_eth?: string;
+    allowed_chains?: string[];
+    allowed_tokens?: string[];
+    max_transactions_per_day?: number;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface SpendPolicyListResponse {
+    policies: SpendPolicyResponse[];
+}
+
 /**
  * Platform API — build multi-tenant apps on top of 1Claw.
  * Manage platform apps, templates, user provisioning, and bootstrapping.
@@ -189,6 +219,51 @@ export class PlatformResource {
             "POST",
             `/v1/platform/claim/${encodeURIComponent(token)}`,
             { skipAuth: true },
+        );
+    }
+
+    /** Create a spend policy for a platform app. */
+    async createSpendPolicy(
+        appId: string,
+        body: CreateSpendPolicyRequest,
+    ): Promise<OneclawResponse<SpendPolicyResponse>> {
+        return this.http.request<SpendPolicyResponse>(
+            "POST",
+            `/v1/platform/apps/${appId}/spend-policies`,
+            { body },
+        );
+    }
+
+    /** List spend policies for a platform app. */
+    async listSpendPolicies(
+        appId: string,
+    ): Promise<OneclawResponse<SpendPolicyListResponse>> {
+        return this.http.request<SpendPolicyListResponse>(
+            "GET",
+            `/v1/platform/apps/${appId}/spend-policies`,
+        );
+    }
+
+    /** Set a spend policy on a user connection. */
+    async setUserSpendPolicy(
+        connectionId: string,
+        body: CreateSpendPolicyRequest,
+    ): Promise<OneclawResponse<SpendPolicyResponse>> {
+        return this.http.request<SpendPolicyResponse>(
+            "PUT",
+            `/v1/platform/connections/${connectionId}/spend-policy`,
+            { body },
+        );
+    }
+
+    /** Delete a spend policy from a platform app. */
+    async deleteSpendPolicy(
+        appId: string,
+        policyId: string,
+    ): Promise<OneclawResponse<void>> {
+        return this.http.request<void>(
+            "DELETE",
+            `/v1/platform/apps/${appId}/spend-policies/${policyId}`,
         );
     }
 }
