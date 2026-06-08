@@ -50,4 +50,36 @@ export class OrgResource {
     async removeMember(userId: string): Promise<OneclawResponse<void>> {
         return this.http.request<void>("DELETE", `/v1/org/members/${userId}`);
     }
+
+    /** Get org Bankr partner configuration (prefix + wallet; never returns the partner key). */
+    async getBankrConfig(): Promise<OneclawResponse<OrgBankrConfigResponse>> {
+        return this.http.request<OrgBankrConfigResponse>("GET", "/v1/org/bankr-config");
+    }
+
+    /** Store or replace the org's Bankr partner key and optional default wallet. Owner/admin only. */
+    async setBankrConfig(
+        body: UpsertOrgBankrConfigRequest,
+    ): Promise<OneclawResponse<OrgBankrConfigResponse>> {
+        return this.http.request<OrgBankrConfigResponse>("PUT", "/v1/org/bankr-config", {
+            body,
+        });
+    }
+
+    /** Remove org Bankr BYOK configuration. Owner/admin only. */
+    async deleteBankrConfig(): Promise<OneclawResponse<void>> {
+        return this.http.request<void>("DELETE", "/v1/org/bankr-config");
+    }
+}
+
+export interface OrgBankrConfigResponse {
+    configured: boolean;
+    partner_key_prefix?: string;
+    default_wallet_id?: string;
+    updated_at?: string;
+    using_platform_fallback: boolean;
+}
+
+export interface UpsertOrgBankrConfigRequest {
+    partner_key: string;
+    default_wallet_id?: string;
 }

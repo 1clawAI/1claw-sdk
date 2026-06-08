@@ -1743,6 +1743,34 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/org/bankr-config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get org Bankr partner configuration
+         * @description Returns whether the org has configured Bankr BYOK (partner key prefix and default wallet only — never the secret). Users only.
+         */
+        get: operations["getOrgBankrConfig"];
+        /**
+         * Set org Bankr partner configuration
+         * @description Store or replace the org's Bankr partner key (`bk_ptr_...`) and optional default wallet (`wlt_...`). Owner/admin only. Partner key encrypted at rest.
+         */
+        put: operations["upsertOrgBankrConfig"];
+        post?: never;
+        /**
+         * Remove org Bankr partner configuration
+         * @description Delete BYOK credentials for the org. Owner/admin only.
+         */
+        delete: operations["deleteOrgBankrConfig"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/org/invite": {
         parameters: {
             query?: never;
@@ -2427,6 +2455,28 @@ export interface paths {
          *     `X-Auth-Confirm` header (account password). Human users only.
          */
         post: operations["swapFromTreasuryWallet"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/treasury/wallets/spend-policy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get effective spend policy for current user
+         * @description Returns the effective spend policy governing the authenticated user's
+         *     wallet transactions. Resolves from per-user override (if set) or the
+         *     app-wide default. Returns null if no policy is configured.
+         */
+        get: operations["getEffectiveSpendPolicy"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -3569,6 +3619,71 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/platform/apps/{appId}/spend-policies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List spend policies for app
+         * @description Returns all spend policies configured for the platform app.
+         */
+        get: operations["listSpendPolicies"];
+        put?: never;
+        /**
+         * Create wallet spend policy
+         * @description Create an app-wide spend policy that governs what embedded wallet users
+         *     can do with their wallets. Policies apply to all connected users by default
+         *     and can be overridden per-user via connection-level policies.
+         */
+        post: operations["createSpendPolicy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/apps/{appId}/spend-policies/{policyId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a spend policy */
+        delete: operations["deleteSpendPolicy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/connections/{connectionId}/spend-policy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set per-user spend policy override
+         * @description Override the app-wide spend policy for a specific connected user. This
+         *     policy takes precedence over the app default. Remove by deleting the
+         *     connection-level policy.
+         */
+        put: operations["setUserSpendPolicy"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/approvals": {
         parameters: {
             query?: never;
@@ -3820,6 +3935,118 @@ export interface paths {
         put?: never;
         /** Complete passkey transaction authorization */
         post: operations["passkeyTxAssertComplete"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/email-otp/send": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send email OTP code
+         * @description Sends a 6-digit one-time code to the specified email address.
+         *     No authentication required. Rate-limited per IP and per email.
+         */
+        post: operations["sendEmailOtp"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/email-otp/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Verify email OTP and get JWT
+         * @description Verifies the 6-digit code sent to the user's email. If the user does not
+         *     exist, a new account is created. Optionally auto-provisions treasury wallets
+         *     for the specified chains. Returns a JWT for subsequent API calls.
+         */
+        post: operations["verifyEmailOtp"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/oauth/authorize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get OAuth consent info
+         * @description Returns information about the platform app requesting authorization so the
+         *     UI can display a consent screen. Used by the 1Claw-hosted consent page.
+         */
+        get: operations["getOAuthConsent"];
+        put?: never;
+        /**
+         * Submit OAuth consent decision
+         * @description The user approves or denies the authorization request. On approval, returns
+         *     a redirect URL containing the authorization code. On denial, returns a
+         *     redirect URL with an error parameter.
+         */
+        post: operations["submitOAuthConsent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/oauth/token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Exchange authorization code for tokens
+         * @description Standard OAuth 2.0 token endpoint. Exchanges an authorization code for an
+         *     access token and optional OIDC ID token. Supports PKCE via `code_verifier`.
+         */
+        post: operations["exchangeOAuthToken"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/oauth/userinfo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get authenticated user info (OIDC UserInfo)
+         * @description Standard OIDC UserInfo endpoint. Returns claims about the authenticated user
+         *     based on the granted scopes.
+         */
+        get: operations["getOAuthUserInfo"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -5156,6 +5383,20 @@ export interface components {
             /** Format: uuid */
             vault_id?: string;
         };
+        OrgBankrConfigResponse: {
+            configured?: boolean;
+            partner_key_prefix?: string;
+            default_wallet_id?: string;
+            /** Format: date-time */
+            updated_at?: string;
+            using_platform_fallback?: boolean;
+        };
+        UpsertOrgBankrConfigRequest: {
+            /** @description Bankr partner API key (bk_ptr_...) */
+            partner_key: string;
+            /** @description Default provisioned wallet (wlt_...) */
+            default_wallet_id?: string;
+        };
         UsageSummaryResponse: {
             billing_tier?: string;
             free_tier_limit?: number;
@@ -6105,6 +6346,85 @@ export interface components {
             decided_at?: string | null;
             /** Format: date-time */
             expires_at?: string | null;
+            /** Format: date-time */
+            created_at: string;
+        };
+        EmailOtpVerifyResponse: {
+            /** @description JWT access token */
+            token: string;
+            /** Format: uuid */
+            user_id: string;
+            /** Format: uuid */
+            org_id: string;
+            is_new_user: boolean;
+            /** Format: email */
+            email: string;
+            /** @description Ethereum address if auto_provision_chains included an EVM chain */
+            wallet_address?: string | null;
+        };
+        OAuthConsentResponse: {
+            app_name: string;
+            app_slug: string;
+            /** Format: uri */
+            app_logo_url?: string | null;
+            scopes: string[];
+            /** Format: uri */
+            redirect_uri: string;
+            already_consented: boolean;
+        };
+        OAuthTokenResponse: {
+            access_token: string;
+            /** @enum {string} */
+            token_type: "Bearer";
+            /** @description Token lifetime in seconds */
+            expires_in: number;
+            /** @description OIDC ID token (when openid scope was granted) */
+            id_token?: string | null;
+            scope: string;
+        };
+        OAuthUserInfoResponse: {
+            /** Format: uuid */
+            sub: string;
+            /** Format: email */
+            email: string;
+            name?: string | null;
+            wallet_address?: string | null;
+        };
+        CreateSpendPolicyRequest: {
+            /**
+             * Format: uuid
+             * @description Scope to a specific user (app-level policies only)
+             */
+            user_id?: string;
+            /** @description Permitted destination addresses (empty = unrestricted) */
+            to_allowlist?: string[];
+            /** @description Blocked destination addresses */
+            to_denylist?: string[];
+            /** @description Maximum value per transaction in ETH (decimal string) */
+            max_value_per_tx_eth?: string;
+            /** @description Rolling 24h spend cap in ETH (decimal string) */
+            daily_limit_eth?: string;
+            /** @description Chains the user may transact on (empty = all enabled) */
+            allowed_chains?: string[];
+            /** @description Permitted ERC-20 token contract addresses */
+            allowed_tokens?: string[];
+            /** @description Maximum number of transactions per 24h window */
+            max_transactions_per_day?: number;
+        };
+        SpendPolicyResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            platform_app_id: string;
+            /** Format: uuid */
+            user_id?: string | null;
+            to_allowlist?: string[];
+            to_denylist?: string[];
+            max_value_per_tx_eth?: string | null;
+            daily_limit_eth?: string | null;
+            allowed_chains?: string[];
+            allowed_tokens?: string[];
+            max_transactions_per_day?: number | null;
             /** Format: date-time */
             created_at: string;
         };
@@ -9023,6 +9343,75 @@ export interface operations {
             };
         };
     };
+    getOrgBankrConfig: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bankr configuration status */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrgBankrConfigResponse"];
+                };
+            };
+        };
+    };
+    upsertOrgBankrConfig: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpsertOrgBankrConfigRequest"];
+            };
+        };
+        responses: {
+            /** @description Configuration saved */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrgBankrConfigResponse"];
+                };
+            };
+        };
+    };
+    deleteOrgBankrConfig: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Configuration removed */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Configuration not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     inviteMember: {
         parameters: {
             query?: never;
@@ -10126,6 +10515,29 @@ export interface operations {
             404: components["responses"]["NotFound"];
         };
     };
+    getEffectiveSpendPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Effective spend policy */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        policy?: components["schemas"]["SpendPolicyResponse"] | null;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
     listWebhooks: {
         parameters: {
             query?: never;
@@ -10563,6 +10975,108 @@ export interface operations {
             };
         };
     };
+    listSpendPolicies: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Spend policies */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        policies?: components["schemas"]["SpendPolicyResponse"][];
+                    };
+                };
+            };
+        };
+    };
+    createSpendPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateSpendPolicyRequest"];
+            };
+        };
+        responses: {
+            /** @description Spend policy created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpendPolicyResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    deleteSpendPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appId: string;
+                policyId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    setUserSpendPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connectionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateSpendPolicyRequest"];
+            };
+        };
+        responses: {
+            /** @description Spend policy set */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpendPolicyResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
     listApprovals: {
         parameters: {
             query?: {
@@ -10983,6 +11497,257 @@ export interface operations {
                 };
                 content?: never;
             };
+        };
+    };
+    sendEmailOtp: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: email */
+                    email: string;
+                    /**
+                     * Format: uuid
+                     * @description Optional platform app context for embedded wallet flows
+                     */
+                    platform_app_id?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OTP sent */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        status?: "sent";
+                    };
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    verifyEmailOtp: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: email */
+                    email: string;
+                    /** @description 6-digit OTP code */
+                    code: string;
+                    /** Format: uuid */
+                    platform_app_id?: string;
+                    /** @description Chains to auto-generate wallets for (e.g. ["ethereum", "base"]) */
+                    auto_provision_chains?: string[];
+                };
+            };
+        };
+        responses: {
+            /** @description Existing user authenticated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmailOtpVerifyResponse"];
+                };
+            };
+            /** @description New user created and authenticated */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmailOtpVerifyResponse"];
+                };
+            };
+            /** @description Invalid or expired code */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getOAuthConsent: {
+        parameters: {
+            query: {
+                /** @description Platform app slug */
+                client_id: string;
+                redirect_uri: string;
+                response_type: "code";
+                /** @description Space-delimited scopes (e.g. "openid email wallet") */
+                scope?: string;
+                state?: string;
+                /** @description PKCE code challenge */
+                code_challenge?: string;
+                code_challenge_method?: "S256" | "plain";
+                /** @description OIDC nonce for ID token replay protection */
+                nonce?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Consent screen data */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OAuthConsentResponse"];
+                };
+            };
+            /** @description Invalid client_id, redirect_uri, or response_type */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    submitOAuthConsent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    approve: boolean;
+                    client_id: string;
+                    /** Format: uri */
+                    redirect_uri: string;
+                    scope?: string;
+                    state?: string;
+                    code_challenge?: string;
+                    /** @enum {string} */
+                    code_challenge_method?: "S256" | "plain";
+                    nonce?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Redirect URL with authorization code or error */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uri */
+                        redirect_url: string;
+                    };
+                };
+            };
+            /** @description Invalid request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    exchangeOAuthToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    grant_type: "authorization_code";
+                    code: string;
+                    client_id: string;
+                    /** Format: uri */
+                    redirect_uri: string;
+                    /** @description PKCE code verifier (required when code_challenge was used) */
+                    code_verifier?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Token response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OAuthTokenResponse"];
+                };
+            };
+            /** @description Invalid grant, code, or verifier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid client credentials */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getOAuthUserInfo: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description User info */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OAuthUserInfoResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
         };
     };
 }
