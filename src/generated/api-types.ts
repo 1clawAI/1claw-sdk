@@ -4053,6 +4053,112 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/risk/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List risk events
+         * @description Returns risk events detected by the risk engine, ordered by most recent first.
+         *     Filter by severity or principal type.
+         */
+        get: operations["listRiskEvents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/risk/verdicts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List risk verdicts
+         * @description Returns all active risk verdicts for the caller's organization.
+         */
+        get: operations["listRiskVerdicts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/risk/verdicts/{principal_type}/{principal_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get risk verdict for a principal
+         * @description Returns the current risk verdict for a specific user or agent.
+         */
+        get: operations["getRiskVerdict"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/risk/honeytokens": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List honeytokens
+         * @description Returns all honeytokens (canary secrets) configured for the caller's organization.
+         */
+        get: operations["listHoneytokens"];
+        put?: never;
+        /**
+         * Create a honeytoken
+         * @description Register a secret path as a honeytoken (canary). Any access to this secret
+         *     triggers a risk event and increments the trigger counter.
+         */
+        post: operations["createHoneytoken"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/risk/honeytokens/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete a honeytoken
+         * @description Remove a honeytoken registration. The underlying secret is not affected.
+         */
+        delete: operations["deleteHoneytoken"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -6427,6 +6533,94 @@ export interface components {
             max_transactions_per_day?: number | null;
             /** Format: date-time */
             created_at: string;
+        };
+        RiskEvent: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            occurred_at: string;
+            /** @enum {string} */
+            principal_type: "user" | "agent";
+            /** Format: uuid */
+            principal_id: string;
+            /** Format: uuid */
+            org_id: string;
+            /** @description Risk event type (e.g. first_seen, geo_velocity, honeytoken_access) */
+            event_type: string;
+            ip?: string | null;
+            asn?: number | null;
+            asn_org?: string | null;
+            country_code?: string | null;
+            region?: string | null;
+            city?: string | null;
+            latitude?: number | null;
+            longitude?: number | null;
+            user_agent?: string | null;
+            /** @description Computed severity at event time (low, medium, high, critical) */
+            severity?: string | null;
+            payload: {
+                [key: string]: unknown;
+            };
+            /** Format: date-time */
+            created_at: string;
+        };
+        RiskEventListResponse: {
+            events: components["schemas"]["RiskEvent"][];
+        };
+        RiskVerdictReason: {
+            detector: string;
+            severity: string;
+            description: string;
+            metadata?: {
+                [key: string]: unknown;
+            };
+        };
+        RiskVerdict: {
+            principal_type: string;
+            /** Format: uuid */
+            principal_id: string;
+            /** Format: uuid */
+            org_id: string;
+            /** @description Composite risk score (0.0 – 100.0) */
+            score: number;
+            /** @enum {string} */
+            severity: "low" | "medium" | "high" | "critical";
+            reasons: components["schemas"]["RiskVerdictReason"][];
+            /** Format: date-time */
+            computed_at: string;
+            /** Format: date-time */
+            expires_at: string;
+        };
+        RiskVerdictListResponse: {
+            verdicts: components["schemas"]["RiskVerdict"][];
+        };
+        Honeytoken: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            vault_id: string;
+            /** Format: uuid */
+            org_id: string;
+            secret_path: string;
+            /** Format: uuid */
+            created_by: string;
+            /** Format: date-time */
+            created_at: string;
+            notes?: string | null;
+            triggered_count: number;
+            /** Format: date-time */
+            last_triggered_at?: string | null;
+        };
+        CreateHoneytokenRequest: {
+            /** Format: uuid */
+            vault_id: string;
+            /** @description Vault secret path to monitor as a canary */
+            secret_path: string;
+            /** @description Optional human-readable notes about this honeytoken */
+            notes?: string;
+        };
+        HoneytokenListResponse: {
+            honeytokens: components["schemas"]["Honeytoken"][];
         };
     };
     responses: {
@@ -11748,6 +11942,157 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+        };
+    };
+    listRiskEvents: {
+        parameters: {
+            query?: {
+                /** @description Filter events by severity level */
+                severity?: "low" | "medium" | "high" | "critical";
+                /** @description Filter events by principal type */
+                principal_type?: "user" | "agent";
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Risk event list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RiskEventListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    listRiskVerdicts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Verdict list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RiskVerdictListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    getRiskVerdict: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                principal_type: "user" | "agent";
+                principal_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Risk verdict (null if no verdict exists) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        verdict?: components["schemas"]["RiskVerdict"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listHoneytokens: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Honeytoken list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HoneytokenListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    createHoneytoken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateHoneytokenRequest"];
+            };
+        };
+        responses: {
+            /** @description Honeytoken created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        honeytoken?: components["schemas"]["Honeytoken"];
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    deleteHoneytoken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Honeytoken deleted */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        deleted?: boolean;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
         };
     };
 }
