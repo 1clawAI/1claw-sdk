@@ -56,6 +56,17 @@ export type {
     TreasuryWalletListResponse,
     TreasuryWalletExportResponse,
 } from "./resources/treasury-wallets";
+export { RiskResource } from "./resources/risk";
+export type {
+    RiskEvent,
+    RiskVerdict,
+    Honeytoken,
+    CreateHoneytokenRequest,
+    ListRiskEventsParams,
+} from "./resources/risk";
+
+// DPoP (Demonstration of Proof-of-Possession)
+export { DPoPManager } from "./auth/dpop";
 
 // CMEK (Customer-Managed Encryption Keys)
 export {

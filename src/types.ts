@@ -29,6 +29,8 @@ export interface OneclawClientConfig {
     maxAutoPayUsd?: number;
     /** Network for x402 payments (default: "eip155:8453" — Base). */
     network?: string;
+    /** Enable DPoP proof-of-possession (default: false). */
+    dpop?: boolean;
     /** Optional plugin registry for extending the SDK with custom providers. */
     plugins?: import("./plugins").PluginRegistry;
 }

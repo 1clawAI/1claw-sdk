@@ -5,6 +5,7 @@ import type {
     X402Signer,
 } from "../types";
 import { errorFromResponse, PaymentRequiredError } from "./errors";
+import { DPoPManager } from "../auth/dpop";
 
 /**
  * Internal HTTP transport used by every resource module.
@@ -19,6 +20,9 @@ export class HttpClient {
     private agentCredentials?: { agentId?: string; apiKey: string };
     private refreshPromise?: Promise<void>;
     private _resolvedAgentId?: string;
+    private dpopEnabled: boolean;
+    private dpopManager?: DPoPManager;
+    private dpopReady: Promise<void> | null = null;
 
     private static readonly REFRESH_BUFFER_MS = 60_000;
 
@@ -27,6 +31,11 @@ export class HttpClient {
         this.token = config.token;
         this.signer = config.x402Signer;
         this.maxAutoPayUsd = config.maxAutoPayUsd ?? 0;
+        this.dpopEnabled = config.dpop ?? false;
+
+        if (this.dpopEnabled) {
+            this.dpopManager = new DPoPManager();
+        }
 
         const isAgentKey =
             config.apiKey?.startsWith("ocv_") || !!config.agentId;
@@ -70,6 +79,14 @@ export class HttpClient {
         }
     }
 
+    private async ensureDPoP(): Promise<void> {
+        if (!this.dpopManager) return;
+        if (!this.dpopReady) {
+            this.dpopReady = this.dpopManager.init();
+        }
+        await this.dpopReady;
+    }
+
     private async ensureToken(): Promise<void> {
         if (!this.agentCredentials) return;
         if (
@@ -84,16 +101,32 @@ export class HttpClient {
         }
 
         this.refreshPromise = (async () => {
-            const body: Record<string, string> = {
+            await this.ensureDPoP();
+
+            const body: Record<string, unknown> = {
                 api_key: this.agentCredentials!.apiKey,
             };
             if (this.agentCredentials!.agentId) {
                 body.agent_id = this.agentCredentials!.agentId;
             }
+            if (this.dpopManager) {
+                body.dpop_jwk = this.dpopManager.getPublicJwk();
+            }
 
-            const res = await fetch(`${this.baseUrl}/v1/auth/agent-token`, {
+            const tokenUrl = `${this.baseUrl}/v1/auth/agent-token`;
+            const tokenHeaders: Record<string, string> = {
+                "Content-Type": "application/json",
+            };
+            if (this.dpopManager) {
+                tokenHeaders["DPoP"] = await this.dpopManager.generateProof(
+                    "POST",
+                    tokenUrl,
+                );
+            }
+
+            const res = await fetch(tokenUrl, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: tokenHeaders,
                 body: JSON.stringify(body),
             });
 
@@ -151,6 +184,10 @@ export class HttpClient {
         };
         if (!options.skipAuth && this.token) {
             headers["Authorization"] = `Bearer ${this.token}`;
+        }
+        if (this.dpopManager) {
+            await this.ensureDPoP();
+            headers["DPoP"] = await this.dpopManager.generateProof(method, url);
         }
 
         const init: RequestInit = { method, headers };
@@ -210,6 +247,10 @@ export class HttpClient {
         };
         if (this.token) {
             headers["Authorization"] = `Bearer ${this.token}`;
+        }
+        if (this.dpopManager) {
+            await this.ensureDPoP();
+            headers["DPoP"] = await this.dpopManager.generateProof(method, url);
         }
 
         const init: RequestInit = { method, headers };

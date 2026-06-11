@@ -22,6 +22,7 @@ import { PasskeysResource } from "../resources/passkeys";
 import { DepositDestinationsResource } from "../resources/deposit-destinations";
 import { InternalAccountsResource } from "../resources/internal-accounts";
 import { FiatResource } from "../resources/fiat";
+import { RiskResource } from "../resources/risk";
 
 /**
  * The main 1Claw SDK client. All API resources are exposed as
@@ -91,6 +92,8 @@ export class OneclawClient {
     readonly internalAccounts: InternalAccountsResource;
     /** Fiat on/off ramps — buy and sell crypto via partner integrations. */
     readonly fiat: FiatResource;
+    /** Risk engine — events, verdicts, and honeytokens. */
+    readonly risk: RiskResource;
 
     constructor(config: OneclawClientConfig) {
         this.http = new HttpClient(config);
@@ -125,6 +128,7 @@ export class OneclawClient {
         this.depositDestinations = new DepositDestinationsResource(this.http);
         this.internalAccounts = new InternalAccountsResource(this.http);
         this.fiat = new FiatResource(this.http);
+        this.risk = new RiskResource(this.http);
     }
 
     private autoAuthenticateUserKey(config: OneclawClientConfig): void {

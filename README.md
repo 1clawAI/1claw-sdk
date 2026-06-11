@@ -105,6 +105,7 @@ await client.auth.verifyEmailChange({ code: "123456" });
 | `client.platform`  | `createApp`, `listApps`, `getApp`, `updateApp`, `deleteApp`, `rotateKey`, `createTemplate`, `listTemplates`, `upsertUser`, `listUsers`, `bootstrapUser`, `reissueClaim`, `claimPreview`, `claimRedeem`, `listConnectedApps`, `disconnectApp`, `createSpendPolicy`, `listSpendPolicies`, `setUserSpendPolicy`, `deleteSpendPolicy` |
 | `client.devices`   | `register`, `list`, `delete`, `challenge`, `attest`, `setPushToken`                                                 |
 | `client.passkeys`  | `list`, `registerBegin`, `registerComplete`, `assertBegin`, `assertComplete`, `delete`                               |
+| `client.risk`      | `listEvents`, `getVerdict`, `listVerdicts`, `createHoneytoken`, `listHoneytokens`, `deleteHoneytoken`                |
 | `client.x402`      | `getPaymentRequirement`, `pay`, `verifyReceipt`, `withPayment`                                                      |
 
 **Platform bootstrap response:** `bootstrapUser()` returns a `summary` object containing `agent_api_key` (one-time, not retrievable later) and `signing_keys[]` (with chain, address, and public_key for each provisioned key).
@@ -341,6 +342,64 @@ const client = createClient({
     agentId: "agent-uuid",
 });
 // Tokens refresh transparently — just make API calls
+```
+
+## DPoP (Proof-of-Possession)
+
+Enable [DPoP (RFC 9449)](https://datatracker.ietf.org/doc/html/rfc9449) to bind tokens to the client's ephemeral keypair. When enabled, the SDK generates a P-256 ECDSA keypair at startup and attaches a `DPoP` proof JWT to every request — stolen tokens are unusable without the matching private key.
+
+```typescript
+const client = createClient({
+    baseUrl: "https://api.1claw.xyz",
+    apiKey: "ocv_...",
+    agentId: "agent-uuid",
+    dpop: true, // Generates ephemeral P-256 keypair, attaches DPoP proofs
+});
+```
+
+The `DPoPManager` class is also exported for advanced use cases:
+
+```typescript
+import { DPoPManager } from "@1claw/sdk";
+
+const dpop = new DPoPManager();
+await dpop.init();
+
+const proof = await dpop.generateProof("POST", "https://api.1claw.xyz/v1/auth/agent-token");
+const thumbprint = dpop.getThumbprint(); // JWK SHA-256 thumbprint (base64url)
+```
+
+## Risk Engine
+
+Query risk events, retrieve threat verdicts, and manage honeytokens via `client.risk`:
+
+```typescript
+// List recent risk events (filtered by severity)
+const events = await client.risk.listEvents({
+    severity: "high",
+    limit: 50,
+});
+console.log(events.data?.events);
+
+// Get the current risk verdict for a specific agent
+const verdict = await client.risk.getVerdict("agent", agentId);
+console.log(verdict.data?.verdict?.severity); // "low" | "medium" | "high" | "critical"
+console.log(verdict.data?.verdict?.reasons);  // detector breakdown
+
+// List all verdicts for the org
+const verdicts = await client.risk.listVerdicts();
+
+// Create a honeytoken (canary secret that triggers alerts on access)
+const ht = await client.risk.createHoneytoken({
+    vault_id: vaultId,
+    secret_path: "honeypot/admin-key",
+    notes: "Canary for unauthorized agent access",
+});
+console.log(ht.data?.honeytoken.id);
+
+// List and delete honeytokens
+const honeytokens = await client.risk.listHoneytokens();
+await client.risk.deleteHoneytoken(honeytokenId);
 ```
 
 ## x402 Payment Protocol
