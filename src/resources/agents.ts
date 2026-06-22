@@ -9,6 +9,8 @@ import type {
     AgentSelfResponse,
     EnrollAgentRequest,
     EnrollAgentResponse,
+    BatchDeleteAgentsRequest,
+    BatchDeleteAgentsResponse,
     SubmitTransactionRequest,
     SignTransactionRequest,
     SignTransactionResponse,
@@ -118,6 +120,21 @@ export class AgentsResource {
     /** Delete an agent permanently. */
     async delete(agentId: string): Promise<OneclawResponse<void>> {
         return this.http.request<void>("DELETE", `/v1/agents/${agentId}`);
+    }
+
+    /**
+     * Delete multiple agents in a single request. Returns a summary of
+     * how many were deleted and any per-agent errors (e.g. platform-locked).
+     * Accepts up to 500 agent IDs per call.
+     */
+    async batchDelete(
+        agentIds: string[],
+    ): Promise<OneclawResponse<BatchDeleteAgentsResponse>> {
+        return this.http.request<BatchDeleteAgentsResponse>(
+            "POST",
+            "/v1/agents/batch-delete",
+            { body: { agent_ids: agentIds } },
+        );
     }
 
     /**

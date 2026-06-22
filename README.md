@@ -106,6 +106,7 @@ await client.auth.verifyEmailChange({ code: "123456" });
 | `client.devices`   | `register`, `list`, `delete`, `challenge`, `attest`, `setPushToken`                                                 |
 | `client.passkeys`  | `list`, `registerBegin`, `registerComplete`, `assertBegin`, `assertComplete`, `delete`                               |
 | `client.risk`      | `listEvents`, `getVerdict`, `listVerdicts`, `createHoneytoken`, `listHoneytokens`, `deleteHoneytoken`                |
+| `client.webhooks`  | `create`, `list`, `get`, `update`, `delete`                                                                          |
 | `client.x402`      | `getPaymentRequirement`, `pay`, `verifyReceipt`, `withPayment`                                                      |
 
 **Platform bootstrap response:** `bootstrapUser()` returns a `summary` object containing `agent_api_key` (one-time, not retrievable later) and `signing_keys[]` (with chain, address, and public_key for each provisioned key).

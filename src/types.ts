@@ -608,6 +608,16 @@ export interface AgentKeyRotatedResponse {
     api_key: string;
 }
 
+export interface BatchDeleteAgentsRequest {
+    agent_ids: string[];
+}
+
+export interface BatchDeleteAgentsResponse {
+    deleted: number;
+    failed: number;
+    errors: { id: string; reason: string }[];
+}
+
 export type EnrollAgentRequest = ApiSchemas["EnrollAgentRequest"];
 export type EnrollAgentResponse = ApiSchemas["EnrollAgentResponse"];
 

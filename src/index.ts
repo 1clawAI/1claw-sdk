@@ -152,6 +152,8 @@ export type {
     AgentListResponse,
     AgentKeyRotatedResponse,
     AgentSelfResponse,
+    BatchDeleteAgentsRequest,
+    BatchDeleteAgentsResponse,
     // Chains
     ChainResponse,
     ChainListResponse,
