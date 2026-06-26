@@ -4741,6 +4741,8 @@ export interface components {
             eip712_default_policy?: "deny" | "allow";
             /** @description Whether EIP-191 personal_sign is enabled. */
             message_signing_enabled?: boolean;
+            /** @description Whether the raw/precomputed-digest signing intent (eip712_digest) is enabled. Blind signing — bypasses transaction guardrails; OFF by default and human-set. Required for ERC-1271/ERC-7739 flows (e.g. Polymarket). */
+            raw_signing_enabled?: boolean;
             /**
              * Format: date-time
              * @description Optional expiration time for the agent's API key.
@@ -5274,7 +5276,7 @@ export interface components {
         };
         SignIntentRequest: {
             /** @enum {string} */
-            intent_type: "personal_sign" | "typed_data" | "transaction";
+            intent_type: "personal_sign" | "typed_data" | "eip712_digest" | "transaction";
             chain: string;
             /** @description Vault path to signing key. Auto-resolves per-chain signing key if provisioned, otherwise keys/{chain}-signer. */
             signing_key_path?: string;
@@ -5282,6 +5284,8 @@ export interface components {
             message?: string;
             /** @description EIP-712 typed data JSON (for typed_data) */
             typed_data?: Record<string, never>;
+            /** @description Client-computed 32-byte digest (0x-prefixed) for the eip712_digest intent. Signed directly (blind signing); requires the agent's raw_signing_enabled flag. Use for ERC-1271/ERC-7739 nested EIP-712 flows (e.g. Polymarket) where the canonical hash is computed client-side. */
+            hash?: string;
             /** @description EIP-2718 type: 0=legacy, 1=2930, 2=1559, 3=4844, 4=7702 */
             tx_type?: number;
             to?: string;

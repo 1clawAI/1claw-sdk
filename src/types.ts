@@ -478,6 +478,12 @@ export interface UpdateAgentRequest {
     eip712_default_policy?: "allow" | "block";
     /** Whether personal_sign / message signing is enabled for this agent. */
     message_signing_enabled?: boolean;
+    /**
+     * Whether the raw/precomputed-digest signing intent ("eip712_digest") is
+     * enabled. This is blind signing and bypasses transaction guardrails — only
+     * enable for trusted agents needing ERC-1271/ERC-7739 flows (e.g. Polymarket).
+     */
+    raw_signing_enabled?: boolean;
     /** ISO 8601 expiration timestamp for the agent's API key. Null = never expires. */
     api_key_expires_at?: string | null;
 }
@@ -520,6 +526,8 @@ export interface AgentResponse {
     eip712_default_policy?: "allow" | "block";
     /** Whether personal_sign / message signing is enabled for this agent. */
     message_signing_enabled?: boolean;
+    /** Whether the raw/precomputed-digest signing intent is enabled (blind signing). */
+    raw_signing_enabled?: boolean;
     /** ISO 8601 expiration timestamp for the agent's API key. Null = never expires. */
     api_key_expires_at?: string | null;
     /** Agent's Ethereum EOA address (used as Safe signer for smart accounts). */
@@ -842,12 +850,19 @@ export interface SigningKeyExportResponse {
 // ---------------------------------------------------------------------------
 
 export interface SignIntentRequest {
-    intent_type: "personal_sign" | "typed_data" | "transaction";
+    intent_type: "personal_sign" | "typed_data" | "eip712_digest" | "transaction";
     chain: string;
     /** Raw message bytes (hex) or UTF-8 string for personal_sign. */
     message?: string;
     /** EIP-712 typed data object for typed_data signing. */
     typed_data?: unknown;
+    /**
+     * Client-computed 32-byte digest (0x-prefixed) for `eip712_digest` signing.
+     * The server signs it directly (blind signing) — requires the agent's
+     * `raw_signing_enabled` flag. Use for ERC-1271/ERC-7739 nested EIP-712
+     * flows (e.g. Polymarket) where the canonical hash is computed client-side.
+     */
+    hash?: string;
     /** EVM tx type: 0 (legacy), 1 (EIP-2930), 2 (EIP-1559), 3 (EIP-4844), 4 (EIP-7702). */
     tx_type?: number;
     to?: string;
@@ -870,7 +885,7 @@ export interface SignIntentRequest {
 }
 
 export interface SignIntentResponse {
-    intent_type: "personal_sign" | "typed_data" | "transaction";
+    intent_type: "personal_sign" | "typed_data" | "eip712_digest" | "transaction";
     chain: string;
     from: string;
     signature?: string;
