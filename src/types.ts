@@ -1252,11 +1252,19 @@ export interface UpsertPlatformUserRequest {
     display_name?: string;
 }
 
+export interface LinkRequiredInfo {
+    status: "link_required";
+    reason: string;
+    authorize_url: string;
+    app_slug: string;
+}
+
 export interface PlatformUserResponse {
-    user_handle: string;
+    user_handle?: string;
     is_new: boolean;
-    connection_id: string;
-    email: string;
+    connection_id?: string;
+    email?: string;
+    link_required?: LinkRequiredInfo;
 }
 
 export interface PlatformConnectedUserResponse {

@@ -172,6 +172,8 @@ export class HttpClient {
             headers?: Record<string, string>;
             /** Public routes: no Bearer token, no agent token refresh. */
             skipAuth?: boolean;
+            /** Non-2xx status codes to treat as successful (parse body as T). */
+            acceptStatuses?: number[];
         } = {},
     ): Promise<OneclawResponse<T>> {
         if (!options.skipAuth) {
@@ -201,7 +203,7 @@ export class HttpClient {
             res = await this.handlePayment(res, url, init);
         }
 
-        if (!res.ok) {
+        if (!res.ok && !options.acceptStatuses?.includes(res.status)) {
             const err = await errorFromResponse(res);
             return {
                 data: null,

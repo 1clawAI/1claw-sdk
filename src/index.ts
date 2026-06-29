@@ -233,6 +233,7 @@ export type {
     TemplateListResponse,
     UpsertPlatformUserRequest,
     PlatformUserResponse,
+    LinkRequiredInfo,
     PlatformConnectedUserListResponse,
     BootstrapRequest,
     BootstrapResponse,

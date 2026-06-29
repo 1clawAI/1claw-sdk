@@ -3225,6 +3225,15 @@ export interface paths {
                         "application/json": components["schemas"]["PlatformUserResponse"];
                     };
                 };
+                /** @description User exists in a different organization. Contains a link_required payload with an OAuth authorize URL for cross-org consent. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PlatformUserLinkRequiredResponse"];
+                    };
+                };
             };
         };
         delete?: never;
@@ -6276,6 +6285,25 @@ export interface components {
             /** Format: uuid */
             connection_id?: string;
             email?: string;
+            link_required?: components["schemas"]["LinkRequiredInfo"];
+        };
+        PlatformUserLinkRequiredResponse: {
+            /** @example false */
+            is_new: boolean;
+            email: string;
+            link_required: components["schemas"]["LinkRequiredInfo"];
+        };
+        LinkRequiredInfo: {
+            /** @enum {string} */
+            status: "link_required";
+            /** @example user_exists_in_other_org */
+            reason: string;
+            /**
+             * Format: uri
+             * @description OAuth authorize URL the platform app should redirect the user to for consent.
+             */
+            authorize_url: string;
+            app_slug: string;
         };
         PlatformConnectedUserResponse: {
             /** Format: uuid */

@@ -143,14 +143,21 @@ export class PlatformResource {
         );
     }
 
-    /** Upsert (create or match) a platform user via token exchange or email. */
+    /**
+     * Upsert (create or match) a platform user via token exchange or email.
+     *
+     * When the user exists in a different org, the API returns 409 with a
+     * `link_required` payload containing an OAuth authorize URL. This method
+     * treats 409 as a successful typed response so callers can branch on
+     * `result.data?.link_required`.
+     */
     async upsertUser(
         data: UpsertPlatformUserRequest,
     ): Promise<OneclawResponse<PlatformUserResponse>> {
         return this.http.request<PlatformUserResponse>(
             "POST",
             "/v1/platform/users/upsert",
-            { body: data },
+            { body: data, acceptStatuses: [409] },
         );
     }
 
