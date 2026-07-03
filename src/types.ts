@@ -1334,6 +1334,34 @@ export interface ConnectedAppListResponse {
     apps: ConnectedAppResponse[];
 }
 
+export interface GrantResourcesRequest {
+    vault_ids: string[];
+    agent_ids: string[];
+    allowed_paths?: string[];
+    permissions?: string[];
+    expires_at?: string;
+}
+
+export interface GrantResponse {
+    id: string;
+    vault_id: string;
+    allowed_paths: string[];
+    permissions: string[];
+    expires_at?: string;
+    created_at: string;
+}
+
+export interface GrantResourcesResponse {
+    connection_id: string;
+    grants: GrantResponse[];
+    vault_ids: string[];
+    agent_ids: string[];
+}
+
+export interface GrantListResponse {
+    grants: GrantResponse[];
+}
+
 export interface ClaimPreviewResponse {
     app_name: string;
     app_slug: string;

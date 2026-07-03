@@ -20,6 +20,9 @@ import type {
     ClaimRedeemResponse,
     RotatePlatformKeyRequest,
     RotatePlatformKeyResponse,
+    GrantResourcesRequest,
+    GrantResourcesResponse,
+    GrantListResponse,
     OneclawResponse,
 } from "../types";
 
@@ -271,6 +274,42 @@ export class PlatformResource {
         return this.http.request<void>(
             "DELETE",
             `/v1/platform/apps/${appId}/spend-policies/${policyId}`,
+        );
+    }
+
+    /**
+     * Grant a platform app access to specific vaults and agents.
+     * User-authenticated — the calling user must own the connection and resources.
+     */
+    async grantAccess(
+        connectionId: string,
+        data: GrantResourcesRequest,
+    ): Promise<OneclawResponse<GrantResourcesResponse>> {
+        return this.http.request<GrantResourcesResponse>(
+            "POST",
+            `/v1/platform/connections/${connectionId}/grant`,
+            { body: data },
+        );
+    }
+
+    /** List active resource grants for a connection. */
+    async listGrants(
+        connectionId: string,
+    ): Promise<OneclawResponse<GrantListResponse>> {
+        return this.http.request<GrantListResponse>(
+            "GET",
+            `/v1/platform/connections/${connectionId}/grants`,
+        );
+    }
+
+    /** Revoke a specific resource grant. */
+    async revokeGrant(
+        connectionId: string,
+        grantId: string,
+    ): Promise<OneclawResponse<void>> {
+        return this.http.request<void>(
+            "DELETE",
+            `/v1/platform/connections/${connectionId}/grants/${grantId}`,
         );
     }
 }
