@@ -237,6 +237,46 @@ console.log(signRes.data?.from);      // derived sender address
 
 All agent guardrails (allowlists, value caps, daily limits) are enforced exactly as for submit. The transaction is recorded for audit and daily-limit tracking with `status: "sign_only"`.
 
+### Non-EVM transactions (Bitcoin, Solana, XRP, Cardano, Tron)
+
+The same `submitTransaction` / `signTransaction` methods accept chain-specific fields. Values are in the chain's native unit (BTC, SOL, XRP, ADA, TRX):
+
+```typescript
+// Solana devnet — native SOL
+await client.agents.submitTransaction(agentId, {
+    chain: "solana-devnet",
+    to: "RecipientBase58...",
+    value: "0.001",
+});
+
+// Bitcoin testnet
+await client.agents.signTransaction(agentId, {
+    chain: "bitcoin-testnet",
+    to: "tb1q...",
+    value: "0.00001",
+    fee_rate_sat_per_vbyte: 5,
+});
+
+// XRP with destination tag
+await client.agents.submitTransaction(agentId, {
+    chain: "xrp-testnet",
+    to: "r...",
+    value: "1",
+    destination_tag: 12345,
+});
+
+// Solana SPL token
+await client.agents.submitTransaction(agentId, {
+    chain: "solana-devnet",
+    to: "RecipientBase58...",
+    value: "10",
+    token_mint: "MintBase58...",
+    token_decimals: 6,
+});
+```
+
+See the [Intents API guide](https://docs.1claw.xyz/docs/guides/intents-api#non-evm-transaction-signing) for full field reference.
+
 Key properties:
 
 - **Disabled by default** — a human must explicitly enable per-agent
