@@ -5349,6 +5349,10 @@ export interface components {
             token_decimals?: number;
             /** @description Non-EVM (Cardano): transaction time-to-live (absolute slot) */
             ttl?: number;
+            /** @description Raw XRPL transaction JSON for full transaction type coverage. When present (and chain is XRP), the handler uses the xrpl-rust binary codec to encode and sign the transaction as-is. Supports all XRPL transaction types: Payment, TrustSet, OfferCreate, OfferCancel, AccountSet, EscrowCreate, NFTokenMint, AMMCreate, and 20+ more. Account, Sequence, Fee, LastLedgerSequence, and SigningPubKey are auto-filled when absent. */
+            xrpl_tx_json?: {
+                [key: string]: unknown;
+            };
         };
         SignTransactionRequest: {
             /** @description Destination address (0x-prefixed) */
@@ -5382,6 +5386,10 @@ export interface components {
             token_decimals?: number;
             /** @description Non-EVM (Cardano): transaction time-to-live (absolute slot) */
             ttl?: number;
+            /** @description Raw XRPL transaction JSON for full transaction type coverage. When present (and chain is XRP), the handler uses the xrpl-rust binary codec to encode and sign the transaction as-is. Supports all XRPL transaction types: Payment, TrustSet, OfferCreate, OfferCancel, AccountSet, EscrowCreate, NFTokenMint, AMMCreate, and 20+ more. Account, Sequence, Fee, LastLedgerSequence, and SigningPubKey are auto-filled when absent. */
+            xrpl_tx_json?: {
+                [key: string]: unknown;
+            };
         };
         SignTransactionResponse: {
             /** @description Raw signed transaction hex (always included) */
@@ -5500,6 +5508,26 @@ export interface components {
             max_fee_per_blob_gas?: string;
             blob_versioned_hashes?: string[];
             authorization_list?: Record<string, never>[];
+            /** @description When true, sign only (do not broadcast). Non-EVM transaction intents only. */
+            sign_only?: boolean;
+            /** @description Non-EVM (XRP): destination tag for exchange deposits */
+            destination_tag?: number;
+            /** @description Non-EVM (XRP, Solana): optional memo */
+            memo?: string;
+            /** @description Non-EVM (Bitcoin): override the fetched fee rate (sat/vByte) */
+            fee_rate_sat_per_vbyte?: number;
+            /** @description Non-EVM (Tron): TRC-20 energy fee limit in sun */
+            fee_limit_sun?: number;
+            /** @description Non-EVM (Solana SPL / Tron TRC-20): token mint or contract address; omit for native transfer */
+            token_mint?: string;
+            /** @description Non-EVM (Solana, Tron): token decimals (default 6) */
+            token_decimals?: number;
+            /** @description Non-EVM (Cardano): transaction time-to-live (absolute slot) */
+            ttl?: number;
+            /** @description Raw XRPL transaction JSON for full transaction type coverage. When present (and chain is XRP), the handler uses the xrpl-rust binary codec to encode and sign the transaction as-is. Supports all XRPL transaction types: Payment, TrustSet, OfferCreate, OfferCancel, AccountSet, EscrowCreate, NFTokenMint, AMMCreate, and 20+ more. Account, Sequence, Fee, LastLedgerSequence, and SigningPubKey are auto-filled when absent. */
+            xrpl_tx_json?: {
+                [key: string]: unknown;
+            };
         };
         SignIntentResponse: {
             intent_type?: string;

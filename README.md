@@ -257,12 +257,27 @@ await client.agents.signTransaction(agentId, {
     fee_rate_sat_per_vbyte: 5,
 });
 
-// XRP with destination tag
+// XRP — simple Payment with destination tag
 await client.agents.submitTransaction(agentId, {
     chain: "xrp-testnet",
     to: "r...",
     value: "1",
     destination_tag: 12345,
+});
+
+// XRP — arbitrary XRPL transaction type via xrpl_tx_json
+// Supports 30+ types: TrustSet, OfferCreate, NFTokenMint, AMMCreate, EscrowCreate, etc.
+// Account, Sequence, Fee, and SigningPubKey are auto-filled by the server.
+await client.agents.submitTransaction(agentId, {
+    chain: "xrp",
+    xrpl_tx_json: {
+        TransactionType: "TrustSet",
+        LimitAmount: {
+            currency: "USD",
+            issuer: "rIssuer...",
+            value: "100",
+        },
+    },
 });
 
 // Solana SPL token

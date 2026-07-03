@@ -730,6 +730,14 @@ export interface SubmitTransactionRequest {
     token_decimals?: number;
     /** Cardano: transaction time-to-live (absolute slot). */
     ttl?: number;
+    /**
+     * Raw XRPL transaction JSON for full transaction type coverage.
+     * When present (and chain is XRP), the handler uses the xrpl-rust binary
+     * codec to sign the transaction as-is. Supports all XRPL transaction types:
+     * Payment, TrustSet, OfferCreate, NFTokenMint, AMMCreate, EscrowCreate, etc.
+     * Account, Sequence, Fee, LastLedgerSequence, and SigningPubKey are auto-filled.
+     */
+    xrpl_tx_json?: Record<string, unknown>;
 }
 
 /**
@@ -764,6 +772,8 @@ export interface SignTransactionRequest {
     token_decimals?: number;
     /** Cardano: transaction time-to-live (absolute slot). */
     ttl?: number;
+    /** Raw XRPL transaction JSON for full transaction type coverage. */
+    xrpl_tx_json?: Record<string, unknown>;
 }
 
 export interface SignTransactionResponse {
@@ -914,6 +924,32 @@ export interface SignIntentRequest {
     /** EIP-7702 authorization list. */
     authorization_list?: unknown;
     signing_key_path?: string;
+
+    // ── Non-EVM chain fields (Bitcoin, Solana, XRP, Cardano, Tron) ──
+    /** XRP: destination tag for exchange deposits. */
+    destination_tag?: number;
+    /** XRP / Solana: optional memo. */
+    memo?: string;
+    /** Bitcoin: override the fetched fee rate (sat/vByte). */
+    fee_rate_sat_per_vbyte?: number;
+    /** Tron: TRC-20 energy fee limit in sun. */
+    fee_limit_sun?: number;
+    /** Solana (SPL) / Tron (TRC-20): token mint or contract address; omit for native transfer. */
+    token_mint?: string;
+    /** Solana / Tron: token decimals (default 6). */
+    token_decimals?: number;
+    /** Cardano: transaction time-to-live (absolute slot). */
+    ttl?: number;
+    /** When true, sign only (do not broadcast). Non-EVM transaction intents only. */
+    sign_only?: boolean;
+    /**
+     * Raw XRPL transaction JSON for full transaction type coverage.
+     * When present (and chain is XRP), the handler uses the xrpl-rust binary
+     * codec to sign the transaction as-is. Supports all XRPL transaction types:
+     * Payment, TrustSet, OfferCreate, NFTokenMint, AMMCreate, EscrowCreate, etc.
+     * Account, Sequence, Fee, LastLedgerSequence, and SigningPubKey are auto-filled.
+     */
+    xrpl_tx_json?: Record<string, unknown>;
 }
 
 export interface SignIntentResponse {
