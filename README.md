@@ -470,7 +470,7 @@ const { data } = await client.agents.create({
         injection_threshold: 0.7,
 
         // Model restrictions
-        allowed_models: ["gpt-4o-mini", "claude-sonnet-4"],  // Whitelist specific models
+        allowed_models: ["gpt-4o-mini", "claude-sonnet-5"],  // Whitelist specific models
         denied_models: ["gpt-3.5-turbo"],                   // Blacklist models
         allowed_providers: ["openai", "anthropic"],          // Restrict providers
 
