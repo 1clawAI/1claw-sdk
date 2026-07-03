@@ -714,6 +714,22 @@ export interface SubmitTransactionRequest {
     treasury_id?: string;
     /** When true, submits as a gasless (sponsored) transaction via ERC-4337 paymaster. */
     gasless?: boolean;
+
+    // ── Non-EVM chain fields (Bitcoin, Solana, XRP, Cardano, Tron) ──
+    /** XRP: destination tag for exchange deposits. */
+    destination_tag?: number;
+    /** XRP / Solana: optional memo. */
+    memo?: string;
+    /** Bitcoin: override the fetched fee rate (sat/vByte). */
+    fee_rate_sat_per_vbyte?: number;
+    /** Tron: TRC-20 energy fee limit in sun. */
+    fee_limit_sun?: number;
+    /** Solana (SPL) / Tron (TRC-20): token mint or contract address; omit for native transfer. */
+    token_mint?: string;
+    /** Solana / Tron: token decimals (default 6). */
+    token_decimals?: number;
+    /** Cardano: transaction time-to-live (absolute slot). */
+    ttl?: number;
 }
 
 /**
@@ -732,6 +748,22 @@ export interface SignTransactionRequest {
     max_fee_per_gas?: string;
     max_priority_fee_per_gas?: string;
     simulate_first?: boolean;
+
+    // ── Non-EVM chain fields (Bitcoin, Solana, XRP, Cardano, Tron) ──
+    /** XRP: destination tag for exchange deposits. */
+    destination_tag?: number;
+    /** XRP / Solana: optional memo. */
+    memo?: string;
+    /** Bitcoin: override the fetched fee rate (sat/vByte). */
+    fee_rate_sat_per_vbyte?: number;
+    /** Tron: TRC-20 energy fee limit in sun. */
+    fee_limit_sun?: number;
+    /** Solana (SPL) / Tron (TRC-20): token mint or contract address; omit for native transfer. */
+    token_mint?: string;
+    /** Solana / Tron: token decimals (default 6). */
+    token_decimals?: number;
+    /** Cardano: transaction time-to-live (absolute slot). */
+    ttl?: number;
 }
 
 export interface SignTransactionResponse {

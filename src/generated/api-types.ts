@@ -3530,6 +3530,169 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/platform/connections/{connectionId}/grant": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Grant platform app access to vaults/agents
+         * @description User-authenticated. Grant the platform app access to selected vaults and agents.
+         *     Validates user ownership of all requested resources. Creates platform_user_grants
+         *     entries and merges resource IDs into the connection record.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    connectionId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["GrantResourcesRequest"];
+                };
+            };
+            responses: {
+                /** @description Grants created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["GrantResourcesResponse"];
+                    };
+                };
+                /** @description No vault_ids or agent_ids provided */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Resource not owned by caller */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Connection not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/connections/{connectionId}/grants": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List active resource grants for a connection
+         * @description User-authenticated. Returns active (non-revoked) grants for the connection.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    connectionId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Grant list */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["GrantListResponse"];
+                    };
+                };
+                /** @description Connection not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/connections/{connectionId}/grants/{grantId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Revoke a resource grant
+         * @description User-authenticated. Revoke a specific resource grant by ID.
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    connectionId: string;
+                    grantId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Grant revoked */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Grant not found or already revoked */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/platform/claim/{token}": {
         parameters: {
             query?: never;
@@ -5172,6 +5335,20 @@ export interface components {
              * @default false
              */
             gasless: boolean;
+            /** @description Non-EVM (XRP): destination tag for exchange deposits */
+            destination_tag?: number;
+            /** @description Non-EVM (XRP, Solana): optional memo */
+            memo?: string;
+            /** @description Non-EVM (Bitcoin): override the fetched fee rate (sat/vByte) */
+            fee_rate_sat_per_vbyte?: number;
+            /** @description Non-EVM (Tron): TRC-20 energy fee limit in sun */
+            fee_limit_sun?: number;
+            /** @description Non-EVM (Solana SPL / Tron TRC-20): token mint or contract address; omit for native transfer */
+            token_mint?: string;
+            /** @description Non-EVM (Solana, Tron): token decimals (default 6) */
+            token_decimals?: number;
+            /** @description Non-EVM (Cardano): transaction time-to-live (absolute slot) */
+            ttl?: number;
         };
         SignTransactionRequest: {
             /** @description Destination address (0x-prefixed) */
@@ -5191,6 +5368,20 @@ export interface components {
             max_priority_fee_per_gas?: string;
             /** @default false */
             simulate_first: boolean;
+            /** @description Non-EVM (XRP): destination tag for exchange deposits */
+            destination_tag?: number;
+            /** @description Non-EVM (XRP, Solana): optional memo */
+            memo?: string;
+            /** @description Non-EVM (Bitcoin): override the fetched fee rate (sat/vByte) */
+            fee_rate_sat_per_vbyte?: number;
+            /** @description Non-EVM (Tron): TRC-20 energy fee limit in sun */
+            fee_limit_sun?: number;
+            /** @description Non-EVM (Solana SPL / Tron TRC-20): token mint or contract address; omit for native transfer */
+            token_mint?: string;
+            /** @description Non-EVM (Solana, Tron): token decimals (default 6) */
+            token_decimals?: number;
+            /** @description Non-EVM (Cardano): transaction time-to-live (absolute slot) */
+            ttl?: number;
         };
         SignTransactionResponse: {
             /** @description Raw signed transaction hex (always included) */
@@ -6368,6 +6559,53 @@ export interface components {
             agent_ids?: string[];
             /** Format: date-time */
             created_at?: string;
+        };
+        GrantResourcesRequest: {
+            /** @description Vault IDs to grant access to */
+            vault_ids?: string[];
+            /** @description Agent IDs to grant access to */
+            agent_ids?: string[];
+            /**
+             * @description Secret path patterns the app can access
+             * @default [
+             *       "**"
+             *     ]
+             */
+            allowed_paths: string[];
+            /**
+             * @description Permissions granted (read, write, rotate)
+             * @default [
+             *       "read"
+             *     ]
+             */
+            permissions: string[];
+            /**
+             * Format: date-time
+             * @description Optional grant expiration
+             */
+            expires_at?: string;
+        };
+        GrantResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            vault_id?: string;
+            allowed_paths?: string[];
+            permissions?: string[];
+            /** Format: date-time */
+            expires_at?: string | null;
+            /** Format: date-time */
+            created_at?: string;
+        };
+        GrantResourcesResponse: {
+            /** Format: uuid */
+            connection_id?: string;
+            grants?: components["schemas"]["GrantResponse"][];
+            vault_ids?: string[];
+            agent_ids?: string[];
+        };
+        GrantListResponse: {
+            grants?: components["schemas"]["GrantResponse"][];
         };
         ClaimPreviewResponse: {
             app_name?: string;
