@@ -23,6 +23,7 @@ import { DepositDestinationsResource } from "../resources/deposit-destinations";
 import { InternalAccountsResource } from "../resources/internal-accounts";
 import { FiatResource } from "../resources/fiat";
 import { RiskResource } from "../resources/risk";
+import { TokensResource } from "../resources/tokens";
 
 /**
  * The main 1Claw SDK client. All API resources are exposed as
@@ -94,6 +95,8 @@ export class OneclawClient {
     readonly fiat: FiatResource;
     /** Risk engine — events, verdicts, and honeytokens. */
     readonly risk: RiskResource;
+    /** Token registry — list and manage known tokens for guardrail enforcement. */
+    readonly tokens: TokensResource;
 
     constructor(config: OneclawClientConfig) {
         this.http = new HttpClient(config);
@@ -129,6 +132,7 @@ export class OneclawClient {
         this.internalAccounts = new InternalAccountsResource(this.http);
         this.fiat = new FiatResource(this.http);
         this.risk = new RiskResource(this.http);
+        this.tokens = new TokensResource(this.http);
     }
 
     private autoAuthenticateUserKey(config: OneclawClientConfig): void {

@@ -4331,6 +4331,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/tokens": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List known tokens */
+        get: operations["listKnownTokens"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/chains/{chain_name}/tokens": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List tokens for a specific chain */
+        get: operations["listTokensByChain"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/tokens": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create a known token (admin only) */
+        post: operations["createKnownToken"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/tokens/{token_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a known token (admin only) */
+        delete: operations["deleteKnownToken"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -4816,6 +4884,23 @@ export interface components {
              */
             shroud_enabled: boolean;
             shroud_config?: components["schemas"]["ShroudConfig"];
+            /** @description Token contract/mint addresses this agent may interact with. Empty = unrestricted. */
+            tx_token_allowlist?: string[];
+            /**
+             * @description When true, only tokens in the known_tokens registry may be used.
+             * @default false
+             */
+            tx_known_tokens_only: boolean;
+            /** @description Allowed XRP Ledger transaction types (Payment, TrustSet, etc.). Empty = all allowed. */
+            xrpl_allowed_tx_types?: string[];
+            /**
+             * @description Per-chain guardrail overrides. Keys are chain family names (ethereum, bitcoin, solana, etc.).
+             *     Each value can contain: max_value, daily_limit, to_allowlist, token_allowlist.
+             *     Example: { "ethereum": { "max_value": "0.5", "to_allowlist": ["0x..."] } }
+             */
+            per_chain_guardrails?: {
+                [key: string]: unknown;
+            };
             /**
              * Format: date-time
              * @description Optional expiration time for the agent's API key.
@@ -4856,6 +4941,23 @@ export interface components {
              *     Hard-capped at 3600 seconds.
              */
             federated_token_ttl_seconds?: number | null;
+            /** @description Token contract/mint addresses this agent may interact with. Empty = unrestricted. */
+            tx_token_allowlist?: string[];
+            /**
+             * @description When true, only tokens in the known_tokens registry may be used.
+             * @default false
+             */
+            tx_known_tokens_only: boolean;
+            /** @description Allowed XRP Ledger transaction types (Payment, TrustSet, etc.). Empty = all allowed. */
+            xrpl_allowed_tx_types?: string[];
+            /**
+             * @description Per-chain guardrail overrides. Keys are chain family names (ethereum, bitcoin, solana, etc.).
+             *     Each value can contain: max_value, daily_limit, to_allowlist, token_allowlist.
+             *     Example: { "ethereum": { "max_value": "0.5", "to_allowlist": ["0x..."] } }
+             */
+            per_chain_guardrails?: {
+                [key: string]: unknown;
+            };
             /**
              * Format: date-time
              * @description Optional expiration time for the agent's API key. Set to null to clear.
@@ -4915,6 +5017,20 @@ export interface components {
             message_signing_enabled?: boolean;
             /** @description Whether the raw/precomputed-digest signing intent (eip712_digest) is enabled. Blind signing — bypasses transaction guardrails; OFF by default and human-set. Required for ERC-1271/ERC-7739 flows (e.g. Polymarket). */
             raw_signing_enabled?: boolean;
+            /** @description Token contract/mint addresses this agent may interact with. */
+            tx_token_allowlist?: string[];
+            /** @description When true, only tokens in the known_tokens registry may be used. */
+            tx_known_tokens_only?: boolean;
+            /** @description Allowed XRP Ledger transaction types. */
+            xrpl_allowed_tx_types?: string[];
+            /** @description Per-chain guardrail overrides. */
+            per_chain_guardrails?: {
+                [key: string]: unknown;
+            };
+            /** @description Per-chain-family daily spend in major units (e.g. {"ethereum": "0.5", "solana": "2.1"}). */
+            tx_spent_today_by_chain?: {
+                [key: string]: string;
+            };
             /**
              * Format: date-time
              * @description Optional expiration time for the agent's API key.
@@ -4930,6 +5046,37 @@ export interface components {
             last_active_at?: string;
             /** @description Multi-chain; one Safe per chain */
             smart_accounts?: components["schemas"]["AgentSmartAccountResponse"][];
+        };
+        KnownToken: {
+            /** Format: uuid */
+            id: string;
+            chain: string;
+            symbol: string;
+            name: string;
+            contract_address: string;
+            decimals: number;
+            is_testnet: boolean;
+            is_verified: boolean;
+            logo_url?: string | null;
+            /** Format: date-time */
+            created_at?: string;
+            /** Format: date-time */
+            updated_at?: string;
+        };
+        KnownTokenListResponse: {
+            tokens: components["schemas"]["KnownToken"][];
+        };
+        CreateKnownTokenRequest: {
+            chain: string;
+            symbol: string;
+            name: string;
+            contract_address: string;
+            decimals: number;
+            /** @default false */
+            is_testnet: boolean;
+            /** @default true */
+            is_verified: boolean;
+            logo_url?: string | null;
         };
         /** @description One Safe smart account per chain for an agent */
         AgentSmartAccountResponse: {
@@ -6249,6 +6396,13 @@ export interface components {
             address: string;
             balance_wei: string;
             balance_display: string;
+            /** @description Token balances when ?tokens= query param is provided */
+            tokens?: {
+                contract_address?: string;
+                symbol?: string | null;
+                balance?: string;
+                decimals?: number | null;
+            }[];
         };
         PaymentRequirement: {
             x402Version?: number;
@@ -12391,6 +12545,97 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             404: components["responses"]["NotFound"];
+        };
+    };
+    listKnownTokens: {
+        parameters: {
+            query?: {
+                /** @description Filter by chain name */
+                chain?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Token list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KnownTokenListResponse"];
+                };
+            };
+        };
+    };
+    listTokensByChain: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                chain_name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Token list for chain */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KnownTokenListResponse"];
+                };
+            };
+        };
+    };
+    createKnownToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateKnownTokenRequest"];
+            };
+        };
+        responses: {
+            /** @description Token created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KnownToken"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    deleteKnownToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Token deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            403: components["responses"]["Forbidden"];
         };
     };
 }

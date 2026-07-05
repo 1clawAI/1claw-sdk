@@ -64,6 +64,7 @@ export type {
     CreateHoneytokenRequest,
     ListRiskEventsParams,
 } from "./resources/risk";
+export { TokensResource } from "./resources/tokens";
 
 // DPoP (Demonstration of Proof-of-Possession)
 export { DPoPManager } from "./auth/dpop";
@@ -175,6 +176,12 @@ export type {
     CreateSigningKeyRequest,
     SigningKeyResponse,
     SigningKeyListResponse,
+    SigningKeyBalanceResponse,
+    // Token Registry
+    KnownToken,
+    KnownTokenListResponse,
+    CreateKnownTokenRequest,
+    TokenBalance,
     // Unified Sign Intent
     SignIntentRequest,
     SignIntentResponse,

@@ -4,6 +4,7 @@ import type {
     SigningKeyResponse,
     SigningKeyExportResponse,
     SigningKeyListResponse,
+    SigningKeyBalanceResponse,
     OneclawResponse,
 } from "../types";
 
@@ -65,6 +66,19 @@ export class SigningKeysResource {
             "POST",
             `/v1/agents/${agentId}/signing-keys/${chain}/export`,
             { headers: { "X-Auth-Confirm": password } },
+        );
+    }
+
+    /** Get the native and token balances for a signing key's address. */
+    async getBalance(
+        agentId: string,
+        chain: string,
+        tokens?: string[],
+    ): Promise<OneclawResponse<SigningKeyBalanceResponse>> {
+        const params = tokens?.length ? `?tokens=${tokens.join(",")}` : "";
+        return this.http.request<SigningKeyBalanceResponse>(
+            "GET",
+            `/v1/agents/${agentId}/signing-keys/${encodeURIComponent(chain)}/balance${params}`,
         );
     }
 }

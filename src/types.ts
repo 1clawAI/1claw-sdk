@@ -453,6 +453,15 @@ export interface CreateAgentRequest {
     shroud_config?: ShroudConfig;
     /** ISO 8601 expiration timestamp for the agent's API key. Null = never expires. */
     api_key_expires_at?: string | null;
+    tx_token_allowlist?: string[];
+    tx_known_tokens_only?: boolean;
+    xrpl_allowed_tx_types?: string[];
+    per_chain_guardrails?: Record<string, {
+        max_value?: string;
+        daily_limit?: string;
+        to_allowlist?: string[];
+        token_allowlist?: string[];
+    }>;
 }
 
 export interface UpdateAgentRequest {
@@ -486,6 +495,15 @@ export interface UpdateAgentRequest {
     raw_signing_enabled?: boolean;
     /** ISO 8601 expiration timestamp for the agent's API key. Null = never expires. */
     api_key_expires_at?: string | null;
+    tx_token_allowlist?: string[];
+    tx_known_tokens_only?: boolean;
+    xrpl_allowed_tx_types?: string[];
+    per_chain_guardrails?: Record<string, {
+        max_value?: string;
+        daily_limit?: string;
+        to_allowlist?: string[];
+        token_allowlist?: string[];
+    }> | null;
 }
 
 export interface AgentResponse {
@@ -501,6 +519,11 @@ export interface AgentResponse {
     tx_daily_limit_eth?: string;
     /** ETH already spent today (UTC) per recorded txs; pairs with tx_daily_limit_eth. */
     tx_spent_today_eth?: string;
+    tx_token_allowlist?: string[];
+    tx_known_tokens_only?: boolean;
+    xrpl_allowed_tx_types?: string[];
+    per_chain_guardrails?: Record<string, unknown>;
+    tx_spent_today_by_chain?: Record<string, string>;
     tx_allowed_chains?: string[];
     token_ttl_seconds?: number | null;
     vault_ids?: string[];
@@ -1475,4 +1498,52 @@ export interface McpToolDefinition {
 export interface McpToolResult {
     content: Array<{ type: string; text: string }>;
     isError?: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Token Registry
+// ---------------------------------------------------------------------------
+
+export interface KnownToken {
+    id: string;
+    chain: string;
+    symbol: string;
+    name: string;
+    contract_address: string;
+    decimals: number;
+    is_testnet: boolean;
+    is_verified: boolean;
+    logo_url?: string | null;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface KnownTokenListResponse {
+    tokens: KnownToken[];
+}
+
+export interface CreateKnownTokenRequest {
+    chain: string;
+    symbol: string;
+    name: string;
+    contract_address: string;
+    decimals: number;
+    is_testnet?: boolean;
+    is_verified?: boolean;
+    logo_url?: string | null;
+}
+
+export interface TokenBalance {
+    contract_address: string;
+    symbol?: string | null;
+    balance: string;
+    decimals?: number | null;
+}
+
+export interface SigningKeyBalanceResponse {
+    chain: string;
+    address: string;
+    balance_wei: string;
+    balance_display: string;
+    tokens?: TokenBalance[];
 }
