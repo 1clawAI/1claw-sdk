@@ -436,7 +436,11 @@ export interface CreateAgentRequest {
     expires_at?: string;
     intents_api_enabled?: boolean;
     tx_to_allowlist?: string[];
+    tx_max_value?: string;
+    tx_daily_limit?: string;
+    /** @deprecated Use tx_max_value — same native major-unit semantics. */
     tx_max_value_eth?: string;
+    /** @deprecated Use tx_daily_limit. */
     tx_daily_limit_eth?: string;
     tx_allowed_chains?: string[];
     token_ttl_seconds?: number | null;
@@ -471,7 +475,11 @@ export interface UpdateAgentRequest {
     is_active?: boolean;
     intents_api_enabled?: boolean;
     tx_to_allowlist?: string[];
+    tx_max_value?: string | null;
+    tx_daily_limit?: string | null;
+    /** @deprecated Use tx_max_value. */
     tx_max_value_eth?: string | null;
+    /** @deprecated Use tx_daily_limit. */
     tx_daily_limit_eth?: string | null;
     tx_allowed_chains?: string[];
     token_ttl_seconds?: number | null;
@@ -515,9 +523,14 @@ export interface AgentResponse {
     is_active: boolean;
     intents_api_enabled: boolean;
     tx_to_allowlist?: string[];
+    tx_max_value?: string;
+    tx_daily_limit?: string;
+    /** @deprecated Use tx_max_value — same native major-unit semantics. */
     tx_max_value_eth?: string;
+    /** @deprecated Use tx_daily_limit. */
     tx_daily_limit_eth?: string;
-    /** ETH already spent today (UTC) per recorded txs; pairs with tx_daily_limit_eth. */
+    tx_spent_today?: string;
+    /** @deprecated Use tx_spent_today or tx_spent_today_by_chain. */
     tx_spent_today_eth?: string;
     tx_token_allowlist?: string[];
     tx_known_tokens_only?: boolean;

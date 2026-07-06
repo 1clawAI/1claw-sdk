@@ -4865,7 +4865,19 @@ export interface components {
             /** @default false */
             intents_api_enabled: boolean;
             tx_to_allowlist?: string[];
+            /** @description Maximum value per transaction in native major units for the transacting chain family (ETH on EVM, BTC on Bitcoin, SOL on Solana, XRP, ADA, TRX). */
+            tx_max_value?: string;
+            /** @description Rolling daily spend cap in native major units, enforced per chain family at signing time. */
+            tx_daily_limit?: string;
+            /**
+             * @deprecated
+             * @description Deprecated alias for tx_max_value. Same unit semantics (native major units, not ETH-only).
+             */
             tx_max_value_eth?: string;
+            /**
+             * @deprecated
+             * @description Deprecated alias for tx_daily_limit.
+             */
             tx_daily_limit_eth?: string;
             tx_allowed_chains?: string[];
             /** @description Per-agent token TTL in seconds (overrides global default) */
@@ -4894,9 +4906,9 @@ export interface components {
             /** @description Allowed XRP Ledger transaction types (Payment, TrustSet, etc.). Empty = all allowed. */
             xrpl_allowed_tx_types?: string[];
             /**
-             * @description Per-chain guardrail overrides. Keys are chain family names (ethereum, bitcoin, solana, etc.).
-             *     Each value can contain: max_value, daily_limit, to_allowlist, token_allowlist.
-             *     Example: { "ethereum": { "max_value": "0.5", "to_allowlist": ["0x..."] } }
+             * @description Per-chain guardrail overrides. Keys are signing chains (ethereum, bitcoin, solana, xrp, cardano, tron).
+             *     Each value may include max_value, daily_limit, to_allowlist, token_allowlist (legacy *_eth keys accepted).
+             *     Strictest of global and per-chain limits wins. Daily limits apply per chain family spend, not cross-chain totals.
              */
             per_chain_guardrails?: {
                 [key: string]: unknown;
@@ -4915,7 +4927,19 @@ export interface components {
             expires_at?: string;
             intents_api_enabled?: boolean;
             tx_to_allowlist?: string[];
+            /** @description Maximum value per transaction in native major units for the transacting chain family (ETH on EVM, BTC on Bitcoin, SOL on Solana, XRP, ADA, TRX). */
+            tx_max_value?: string;
+            /** @description Rolling daily spend cap in native major units, enforced per chain family at signing time. */
+            tx_daily_limit?: string;
+            /**
+             * @deprecated
+             * @description Deprecated alias for tx_max_value. Same unit semantics (native major units, not ETH-only).
+             */
             tx_max_value_eth?: string;
+            /**
+             * @deprecated
+             * @description Deprecated alias for tx_daily_limit.
+             */
             tx_daily_limit_eth?: string;
             tx_allowed_chains?: string[];
             token_ttl_seconds?: number | null;
@@ -4951,9 +4975,9 @@ export interface components {
             /** @description Allowed XRP Ledger transaction types (Payment, TrustSet, etc.). Empty = all allowed. */
             xrpl_allowed_tx_types?: string[];
             /**
-             * @description Per-chain guardrail overrides. Keys are chain family names (ethereum, bitcoin, solana, etc.).
-             *     Each value can contain: max_value, daily_limit, to_allowlist, token_allowlist.
-             *     Example: { "ethereum": { "max_value": "0.5", "to_allowlist": ["0x..."] } }
+             * @description Per-chain guardrail overrides. Keys are signing chains (ethereum, bitcoin, solana, xrp, cardano, tron).
+             *     Each value may include max_value, daily_limit, to_allowlist, token_allowlist (legacy *_eth keys accepted).
+             *     Strictest of global and per-chain limits wins. Daily limits apply per chain family spend, not cross-chain totals.
              */
             per_chain_guardrails?: {
                 [key: string]: unknown;
@@ -4975,9 +4999,26 @@ export interface components {
             is_active: boolean;
             intents_api_enabled: boolean;
             tx_to_allowlist?: string[];
+            /** @description Maximum value per transaction in native major units for the transacting chain family (ETH on EVM, BTC on Bitcoin, SOL on Solana, XRP, ADA, TRX). */
+            tx_max_value?: string;
+            /** @description Rolling daily spend cap in native major units, enforced per chain family at signing time. */
+            tx_daily_limit?: string;
+            /**
+             * @deprecated
+             * @description Deprecated alias for tx_max_value. Same unit semantics (native major units, not ETH-only).
+             */
             tx_max_value_eth?: string;
+            /**
+             * @deprecated
+             * @description Deprecated alias for tx_daily_limit.
+             */
             tx_daily_limit_eth?: string;
-            /** @description ETH value already spent today (UTC) from recorded transactions; used with daily limit guardrails */
+            /** @description Sum of today's spend across all chain families in major units. Prefer tx_spent_today_by_chain. */
+            tx_spent_today?: string;
+            /**
+             * @deprecated
+             * @description Deprecated alias for tx_spent_today.
+             */
             tx_spent_today_eth?: string;
             tx_allowed_chains?: string[];
             token_ttl_seconds?: number | null;
@@ -5027,7 +5068,7 @@ export interface components {
             per_chain_guardrails?: {
                 [key: string]: unknown;
             };
-            /** @description Per-chain-family daily spend in major units (e.g. {"ethereum": "0.5", "solana": "2.1"}). */
+            /** @description Per-chain-family daily spend in native major units (keys: evm, bitcoin, solana, xrp, cardano, tron). */
             tx_spent_today_by_chain?: {
                 [key: string]: string;
             };
