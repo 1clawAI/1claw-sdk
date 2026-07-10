@@ -7861,6 +7861,8 @@ export interface operations {
             /** @description Approval request created */
             202: {
                 headers: {
+                    /** @description URL to poll for approval status */
+                    Location?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -8616,6 +8618,8 @@ export interface operations {
             /** @description Rotation job started */
             202: {
                 headers: {
+                    /** @description URL to poll for rotation job status */
+                    Location?: string;
                     [name: string]: unknown;
                 };
                 content: {

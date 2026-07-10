@@ -65,6 +65,7 @@ export type {
     ListRiskEventsParams,
 } from "./resources/risk";
 export { TokensResource } from "./resources/tokens";
+export { BindingsResource } from "./resources/bindings";
 
 // DPoP (Demonstration of Proof-of-Possession)
 export { DPoPManager } from "./auth/dpop";
@@ -250,6 +251,17 @@ export type {
     ClaimRedeemResponse,
     RotatePlatformKeyRequest,
     RotatePlatformKeyResponse,
+    // Execution Intents / Bindings
+    CreateBindingRequest,
+    UpdateBindingRequest,
+    BindingResponse,
+    BindingListResponse,
+    ExecuteRequest,
+    ExecuteResponse,
+    ExecutionEventResponse,
+    ExecutionEventListResponse,
+    TestBindingRequest,
+    TestBindingResponse,
     // Health
     HealthResponse,
     // MCP

@@ -466,6 +466,8 @@ export interface CreateAgentRequest {
         to_allowlist?: string[];
         token_allowlist?: string[];
     }>;
+    execution_intents_enabled?: boolean;
+    execution_guardrails?: Record<string, unknown>;
 }
 
 export interface UpdateAgentRequest {
@@ -512,6 +514,8 @@ export interface UpdateAgentRequest {
         to_allowlist?: string[];
         token_allowlist?: string[];
     }> | null;
+    execution_intents_enabled?: boolean;
+    execution_guardrails?: Record<string, unknown> | null;
 }
 
 export interface AgentResponse {
@@ -576,9 +580,92 @@ export interface AgentResponse {
     smart_account_chain?: string | null;
     /** Legacy single Smart Account chain ID. */
     smart_account_chain_id?: number | null;
+    execution_intents_enabled?: boolean;
+    execution_guardrails?: Record<string, unknown>;
     created_at: string;
     expires_at?: string;
     last_active_at?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Execution Intents — Bindings & Execution
+// ---------------------------------------------------------------------------
+
+export interface CreateBindingRequest {
+    name: string;
+    binding_type: string;
+    config?: Record<string, unknown>;
+    guardrails?: Record<string, unknown>;
+    credential?: Record<string, unknown>;
+}
+
+export interface UpdateBindingRequest {
+    config?: Record<string, unknown>;
+    guardrails?: Record<string, unknown>;
+    is_active?: boolean;
+    credential?: Record<string, unknown>;
+}
+
+export interface BindingResponse {
+    id: string;
+    agent_id: string;
+    binding_type: string;
+    name: string;
+    config: Record<string, unknown>;
+    guardrails: Record<string, unknown>;
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface BindingListResponse {
+    bindings: BindingResponse[];
+}
+
+export interface ExecuteRequest {
+    binding: string;
+    intent_type: string;
+    execution_mode?: "vault" | "tee";
+    params: Record<string, unknown>;
+}
+
+export interface ExecuteResponse {
+    execution_id: string;
+    status: string;
+    result?: Record<string, unknown>;
+    error?: string;
+    duration_ms?: number;
+    redactions_applied?: number;
+}
+
+export interface ExecutionEventResponse {
+    id: string;
+    agent_id: string;
+    binding_id: string;
+    intent_type: string;
+    execution_mode: string;
+    status: string;
+    request_summary?: Record<string, unknown>;
+    result_summary?: Record<string, unknown>;
+    error_message?: string;
+    duration_ms?: number;
+    cost_cents?: number;
+    redactions_applied?: number;
+    created_at: string;
+}
+
+export interface ExecutionEventListResponse {
+    events: ExecutionEventResponse[];
+}
+
+export interface TestBindingRequest {
+    timeout_ms?: number;
+}
+
+export interface TestBindingResponse {
+    success: boolean;
+    latency_ms: number;
+    error?: string;
 }
 
 export interface AgentCreatedResponse {

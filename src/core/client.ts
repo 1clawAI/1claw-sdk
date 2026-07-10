@@ -24,6 +24,7 @@ import { InternalAccountsResource } from "../resources/internal-accounts";
 import { FiatResource } from "../resources/fiat";
 import { RiskResource } from "../resources/risk";
 import { TokensResource } from "../resources/tokens";
+import { BindingsResource } from "../resources/bindings";
 
 /**
  * The main 1Claw SDK client. All API resources are exposed as
@@ -79,6 +80,8 @@ export class OneclawClient {
     readonly treasury: TreasuryResource;
     /** Multi-chain signing keys — create, list, rotate, deactivate per-agent keys. */
     readonly signingKeys: SigningKeysResource;
+    /** Execution Intents — bindings, execute, and execution history. */
+    readonly bindings: BindingsResource;
     /** Treasury wallets — multi-chain wallet generation for human users. */
     readonly treasuryWallets: TreasuryWalletsResource;
     /** Platform API — build multi-tenant apps on top of 1Claw. */
@@ -124,6 +127,7 @@ export class OneclawClient {
         this.x402 = new X402Resource(this.http, config.x402Signer);
         this.treasury = new TreasuryResource(this.http);
         this.signingKeys = new SigningKeysResource(this.http);
+        this.bindings = new BindingsResource(this.http);
         this.treasuryWallets = new TreasuryWalletsResource(this.http);
         this.platform = new PlatformResource(this.http);
         this.devices = new DevicesResource(this.http);
