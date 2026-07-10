@@ -1533,6 +1533,94 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/agents/{agent_id}/bindings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List bindings */
+        get: operations["listBindings"];
+        put?: never;
+        /** Create a binding */
+        post: operations["createBinding"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/bindings/{binding_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get binding */
+        get: operations["getBinding"];
+        put?: never;
+        post?: never;
+        /** Delete binding */
+        delete: operations["deleteBinding"];
+        options?: never;
+        head?: never;
+        /** Update binding */
+        patch: operations["updateBinding"];
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/bindings/{binding_id}/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Test binding connectivity */
+        post: operations["testBinding"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/execute": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Execute an intent */
+        post: operations["executeIntent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/executions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List execution events */
+        get: operations["listExecutions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/chains": {
         parameters: {
             query?: never;
@@ -4896,6 +4984,15 @@ export interface components {
              */
             shroud_enabled: boolean;
             shroud_config?: components["schemas"]["ShroudConfig"];
+            /**
+             * @description Enable Execution Intents (bindings and execute endpoint) for this agent
+             * @default false
+             */
+            execution_intents_enabled: boolean;
+            /** @description Guardrails applied to all execution intents for this agent */
+            execution_guardrails?: {
+                [key: string]: unknown;
+            };
             /** @description Token contract/mint addresses this agent may interact with. Empty = unrestricted. */
             tx_token_allowlist?: string[];
             /**
@@ -4947,6 +5044,12 @@ export interface components {
             /** @description Enable/disable Shroud LLM Proxy */
             shroud_enabled?: boolean;
             shroud_config?: components["schemas"]["ShroudConfig"];
+            /** @description Enable/disable Execution Intents for this agent */
+            execution_intents_enabled?: boolean;
+            /** @description Guardrails applied to all execution intents for this agent */
+            execution_guardrails?: {
+                [key: string]: unknown;
+            };
             /**
              * @description Enable OIDC federation (RFC 8693 token-exchange) for this agent.
              *     When true, the agent may call POST /v1/auth/federated-token to mint
@@ -5036,6 +5139,12 @@ export interface components {
             /** @description Whether this agent routes LLM traffic through the Shroud TEE proxy */
             shroud_enabled: boolean;
             shroud_config?: components["schemas"]["ShroudConfig"];
+            /** @description Whether Execution Intents (bindings and execute endpoint) are enabled for this agent */
+            execution_intents_enabled?: boolean;
+            /** @description Guardrails applied to all execution intents for this agent */
+            execution_guardrails?: {
+                [key: string]: unknown;
+            };
             /**
              * @description Whether this agent may mint OIDC federation tokens via
              *     POST /v1/auth/federated-token. False by default.
@@ -7114,6 +7223,107 @@ export interface components {
         };
         HoneytokenListResponse: {
             honeytokens: components["schemas"]["Honeytoken"][];
+        };
+        CreateBindingRequest: {
+            name: string;
+            /** @enum {string} */
+            binding_type: "http" | "graphql" | "postgres" | "mysql" | "redis" | "grpc" | "smtp" | "cloud_sdk" | "s3" | "custom";
+            config?: {
+                [key: string]: unknown;
+            };
+            guardrails?: {
+                [key: string]: unknown;
+            };
+            credential?: {
+                [key: string]: unknown;
+            };
+        };
+        UpdateBindingRequest: {
+            config?: {
+                [key: string]: unknown;
+            };
+            guardrails?: {
+                [key: string]: unknown;
+            };
+            is_active?: boolean;
+            credential?: {
+                [key: string]: unknown;
+            };
+        };
+        BindingResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            agent_id: string;
+            /** @enum {string} */
+            binding_type: "http" | "graphql" | "postgres" | "mysql" | "redis" | "grpc" | "smtp" | "cloud_sdk" | "s3" | "custom";
+            name: string;
+            config?: {
+                [key: string]: unknown;
+            };
+            guardrails?: {
+                [key: string]: unknown;
+            };
+            is_active: boolean;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        TestBindingResponse: {
+            success: boolean;
+            latency_ms: number;
+            error?: string | null;
+        };
+        ExecuteRequest: {
+            /** @description Binding name or ID to execute against */
+            binding: string;
+            /** @description Type of execution intent (e.g. http_request, graphql_query) */
+            intent_type: string;
+            /**
+             * @description Where execution runs (vault = server-side, tee = Shroud TEE)
+             * @default vault
+             * @enum {string}
+             */
+            execution_mode: "vault" | "tee";
+            /** @description Intent-specific parameters */
+            params: {
+                [key: string]: unknown;
+            };
+        };
+        ExecuteResponse: {
+            /** Format: uuid */
+            execution_id: string;
+            status: string;
+            result?: {
+                [key: string]: unknown;
+            } | null;
+            error?: string | null;
+            duration_ms: number;
+            redactions_applied: number;
+        };
+        ExecutionEventResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            agent_id: string;
+            /** Format: uuid */
+            binding_id: string;
+            intent_type: string;
+            execution_mode: string;
+            status: string;
+            request_summary?: {
+                [key: string]: unknown;
+            } | null;
+            result_summary?: {
+                [key: string]: unknown;
+            } | null;
+            error_message?: string | null;
+            duration_ms: number;
+            cost_cents?: number | null;
+            redactions_applied: number;
+            /** Format: date-time */
+            created_at: string;
         };
     };
     responses: {
@@ -9698,6 +9908,221 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    listBindings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Binding list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        bindings: components["schemas"]["BindingResponse"][];
+                    };
+                };
+            };
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    createBinding: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateBindingRequest"];
+            };
+        };
+        responses: {
+            /** @description Binding created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BindingResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    getBinding: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+                binding_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Binding details */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BindingResponse"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deleteBinding: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+                binding_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Binding deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateBinding: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+                binding_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateBindingRequest"];
+            };
+        };
+        responses: {
+            /** @description Binding updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BindingResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    testBinding: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+                binding_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Connection test timeout in milliseconds */
+                    timeout_ms?: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Test result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TestBindingResponse"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    executeIntent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExecuteRequest"];
+            };
+        };
+        responses: {
+            /** @description Execution result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExecuteResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    listExecutions: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Execution event list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        events: components["schemas"]["ExecutionEventResponse"][];
+                    };
+                };
+            };
             403: components["responses"]["Forbidden"];
         };
     };
