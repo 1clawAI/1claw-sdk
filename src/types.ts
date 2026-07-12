@@ -606,6 +606,11 @@ export interface UpdateBindingRequest {
     credential?: Record<string, unknown>;
 }
 
+/** Rotate (overwrite) a binding's stored credential without touching config. */
+export interface RotateCredentialRequest {
+    credential: Record<string, unknown> | string;
+}
+
 export interface BindingResponse {
     id: string;
     agent_id: string;
@@ -614,6 +619,8 @@ export interface BindingResponse {
     config: Record<string, unknown>;
     guardrails: Record<string, unknown>;
     is_active: boolean;
+    /** Whether a credential is stored. The value itself is never returned. */
+    credential_set?: boolean;
     created_at: string;
     updated_at: string;
 }
@@ -636,6 +643,8 @@ export interface ExecuteResponse {
     error?: string;
     duration_ms?: number;
     redactions_applied?: number;
+    /** Where the intent ran: "vault" or "tee". Reported truthfully. */
+    execution_surface?: string;
 }
 
 export interface ExecutionEventResponse {

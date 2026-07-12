@@ -1587,6 +1587,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/agents/{agent_id}/bindings/{binding_id}/rotate-credential": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Rotate a binding credential
+         * @description Overwrite the stored credential for a binding without touching its config or guardrails. Human-only. The credential value is never returned.
+         */
+        post: operations["rotateBindingCredential"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/agents/{agent_id}/execute": {
         parameters: {
             query?: never;
@@ -7265,6 +7285,8 @@ export interface components {
                 [key: string]: unknown;
             };
             is_active: boolean;
+            /** @description Whether a credential is stored for this binding. The value itself is never returned. */
+            credential_set?: boolean;
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
@@ -7301,6 +7323,11 @@ export interface components {
             error?: string | null;
             duration_ms: number;
             redactions_applied: number;
+            /**
+             * @description Where the intent actually ran. Reported truthfully — never claims TEE when it ran in the Vault.
+             * @enum {string}
+             */
+            execution_surface?: "vault" | "tee";
         };
         ExecutionEventResponse: {
             /** Format: uuid */
@@ -10067,6 +10094,38 @@ export interface operations {
                     "application/json": components["schemas"]["TestBindingResponse"];
                 };
             };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    rotateBindingCredential: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+                binding_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description New credential material (object or string). Stored server-side. */
+                    credential: unknown;
+                };
+            };
+        };
+        responses: {
+            /** @description Updated binding */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BindingResponse"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
         };
     };

@@ -2,6 +2,7 @@ import type { HttpClient } from "../core/http";
 import type {
     CreateBindingRequest,
     UpdateBindingRequest,
+    RotateCredentialRequest,
     BindingResponse,
     BindingListResponse,
     ExecuteRequest,
@@ -64,6 +65,19 @@ export class BindingsResource {
         return this.http.request<void>(
             "DELETE",
             `/v1/agents/${agentId}/bindings/${bindingId}`,
+        );
+    }
+
+    /** Rotate (overwrite) a binding's stored credential. */
+    async rotateCredential(
+        agentId: string,
+        bindingId: string,
+        options: RotateCredentialRequest,
+    ): Promise<OneclawResponse<BindingResponse>> {
+        return this.http.request<BindingResponse>(
+            "POST",
+            `/v1/agents/${agentId}/bindings/${bindingId}/rotate-credential`,
+            { body: options },
         );
     }
 
