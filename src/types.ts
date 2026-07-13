@@ -465,11 +465,17 @@ export interface CreateAgentRequest {
         daily_limit?: string;
         to_allowlist?: string[];
         token_allowlist?: string[];
+        max_per_day?: number;
+        overhead_budget?: string;
+        max_ata_creates_per_day?: number;
     }>;
     execution_intents_enabled?: boolean;
     execution_guardrails?: Record<string, unknown>;
     intents_require_tee?: boolean;
     execution_require_tee?: boolean;
+    tx_max_per_day?: number | null;
+    tx_overhead_budget?: Record<string, string> | null;
+    solana_ata_allowlist?: string[];
 }
 
 export interface UpdateAgentRequest {
@@ -515,11 +521,17 @@ export interface UpdateAgentRequest {
         daily_limit?: string;
         to_allowlist?: string[];
         token_allowlist?: string[];
+        max_per_day?: number;
+        overhead_budget?: string;
+        max_ata_creates_per_day?: number;
     }> | null;
     execution_intents_enabled?: boolean;
     execution_guardrails?: Record<string, unknown> | null;
     intents_require_tee?: boolean;
     execution_require_tee?: boolean;
+    tx_max_per_day?: number | null;
+    tx_overhead_budget?: Record<string, string> | null;
+    solana_ata_allowlist?: string[];
 }
 
 export interface AgentResponse {
@@ -588,6 +600,16 @@ export interface AgentResponse {
     execution_guardrails?: Record<string, unknown>;
     intents_require_tee?: boolean;
     execution_require_tee?: boolean;
+    /** Max transactions per UTC calendar day. Null = unlimited. */
+    tx_max_per_day?: number | null;
+    /** Per-chain daily overhead budget in native units (rent, fees, energy). */
+    tx_overhead_budget?: Record<string, string> | null;
+    /** Solana wallet addresses whose ATAs may be created. Empty = unrestricted. */
+    solana_ata_allowlist?: string[];
+    /** Today's transaction count (UTC calendar day). Present when intents_api_enabled. */
+    tx_count_today?: number;
+    /** Today's overhead spend by chain in native units. */
+    tx_overhead_today_by_chain?: Record<string, string>;
     created_at: string;
     expires_at?: string;
     last_active_at?: string;

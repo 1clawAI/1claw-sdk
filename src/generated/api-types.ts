@@ -5034,12 +5034,20 @@ export interface components {
             xrpl_allowed_tx_types?: string[];
             /**
              * @description Per-chain guardrail overrides. Keys are signing chains (ethereum, bitcoin, solana, xrp, cardano, tron).
-             *     Each value may include max_value, daily_limit, to_allowlist, token_allowlist (legacy *_eth keys accepted).
+             *     Each value may include max_value, daily_limit, to_allowlist, token_allowlist, max_per_day, overhead_budget, max_ata_creates_per_day.
              *     Strictest of global and per-chain limits wins. Daily limits apply per chain family spend, not cross-chain totals.
              */
             per_chain_guardrails?: {
                 [key: string]: unknown;
             };
+            /** @description Max transactions per UTC calendar day. Null = unlimited. */
+            tx_max_per_day?: number | null;
+            /** @description Per-chain daily overhead budget in native units (e.g. {"solana":"0.5","xrp":"100"}). */
+            tx_overhead_budget?: {
+                [key: string]: string;
+            } | null;
+            /** @description Solana wallet addresses whose ATAs may be created. Empty = unrestricted. */
+            solana_ata_allowlist?: string[];
             /**
              * Format: date-time
              * @description Optional expiration time for the agent's API key.
@@ -5084,6 +5092,14 @@ export interface components {
             intents_require_tee?: boolean;
             /** @description When true, execute requests must arrive via TEE and all direct secret reads are blocked (Pro+ only) */
             execution_require_tee?: boolean;
+            /** @description Max transactions per UTC calendar day. Null = unlimited. */
+            tx_max_per_day?: number | null;
+            /** @description Per-chain daily overhead budget in native units. */
+            tx_overhead_budget?: {
+                [key: string]: string;
+            } | null;
+            /** @description Solana wallet addresses whose ATAs may be created. */
+            solana_ata_allowlist?: string[];
             /**
              * @description Enable OIDC federation (RFC 8693 token-exchange) for this agent.
              *     When true, the agent may call POST /v1/auth/federated-token to mint
@@ -5183,6 +5199,20 @@ export interface components {
             intents_require_tee?: boolean;
             /** @description When true, execute requests must arrive via TEE and all direct secret reads are blocked (Pro+ only) */
             execution_require_tee?: boolean;
+            /** @description Max transactions per UTC calendar day. Null = unlimited. */
+            tx_max_per_day?: number | null;
+            /** @description Per-chain daily overhead budget in native units. */
+            tx_overhead_budget?: {
+                [key: string]: string;
+            } | null;
+            /** @description Solana wallet addresses whose ATAs may be created. */
+            solana_ata_allowlist?: string[];
+            /** @description Today's transaction count (UTC calendar day). Present when intents_api_enabled. */
+            tx_count_today?: number;
+            /** @description Today's overhead spend by chain in native units. */
+            tx_overhead_today_by_chain?: {
+                [key: string]: string;
+            };
             /**
              * @description Whether this agent may mint OIDC federation tokens via
              *     POST /v1/auth/federated-token. False by default.

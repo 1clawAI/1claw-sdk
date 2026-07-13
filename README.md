@@ -322,6 +322,32 @@ When `execution_require_tee` is true:
 
 Both require `intents_api_enabled` / `execution_intents_enabled` to be on first.
 
+### Overhead Budget and Transaction Count Limits
+
+Protect against non-value drain attacks (ATA rent drain, XRP reserve exhaustion, Tron energy drain):
+
+```typescript
+await client.agents.update(agentId, {
+    tx_max_per_day: 100,                     // Cap transactions per UTC day
+    tx_overhead_budget: {                    // Per-chain non-value cost budgets (native units)
+        solana: "0.5",
+        xrp: "100",
+        ethereum: "0.01",
+    },
+    solana_ata_allowlist: [                  // Only these addresses may have ATAs created
+        "7nYzKqAqfaGEhN6oeKCQVFjduQ9qH1dWs2gVFkNKBpQF",
+    ],
+    per_chain_guardrails: {                  // Per-chain overrides
+        solana: { max_per_day: 20, overhead_budget: "0.2", max_ata_creates_per_day: 5 },
+    },
+});
+
+// Check current spend:
+const agent = await client.agents.get(agentId);
+console.log(agent.data?.tx_count_today);           // e.g. 42
+console.log(agent.data?.tx_overhead_today_by_chain); // e.g. { "solana": "0.12" }
+```
+
 ## OIDC Federation (Anthropic WIF, GCP STS, AWS STS)
 
 `https://api.1claw.xyz` is a fully OpenID Connect–compliant issuer. External relying parties — Anthropic Workload Identity Federation, GCP STS, AWS STS, Stytch, etc. — can validate 1claw-issued JWTs by fetching:
