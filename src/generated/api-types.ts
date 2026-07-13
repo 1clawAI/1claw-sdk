@@ -5013,6 +5013,16 @@ export interface components {
             execution_guardrails?: {
                 [key: string]: unknown;
             };
+            /**
+             * @description When true, transaction/sign requests must arrive via a TEE host (Pro+ only)
+             * @default false
+             */
+            intents_require_tee: boolean;
+            /**
+             * @description When true, execute requests must arrive via TEE and all direct secret reads are blocked (Pro+ only)
+             * @default false
+             */
+            execution_require_tee: boolean;
             /** @description Token contract/mint addresses this agent may interact with. Empty = unrestricted. */
             tx_token_allowlist?: string[];
             /**
@@ -5070,6 +5080,10 @@ export interface components {
             execution_guardrails?: {
                 [key: string]: unknown;
             };
+            /** @description When true, transaction/sign requests must arrive via a TEE host (Pro+ only) */
+            intents_require_tee?: boolean;
+            /** @description When true, execute requests must arrive via TEE and all direct secret reads are blocked (Pro+ only) */
+            execution_require_tee?: boolean;
             /**
              * @description Enable OIDC federation (RFC 8693 token-exchange) for this agent.
              *     When true, the agent may call POST /v1/auth/federated-token to mint
@@ -5165,6 +5179,10 @@ export interface components {
             execution_guardrails?: {
                 [key: string]: unknown;
             };
+            /** @description When true, transaction/sign requests must arrive via a TEE host (Pro+ only) */
+            intents_require_tee?: boolean;
+            /** @description When true, execute requests must arrive via TEE and all direct secret reads are blocked (Pro+ only) */
+            execution_require_tee?: boolean;
             /**
              * @description Whether this agent may mint OIDC federation tokens via
              *     POST /v1/auth/federated-token. False by default.
