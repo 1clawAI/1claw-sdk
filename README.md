@@ -300,6 +300,28 @@ Key properties:
 - **Every transaction is audit-logged** with full calldata
 - **Revocable instantly** — set `intents_api_enabled: false` to cut off access
 
+### TEE Enforcement (Pro+)
+
+Lock down agents so signing and execution requests **must** route through the hardware enclave (Shroud TEE). Direct Vault API calls are rejected with 403.
+
+```typescript
+await client.agents.update(agentId, {
+    intents_require_tee: true,    // Only signs within the hardware enclave
+    execution_require_tee: true,  // Only runs within the hardware enclave
+});
+```
+
+When `intents_require_tee` is true:
+- Transaction submit/sign requests to `api.1claw.xyz` are rejected (403)
+- Agents must route through `shroud.1claw.xyz` where signing happens inside TEE memory
+
+When `execution_require_tee` is true:
+- Execute requests to `api.1claw.xyz` are rejected (403)
+- All direct secret reads by the agent are blocked — forces use of Execution Intent bindings
+- Agents must route through `shroud.1claw.xyz`
+
+Both require `intents_api_enabled` / `execution_intents_enabled` to be on first.
+
 ## OIDC Federation (Anthropic WIF, GCP STS, AWS STS)
 
 `https://api.1claw.xyz` is a fully OpenID Connect–compliant issuer. External relying parties — Anthropic Workload Identity Federation, GCP STS, AWS STS, Stytch, etc. — can validate 1claw-issued JWTs by fetching:

@@ -468,6 +468,8 @@ export interface CreateAgentRequest {
     }>;
     execution_intents_enabled?: boolean;
     execution_guardrails?: Record<string, unknown>;
+    intents_require_tee?: boolean;
+    execution_require_tee?: boolean;
 }
 
 export interface UpdateAgentRequest {
@@ -516,6 +518,8 @@ export interface UpdateAgentRequest {
     }> | null;
     execution_intents_enabled?: boolean;
     execution_guardrails?: Record<string, unknown> | null;
+    intents_require_tee?: boolean;
+    execution_require_tee?: boolean;
 }
 
 export interface AgentResponse {
@@ -582,6 +586,8 @@ export interface AgentResponse {
     smart_account_chain_id?: number | null;
     execution_intents_enabled?: boolean;
     execution_guardrails?: Record<string, unknown>;
+    intents_require_tee?: boolean;
+    execution_require_tee?: boolean;
     created_at: string;
     expires_at?: string;
     last_active_at?: string;
