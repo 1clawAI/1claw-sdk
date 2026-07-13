@@ -7244,6 +7244,22 @@ export interface components {
         HoneytokenListResponse: {
             honeytokens: components["schemas"]["Honeytoken"][];
         };
+        /** @description Credential source — inline value (stored in __agent-keys) or live pointer to a vault secret (resolved at execution time). */
+        CredentialSource: {
+            /** @enum {string} */
+            type: "inline" | "vault_ref";
+            /** @description For inline — the credential value object. */
+            value?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Format: uuid
+             * @description For vault_ref — the vault containing the referenced secret.
+             */
+            vault_id?: string;
+            /** @description For vault_ref — the secret path in the vault. */
+            path?: string;
+        };
         CreateBindingRequest: {
             name: string;
             /** @enum {string} */
@@ -7254,9 +7270,11 @@ export interface components {
             guardrails?: {
                 [key: string]: unknown;
             };
+            /** @description Legacy: inline credential value. Use credential_source for new integrations. */
             credential?: {
                 [key: string]: unknown;
             };
+            credential_source?: components["schemas"]["CredentialSource"];
         };
         UpdateBindingRequest: {
             config?: {
@@ -7266,9 +7284,11 @@ export interface components {
                 [key: string]: unknown;
             };
             is_active?: boolean;
+            /** @description Legacy: inline credential value. */
             credential?: {
                 [key: string]: unknown;
             };
+            credential_source?: components["schemas"]["CredentialSource"];
         };
         BindingResponse: {
             /** Format: uuid */
@@ -7287,6 +7307,18 @@ export interface components {
             is_active: boolean;
             /** @description Whether a credential is stored for this binding. The value itself is never returned. */
             credential_set?: boolean;
+            /**
+             * @description How the credential is sourced — inline (HSM-encrypted copy) or vault_ref (live pointer).
+             * @enum {string|null}
+             */
+            credential_source_type?: "inline" | "vault_ref" | null;
+            /**
+             * Format: uuid
+             * @description For vault_ref credentials — the vault containing the referenced secret.
+             */
+            credential_vault_id?: string | null;
+            /** @description For vault_ref credentials — the secret path in the referenced vault. */
+            credential_path?: string | null;
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */

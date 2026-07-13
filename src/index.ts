@@ -252,6 +252,7 @@ export type {
     RotatePlatformKeyRequest,
     RotatePlatformKeyResponse,
     // Execution Intents / Bindings
+    CredentialSource,
     CreateBindingRequest,
     UpdateBindingRequest,
     BindingResponse,

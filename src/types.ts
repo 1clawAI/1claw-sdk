@@ -591,19 +591,37 @@ export interface AgentResponse {
 // Execution Intents — Bindings & Execution
 // ---------------------------------------------------------------------------
 
+/** Credential source: inline value (copied into __agent-keys) or a live
+ *  pointer to an existing vault secret (resolved at execution time). */
+export interface CredentialSource {
+    type: "inline" | "vault_ref";
+    /** For inline: the credential value object. */
+    value?: Record<string, unknown>;
+    /** For vault_ref: the vault containing the referenced secret. */
+    vault_id?: string;
+    /** For vault_ref: the secret path in the vault. */
+    path?: string;
+}
+
 export interface CreateBindingRequest {
     name: string;
     binding_type: string;
     config?: Record<string, unknown>;
     guardrails?: Record<string, unknown>;
+    /** Legacy: inline credential value (still supported). */
     credential?: Record<string, unknown>;
+    /** Structured credential source (takes precedence over `credential`). */
+    credential_source?: CredentialSource;
 }
 
 export interface UpdateBindingRequest {
     config?: Record<string, unknown>;
     guardrails?: Record<string, unknown>;
     is_active?: boolean;
+    /** Legacy: inline credential value. */
     credential?: Record<string, unknown>;
+    /** Structured credential source (takes precedence over `credential`). */
+    credential_source?: CredentialSource;
 }
 
 /** Rotate (overwrite) a binding's stored credential without touching config. */
@@ -621,6 +639,12 @@ export interface BindingResponse {
     is_active: boolean;
     /** Whether a credential is stored. The value itself is never returned. */
     credential_set?: boolean;
+    /** How the credential is sourced: "inline" or "vault_ref". */
+    credential_source_type?: "inline" | "vault_ref" | null;
+    /** For vault_ref: the vault ID containing the referenced secret. */
+    credential_vault_id?: string | null;
+    /** For vault_ref: the secret path in the referenced vault. */
+    credential_path?: string | null;
     created_at: string;
     updated_at: string;
 }
