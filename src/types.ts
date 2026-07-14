@@ -476,6 +476,16 @@ export interface CreateAgentRequest {
     tx_max_per_day?: number | null;
     tx_overhead_budget?: Record<string, string> | null;
     solana_ata_allowlist?: string[];
+    /** Whether this agent may order payment cards (x402 card ordering). Pro+ tier. */
+    cards_enabled?: boolean;
+    /** Maximum USD amount for a single card order. */
+    card_max_order_usd?: string;
+    /** Maximum cumulative USD spent ordering cards per rolling 24h window. */
+    card_daily_limit_usd?: string;
+    /** Allowed x402 payTo recipients for card orders (empty = built-in Laso recipients). */
+    card_payto_allowlist?: string[];
+    /** Whether agents may reveal card details subject to per-card reveal policy. */
+    card_reveal_enabled?: boolean;
 }
 
 export interface UpdateAgentRequest {
@@ -532,6 +542,16 @@ export interface UpdateAgentRequest {
     tx_max_per_day?: number | null;
     tx_overhead_budget?: Record<string, string> | null;
     solana_ata_allowlist?: string[];
+    /** Whether this agent may order payment cards (x402 card ordering). Pro+ tier. */
+    cards_enabled?: boolean;
+    /** Maximum USD amount for a single card order. `null` clears. */
+    card_max_order_usd?: string | null;
+    /** Maximum cumulative USD spent ordering cards per rolling 24h window. `null` clears. */
+    card_daily_limit_usd?: string | null;
+    /** Allowed x402 payTo recipients for card orders (empty = built-in Laso recipients). */
+    card_payto_allowlist?: string[];
+    /** Whether agents may reveal card details subject to per-card reveal policy. */
+    card_reveal_enabled?: boolean;
 }
 
 export interface AgentResponse {
@@ -610,9 +630,111 @@ export interface AgentResponse {
     tx_count_today?: number;
     /** Today's overhead spend by chain in native units. */
     tx_overhead_today_by_chain?: Record<string, string>;
+    /** Whether this agent may order payment cards (x402 card ordering). */
+    cards_enabled?: boolean;
+    /** Maximum USD amount for a single card order. */
+    card_max_order_usd?: string;
+    /** Maximum cumulative USD spent ordering cards per rolling 24h window. */
+    card_daily_limit_usd?: string;
+    /** Allowed x402 payTo recipients for card orders (empty = built-in Laso recipients). */
+    card_payto_allowlist?: string[];
+    /** Whether agents may reveal card details subject to per-card reveal policy. */
+    card_reveal_enabled?: boolean;
     created_at: string;
     expires_at?: string;
     last_active_at?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Payment Card Vault
+// ---------------------------------------------------------------------------
+
+/** Order a prepaid or gift card via the x402 flow. */
+export interface OrderCardRequest {
+    /** "prepaid" or "gift_card". */
+    kind: "prepaid" | "gift_card";
+    /** USD amount to load onto the card. */
+    amount_usd: string;
+    /** Optional Laso gift-card server/brand id (gift cards only). */
+    laso_server_id?: string;
+    /** Optional country (prepaid cards; defaults to US). */
+    country?: string;
+}
+
+/** Masked card view — never contains PAN/CVV. */
+export interface CardResponse {
+    id: string;
+    agent_id?: string | null;
+    issuer: "laso" | "manual";
+    kind: "prepaid" | "gift_card";
+    brand?: string;
+    last4?: string;
+    exp_month?: number;
+    exp_year?: number;
+    currency: string;
+    order_amount_usd?: string;
+    balance?: string;
+    status:
+        | "ordering"
+        | "pending"
+        | "ready"
+        | "depleted"
+        | "expired"
+        | "voided"
+        | "orphaned_payment";
+    storage_mode: "reference" | "full";
+    reveal_policy: Record<string, unknown>;
+    void_after?: string;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface CardListResponse {
+    cards: CardResponse[];
+}
+
+/** Revealed card details — sensitive. Returned only by the reveal endpoint. */
+export interface CardRevealResponse {
+    id: string;
+    pan?: string;
+    cvv?: string;
+    exp_month?: number;
+    exp_year?: number;
+    brand?: string;
+    /** Gift-card redemption payload (URL/code/PIN) when applicable. */
+    redemption?: unknown;
+    /** Post-reveal disclaimer surfaced to the caller. */
+    disclaimer: string;
+}
+
+/** Human-settable per-card reveal policy + lifecycle controls. */
+export interface UpdateCardRequest {
+    /** Whether the owning agent may reveal this card (subject to max/TTL). */
+    agent_reveal?: boolean;
+    /** Maximum number of reveals allowed. */
+    max_reveals?: number;
+    /** Reveal policy expiry (ISO 8601; null clears). */
+    reveal_expires_at?: string | null;
+    /** Auto-void timestamp — blocks reveals/refreshes after this time (null clears). */
+    void_after?: string | null;
+}
+
+/** Manually import an existing card (human-only, full storage mode). */
+export interface ImportCardRequest {
+    pan: string;
+    cvv: string;
+    exp_month: number;
+    exp_year: number;
+    brand?: string;
+    currency?: string;
+    balance?: string;
+    agent_id?: string;
+}
+
+/** Search available Laso gift-card brands/servers. */
+export interface SearchGiftCardsRequest {
+    query?: string;
+    country?: string;
 }
 
 // ---------------------------------------------------------------------------

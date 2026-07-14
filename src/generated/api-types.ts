@@ -4507,10 +4507,257 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/agents/{agent_id}/cards/order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Order a payment card (x402)
+         * @description Order a prepaid or gift card for an agent. Drives the x402 payment flow server-side using the agent's Ethereum signing key (funded with USDC on Base). Requires `cards_enabled` on the agent and a Pro or higher plan. An `Idempotency-Key` header is required.
+         */
+        post: operations["orderCard"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cards": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List payment cards
+         * @description List cards for the caller (agents see only their own). Always masked (last4 only).
+         */
+        get: operations["listCards"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cards/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Import a card (human-only)
+         * @description Manually import an existing card. Full storage mode — PAN stored encrypted, CVV as a one-time-read secret. Human-only.
+         */
+        post: operations["importCard"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cards/gift-cards/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search gift-card brands
+         * @description Search available Laso gift-card brands/servers for the org's Laso account.
+         */
+        post: operations["searchGiftCards"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cards/{card_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a payment card
+         * @description Get a single card (masked — last4 only).
+         */
+        get: operations["getCard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update a card's reveal policy (human-only) */
+        patch: operations["updateCard"];
+        trace?: never;
+    };
+    "/v1/cards/{card_id}/reveal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reveal card details
+         * @description Reveal full card details (PAN/CVV or gift-card redemption). Humans must re-authenticate with their account password via the `X-Auth-Confirm` header. Agents may reveal only when a human has enabled a per-card reveal policy. Once revealed, the card can be used anywhere up to its balance — 1Claw has no further control.
+         */
+        post: operations["revealCard"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cards/{card_id}/void": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Void a card
+         * @description 1Claw-level lock that blocks all further reveals/refreshes. Forward-looking only — a card revealed before void remains live.
+         */
+        post: operations["voidCard"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cards/{card_id}/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh a card's balance
+         * @description Proxy Laso refresh to update balance/status. Rate-limited to once per 5 minutes per card (429 on exceed).
+         */
+        post: operations["refreshCard"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        OrderCardRequest: {
+            /** @enum {string} */
+            kind: "prepaid" | "gift_card";
+            /**
+             * @description USD amount to load onto the card.
+             * @example 25.00
+             */
+            amount_usd: string;
+            /** @description Optional Laso gift-card server/brand id (gift cards only). */
+            laso_server_id?: string;
+            /** @description Optional country (prepaid cards; defaults to US). */
+            country?: string;
+        };
+        /** @description Masked card view — never contains PAN/CVV. */
+        CardResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            agent_id?: string | null;
+            /** @enum {string} */
+            issuer: "laso" | "manual";
+            /** @enum {string} */
+            kind: "prepaid" | "gift_card";
+            brand?: string;
+            last4?: string;
+            exp_month?: number;
+            exp_year?: number;
+            currency: string;
+            order_amount_usd?: string;
+            balance?: string;
+            /** @enum {string} */
+            status: "ordering" | "pending" | "ready" | "depleted" | "expired" | "voided" | "orphaned_payment";
+            /** @enum {string} */
+            storage_mode: "reference" | "full";
+            reveal_policy: {
+                [key: string]: unknown;
+            };
+            /** Format: date-time */
+            void_after?: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        CardListResponse: {
+            cards: components["schemas"]["CardResponse"][];
+        };
+        /** @description Revealed card details — sensitive. Returned only by the reveal endpoint. */
+        CardRevealResponse: {
+            /** Format: uuid */
+            id: string;
+            pan?: string;
+            cvv?: string;
+            exp_month?: number;
+            exp_year?: number;
+            brand?: string;
+            /** @description Gift-card redemption payload (URL/code/PIN) when applicable. */
+            redemption?: {
+                [key: string]: unknown;
+            };
+            disclaimer: string;
+        };
+        /** @description Human-settable per-card reveal policy + lifecycle controls. */
+        UpdateCardRequest: {
+            agent_reveal?: boolean;
+            max_reveals?: number;
+            /** Format: date-time */
+            reveal_expires_at?: string | null;
+            /** Format: date-time */
+            void_after?: string | null;
+        };
+        ImportCardRequest: {
+            pan: string;
+            cvv: string;
+            exp_month: number;
+            exp_year: number;
+            brand?: string;
+            currency?: string;
+            balance?: string;
+            /** Format: uuid */
+            agent_id?: string;
+        };
+        SearchGiftCardsRequest: {
+            query?: string;
+            country?: string;
+        };
         /** @description RFC 7807 error envelope */
         ProblemDetails: {
             type?: string;
@@ -5048,6 +5295,16 @@ export interface components {
             } | null;
             /** @description Solana wallet addresses whose ATAs may be created. Empty = unrestricted. */
             solana_ata_allowlist?: string[];
+            /** @description Whether this agent may order payment cards (x402 card ordering). Pro+ tier. */
+            cards_enabled?: boolean;
+            /** @description Maximum USD amount for a single card order. */
+            card_max_order_usd?: string;
+            /** @description Maximum cumulative USD spent ordering cards per rolling 24h window. */
+            card_daily_limit_usd?: string;
+            /** @description Allowed x402 payTo recipients for card orders (empty = built-in Laso recipients). */
+            card_payto_allowlist?: string[];
+            /** @description Whether agents may reveal card details subject to per-card reveal policy. */
+            card_reveal_enabled?: boolean;
             /**
              * Format: date-time
              * @description Optional expiration time for the agent's API key.
@@ -5100,6 +5357,16 @@ export interface components {
             } | null;
             /** @description Solana wallet addresses whose ATAs may be created. */
             solana_ata_allowlist?: string[];
+            /** @description Whether this agent may order payment cards (x402 card ordering). Pro+ tier. */
+            cards_enabled?: boolean;
+            /** @description Maximum USD amount for a single card order. null clears. */
+            card_max_order_usd?: string | null;
+            /** @description Maximum cumulative USD spent ordering cards per rolling 24h window. null clears. */
+            card_daily_limit_usd?: string | null;
+            /** @description Allowed x402 payTo recipients for card orders (empty = built-in Laso recipients). */
+            card_payto_allowlist?: string[];
+            /** @description Whether agents may reveal card details subject to per-card reveal policy. */
+            card_reveal_enabled?: boolean;
             /**
              * @description Enable OIDC federation (RFC 8693 token-exchange) for this agent.
              *     When true, the agent may call POST /v1/auth/federated-token to mint
@@ -5207,6 +5474,16 @@ export interface components {
             } | null;
             /** @description Solana wallet addresses whose ATAs may be created. */
             solana_ata_allowlist?: string[];
+            /** @description Whether this agent may order payment cards (x402 card ordering). */
+            cards_enabled?: boolean;
+            /** @description Maximum USD amount for a single card order. */
+            card_max_order_usd?: string;
+            /** @description Maximum cumulative USD spent ordering cards per rolling 24h window. */
+            card_daily_limit_usd?: string;
+            /** @description Allowed x402 payTo recipients for card orders (empty = built-in Laso recipients). */
+            card_payto_allowlist?: string[];
+            /** @description Whether agents may reveal card details subject to per-card reveal policy. */
+            card_reveal_enabled?: boolean;
             /** @description Today's transaction count (UTC calendar day). Present when intents_api_enabled. */
             tx_count_today?: number;
             /** @description Today's overhead spend by chain in native units. */
@@ -7495,6 +7772,7 @@ export interface components {
         SecretPath: string;
         AgentId: string;
         PolicyId: string;
+        CardId: string;
         /** @description Set to `true` or `1` to include the raw signed transaction hex in the response. Omitted by default to reduce key exfiltration risk. Only the literal values "true" or "1" enable inclusion; any other value or omission returns responses without signed_tx. Applies to GET /v1/agents/{agent_id}/transactions and GET /v1/agents/{agent_id}/transactions/{tx_id}. */
         IncludeSignedTx: boolean;
     };
@@ -13245,6 +13523,240 @@ export interface operations {
                 content?: never;
             };
             403: components["responses"]["Forbidden"];
+        };
+    };
+    orderCard: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OrderCardRequest"];
+            };
+        };
+        responses: {
+            /** @description Card order accepted (status pending) */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CardResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    listCards: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Card list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CardListResponse"];
+                };
+            };
+        };
+    };
+    importCard: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImportCardRequest"];
+            };
+        };
+        responses: {
+            /** @description Card imported */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CardResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    searchGiftCards: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["SearchGiftCardsRequest"];
+            };
+        };
+        responses: {
+            /** @description Available gift-card brands (provider-shaped payload) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    getCard: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                card_id: components["parameters"]["CardId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Card details */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CardResponse"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateCard: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                card_id: components["parameters"]["CardId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateCardRequest"];
+            };
+        };
+        responses: {
+            /** @description Card updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CardResponse"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    revealCard: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Account password (humans) for re-authentication. */
+                "X-Auth-Confirm"?: string;
+            };
+            path: {
+                card_id: components["parameters"]["CardId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Revealed card details (sensitive) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CardRevealResponse"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    voidCard: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                card_id: components["parameters"]["CardId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Card voided */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CardResponse"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    refreshCard: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                card_id: components["parameters"]["CardId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Card refreshed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CardResponse"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+            /** @description Refreshed too recently */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
 }

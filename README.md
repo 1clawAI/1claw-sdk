@@ -532,6 +532,39 @@ const client = createClient({
 const secret = await client.x402.withPayment("vault-id", "key", signer);
 ```
 
+## Payment Cards (x402 Card Ordering)
+
+Order prepaid and gift cards where the agent pays via an outbound x402 payment (USDC on Base) and never sees the PAN/CVV:
+
+```typescript
+// Order a prepaid card
+const card = await client.cards.order("agent-id", {
+    kind: "prepaid",
+    amount_usd: "5.00",
+});
+// card.id, card.status ("pending"), card.last4 (once ready)
+
+// Poll until ready (or rely on card.ready webhook)
+const status = await client.cards.get(card.id);
+
+// Reveal (human-only with password re-auth)
+const revealed = await client.cards.reveal(card.id, "my-password");
+// revealed.pan, revealed.cvv, revealed.disclaimer
+
+// Gift cards
+const gifts = await client.cards.searchGiftCards({ country: "US" });
+const giftCard = await client.cards.order("agent-id", {
+    kind: "gift_card",
+    amount_usd: "25.00",
+    laso_server_id: gifts[0].serverId,
+});
+
+// Lifecycle
+await client.cards.void(card.id);
+await client.cards.refresh(card.id);
+const all = await client.cards.list();
+```
+
 ## Plugins
 
 The SDK supports optional plugin interfaces for extending behavior without modifying the core:

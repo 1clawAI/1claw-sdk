@@ -66,6 +66,7 @@ export type {
 } from "./resources/risk";
 export { TokensResource } from "./resources/tokens";
 export { BindingsResource } from "./resources/bindings";
+export { CardsResource } from "./resources/cards";
 
 // DPoP (Demonstration of Proof-of-Possession)
 export { DPoPManager } from "./auth/dpop";
@@ -263,6 +264,14 @@ export type {
     ExecutionEventListResponse,
     TestBindingRequest,
     TestBindingResponse,
+    // Payment Card Vault
+    OrderCardRequest,
+    CardResponse,
+    CardListResponse,
+    CardRevealResponse,
+    UpdateCardRequest,
+    ImportCardRequest,
+    SearchGiftCardsRequest,
     // Health
     HealthResponse,
     // MCP

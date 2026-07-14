@@ -25,6 +25,7 @@ import { FiatResource } from "../resources/fiat";
 import { RiskResource } from "../resources/risk";
 import { TokensResource } from "../resources/tokens";
 import { BindingsResource } from "../resources/bindings";
+import { CardsResource } from "../resources/cards";
 
 /**
  * The main 1Claw SDK client. All API resources are exposed as
@@ -100,6 +101,8 @@ export class OneclawClient {
     readonly risk: RiskResource;
     /** Token registry — list and manage known tokens for guardrail enforcement. */
     readonly tokens: TokensResource;
+    /** Payment Card Vault — order, list, reveal, void, and refresh payment cards. */
+    readonly cards: CardsResource;
 
     constructor(config: OneclawClientConfig) {
         this.http = new HttpClient(config);
@@ -137,6 +140,7 @@ export class OneclawClient {
         this.fiat = new FiatResource(this.http);
         this.risk = new RiskResource(this.http);
         this.tokens = new TokensResource(this.http);
+        this.cards = new CardsResource(this.http);
     }
 
     private autoAuthenticateUserKey(config: OneclawClientConfig): void {
