@@ -486,6 +486,8 @@ export interface CreateAgentRequest {
     card_payto_allowlist?: string[];
     /** Whether agents may reveal card details subject to per-card reveal policy. */
     card_reveal_enabled?: boolean;
+    /** When true, card orders route through the approval queue before payment. Default on. */
+    card_require_approval?: boolean;
 }
 
 export interface UpdateAgentRequest {
@@ -552,6 +554,8 @@ export interface UpdateAgentRequest {
     card_payto_allowlist?: string[];
     /** Whether agents may reveal card details subject to per-card reveal policy. */
     card_reveal_enabled?: boolean;
+    /** When true, card orders route through the approval queue before payment. */
+    card_require_approval?: boolean;
 }
 
 export interface AgentResponse {
@@ -640,6 +644,8 @@ export interface AgentResponse {
     card_payto_allowlist?: string[];
     /** Whether agents may reveal card details subject to per-card reveal policy. */
     card_reveal_enabled?: boolean;
+    /** When true, card orders route through the approval queue before payment. */
+    card_require_approval?: boolean;
     created_at: string;
     expires_at?: string;
     last_active_at?: string;
@@ -681,9 +687,12 @@ export interface CardResponse {
         | "depleted"
         | "expired"
         | "voided"
-        | "orphaned_payment";
+        | "orphaned_payment"
+        | "awaiting_approval"
+        | "rejected";
     storage_mode: "reference" | "full";
     reveal_policy: Record<string, unknown>;
+    approval_id?: string;
     void_after?: string;
     created_at: string;
     updated_at: string;
