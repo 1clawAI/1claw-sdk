@@ -4018,8 +4018,37 @@ export interface paths {
          * Approve or reject
          * @description Submit a decision (approve or reject) for a pending approval.
          *     Human-only. The approval must be in `pending` status.
+         *     For `card_order` approvals, approving auto-executes the x402 payment;
+         *     rejecting marks the card as `rejected`.
+         *     Risk tier 2+ approvals require step-up authentication via
+         *     `X-Auth-Confirm` (account password or `rat_` re-auth token from
+         *     `POST /v1/auth/reauth/begin` + `complete`). Risk tier 3 requires
+         *     passkey or TOTP re-auth token.
          */
         post: operations["decideApproval"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/approvals/quick-decide": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One-click approve or deny (email link)
+         * @description Public endpoint (no Bearer auth). The `token` query param is the
+         *     authenticator — SHA-256 hashed, single-use, 7-day TTL. On success
+         *     redirects to `{public_url}/approvals/{id}?decided=true`.
+         *     Auto-executes approved `card_order` and `policy_change` actions.
+         */
+        get: operations["quickDecideApproval"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -4518,7 +4547,7 @@ export interface paths {
         put?: never;
         /**
          * Order a payment card (x402)
-         * @description Order a prepaid or gift card for an agent. Drives the x402 payment flow server-side using the agent's Ethereum signing key (funded with USDC on Base). Requires `cards_enabled` on the agent and a Pro or higher plan. An `Idempotency-Key` header is required.
+         * @description Order a prepaid or gift card for an agent. Drives the x402 payment flow server-side using the agent's Ethereum signing key (funded with USDC on Base). Requires `cards_enabled` on the agent and a Pro or higher plan. An `Idempotency-Key` header is required. When `card_require_approval` is true (default), the order is held in `awaiting_approval` until a human approves via the dashboard, mobile app, or email one-click link; payment runs only after approval.
          */
         post: operations["orderCard"];
         delete?: never;
@@ -4703,12 +4732,17 @@ export interface components {
             order_amount_usd?: string;
             balance?: string;
             /** @enum {string} */
-            status: "ordering" | "pending" | "ready" | "depleted" | "expired" | "voided" | "orphaned_payment";
+            status: "ordering" | "pending" | "ready" | "depleted" | "expired" | "voided" | "orphaned_payment" | "awaiting_approval" | "rejected";
             /** @enum {string} */
             storage_mode: "reference" | "full";
             reveal_policy: {
                 [key: string]: unknown;
             };
+            /**
+             * Format: uuid
+             * @description Linked approval when status is awaiting_approval
+             */
+            approval_id?: string;
             /** Format: date-time */
             void_after?: string;
             /** Format: date-time */
@@ -5306,6 +5340,11 @@ export interface components {
             /** @description Whether agents may reveal card details subject to per-card reveal policy. */
             card_reveal_enabled?: boolean;
             /**
+             * @description When true, card orders route through the human approval queue before x402 payment.
+             * @default true
+             */
+            card_require_approval: boolean;
+            /**
              * Format: date-time
              * @description Optional expiration time for the agent's API key.
              */
@@ -5367,6 +5406,8 @@ export interface components {
             card_payto_allowlist?: string[];
             /** @description Whether agents may reveal card details subject to per-card reveal policy. */
             card_reveal_enabled?: boolean;
+            /** @description When true, card orders route through the human approval queue before x402 payment. */
+            card_require_approval?: boolean;
             /**
              * @description Enable OIDC federation (RFC 8693 token-exchange) for this agent.
              *     When true, the agent may call POST /v1/auth/federated-token to mint
@@ -5484,6 +5525,8 @@ export interface components {
             card_payto_allowlist?: string[];
             /** @description Whether agents may reveal card details subject to per-card reveal policy. */
             card_reveal_enabled?: boolean;
+            /** @description When true, card orders route through the human approval queue before x402 payment. */
+            card_require_approval?: boolean;
             /** @description Today's transaction count (UTC calendar day). Present when intents_api_enabled. */
             tx_count_today?: number;
             /** @description Today's overhead spend by chain in native units. */
@@ -12689,6 +12732,30 @@ export interface operations {
             409: components["responses"]["Conflict"];
         };
     };
+    quickDecideApproval: {
+        parameters: {
+            query: {
+                token: string;
+                decision: "approved" | "rejected";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Redirect to dashboard confirmation page */
+            302: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
     listDepositDestinations: {
         parameters: {
             query?: never;
@@ -13542,8 +13609,26 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Card order accepted (status pending) */
+            /** @description Idempotent replay of a prior order */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CardResponse"];
+                };
+            };
+            /** @description Card order accepted and payment submitted (status pending) */
             201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CardResponse"];
+                };
+            };
+            /** @description Card order queued for human approval (status awaiting_approval) */
+            202: {
                 headers: {
                     [name: string]: unknown;
                 };
