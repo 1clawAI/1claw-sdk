@@ -13,6 +13,7 @@ import { OrgResource } from "../resources/org";
 import { AuthResource } from "../resources/auth";
 import { ApiKeysResource } from "../resources/api-keys";
 import { TreasuryResource } from "../resources/treasury";
+import { WebhooksResource } from "../resources/webhooks";
 
 const BASE = "https://api.test";
 const originalFetch = globalThis.fetch;
@@ -677,5 +678,64 @@ describe("TreasuryResource", () => {
         globalThis.fetch = mockFetch(200, { requests: [] });
         await new TreasuryResource(makeHttp()).listAccessRequests("t-1");
         expect(lastCall().url).toBe(`${BASE}/v1/treasury/t-1/access-requests`);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// WebhooksResource
+// ---------------------------------------------------------------------------
+describe("WebhooksResource", () => {
+    it("create sends POST /v1/webhooks", async () => {
+        globalThis.fetch = mockFetch(201, {
+            id: "wh-1",
+            url: "https://example.com/hook",
+            events: ["secret.accessed"],
+            secret: "whsec_abc",
+            created_at: "2026-01-01T00:00:00Z",
+        });
+        await new WebhooksResource(makeHttp()).create({
+            url: "https://example.com/hook",
+            events: ["secret.accessed"],
+            description: "prod hook",
+        });
+        expect(lastCall().url).toBe(`${BASE}/v1/webhooks`);
+        expect(lastCall().init.method).toBe("POST");
+        expect(JSON.parse(lastCall().init.body as string)).toEqual({
+            url: "https://example.com/hook",
+            events: ["secret.accessed"],
+            description: "prod hook",
+        });
+    });
+
+    it("list sends GET /v1/webhooks", async () => {
+        globalThis.fetch = mockFetch(200, { webhooks: [] });
+        await new WebhooksResource(makeHttp()).list();
+        expect(lastCall().url).toBe(`${BASE}/v1/webhooks`);
+        expect(lastCall().init.method).toBe("GET");
+    });
+
+    it("get sends GET /v1/webhooks/{id}", async () => {
+        globalThis.fetch = mockFetch(200, { id: "wh-1" });
+        await new WebhooksResource(makeHttp()).get("wh-1");
+        expect(lastCall().url).toBe(`${BASE}/v1/webhooks/wh-1`);
+    });
+
+    it("update sends PATCH /v1/webhooks/{id}", async () => {
+        globalThis.fetch = mockFetch(200, { id: "wh-1", is_active: false });
+        await new WebhooksResource(makeHttp()).update("wh-1", {
+            is_active: false,
+        });
+        expect(lastCall().init.method).toBe("PATCH");
+        expect(lastCall().url).toBe(`${BASE}/v1/webhooks/wh-1`);
+        expect(JSON.parse(lastCall().init.body as string)).toEqual({
+            is_active: false,
+        });
+    });
+
+    it("delete sends DELETE /v1/webhooks/{id}", async () => {
+        globalThis.fetch = mockFetch(204, null);
+        await new WebhooksResource(makeHttp()).delete("wh-1");
+        expect(lastCall().init.method).toBe("DELETE");
+        expect(lastCall().url).toBe(`${BASE}/v1/webhooks/wh-1`);
     });
 });

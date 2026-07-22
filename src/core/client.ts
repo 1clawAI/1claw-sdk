@@ -26,6 +26,7 @@ import { RiskResource } from "../resources/risk";
 import { TokensResource } from "../resources/tokens";
 import { BindingsResource } from "../resources/bindings";
 import { CardsResource } from "../resources/cards";
+import { WebhooksResource } from "../resources/webhooks";
 
 /**
  * The main 1Claw SDK client. All API resources are exposed as
@@ -103,6 +104,8 @@ export class OneclawClient {
     readonly tokens: TokensResource;
     /** Payment Card Vault — order, list, reveal, void, and refresh payment cards. */
     readonly cards: CardsResource;
+    /** Webhooks — register HTTPS endpoints for vault event notifications. */
+    readonly webhooks: WebhooksResource;
 
     constructor(config: OneclawClientConfig) {
         this.http = new HttpClient(config);
@@ -141,6 +144,7 @@ export class OneclawClient {
         this.risk = new RiskResource(this.http);
         this.tokens = new TokensResource(this.http);
         this.cards = new CardsResource(this.http);
+        this.webhooks = new WebhooksResource(this.http);
     }
 
     private autoAuthenticateUserKey(config: OneclawClientConfig): void {
