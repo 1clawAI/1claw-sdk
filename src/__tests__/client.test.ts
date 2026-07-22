@@ -35,6 +35,7 @@ describe("OneclawClient", () => {
         expect(client.chains).toBeDefined();
         expect(client.x402).toBeDefined();
         expect(client.treasury).toBeDefined();
+        expect(client.webhooks).toBeDefined();
     });
 
     it("auto-authenticates with agent apiKey + agentId on first request", async () => {

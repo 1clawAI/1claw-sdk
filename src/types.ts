@@ -1769,6 +1769,16 @@ export interface ClaimRedeemResponse {
 }
 
 // ---------------------------------------------------------------------------
+// Webhooks
+// ---------------------------------------------------------------------------
+
+export type CreateWebhookRequest = ApiSchemas["CreateWebhookRequest"];
+export type UpdateWebhookRequest = ApiSchemas["UpdateWebhookRequest"];
+export type WebhookCreatedResponse = ApiSchemas["WebhookCreatedResponse"];
+export type WebhookResponse = ApiSchemas["WebhookResponse"];
+export type WebhookListResponse = ApiSchemas["WebhookListResponse"];
+
+// ---------------------------------------------------------------------------
 // Health
 // ---------------------------------------------------------------------------
 

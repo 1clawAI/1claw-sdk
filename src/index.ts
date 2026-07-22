@@ -67,6 +67,7 @@ export type {
 export { TokensResource } from "./resources/tokens";
 export { BindingsResource } from "./resources/bindings";
 export { CardsResource } from "./resources/cards";
+export { WebhooksResource } from "./resources/webhooks";
 
 // DPoP (Demonstration of Proof-of-Possession)
 export { DPoPManager } from "./auth/dpop";
@@ -272,6 +273,12 @@ export type {
     UpdateCardRequest,
     ImportCardRequest,
     SearchGiftCardsRequest,
+    // Webhooks
+    CreateWebhookRequest,
+    UpdateWebhookRequest,
+    WebhookCreatedResponse,
+    WebhookResponse,
+    WebhookListResponse,
     // Health
     HealthResponse,
     // MCP
