@@ -26,6 +26,10 @@ import { RiskResource } from "../resources/risk";
 import { TokensResource } from "../resources/tokens";
 import { BindingsResource } from "../resources/bindings";
 import { CardsResource } from "../resources/cards";
+import { MemoryResource } from "../resources/memory";
+import { AutomationsResource } from "../resources/automations";
+import { RuntimesResource } from "../resources/runtimes";
+import { DiscoveryResource } from "../resources/discovery";
 
 /**
  * The main 1Claw SDK client. All API resources are exposed as
@@ -103,6 +107,14 @@ export class OneclawClient {
     readonly tokens: TokensResource;
     /** Payment Card Vault — order, list, reveal, void, and refresh payment cards. */
     readonly cards: CardsResource;
+    /** Agent memory — namespaced key-value storage with optional TTL. */
+    readonly memory: MemoryResource;
+    /** Automations — scheduled, event-driven, and webhook-triggered workflows. */
+    readonly automations: AutomationsResource;
+    /** Runtimes — managed compute environments for agent code execution. */
+    readonly runtimes: RuntimesResource;
+    /** Discovery — agent cards, directory, and marketplace. */
+    readonly discovery: DiscoveryResource;
 
     constructor(config: OneclawClientConfig) {
         this.http = new HttpClient(config);
@@ -141,6 +153,10 @@ export class OneclawClient {
         this.risk = new RiskResource(this.http);
         this.tokens = new TokensResource(this.http);
         this.cards = new CardsResource(this.http);
+        this.memory = new MemoryResource(this.http);
+        this.automations = new AutomationsResource(this.http);
+        this.runtimes = new RuntimesResource(this.http);
+        this.discovery = new DiscoveryResource(this.http);
     }
 
     private autoAuthenticateUserKey(config: OneclawClientConfig): void {

@@ -312,4 +312,107 @@ export class PlatformResource {
             `/v1/platform/connections/${connectionId}/grants/${grantId}`,
         );
     }
+
+    /** List all resources managed by this platform app for a connection. */
+    async listConnectionResources(
+        connectionId: string,
+    ): Promise<OneclawResponse<Record<string, unknown>>> {
+        return this.http.request<Record<string, unknown>>(
+            "GET",
+            `/v1/platform/connections/${connectionId}/resources`,
+            { headers: { "X-Platform-Connection": connectionId } },
+        );
+    }
+
+    /** Get the delegation audit log for a connection. */
+    async getDelegationLog(
+        connectionId: string,
+        params?: { limit?: number; offset?: number },
+    ): Promise<OneclawResponse<{ entries: unknown[]; total: number }>> {
+        return this.http.request<{ entries: unknown[]; total: number }>(
+            "GET",
+            `/v1/platform/connections/${connectionId}/delegation-log`,
+            { query: params as Record<string, string | number | undefined> },
+        );
+    }
+
+    /**
+     * Returns a scoped client that auto-sets `X-Platform-Connection` on all
+     * requests. Allows platform developers to perform CRUD in a connected
+     * user's org using standard resource methods.
+     */
+    withConnection(connectionId: string): ScopedPlatformClient {
+        return new ScopedPlatformClient(this.http, connectionId);
+    }
+}
+
+/**
+ * A scoped client that automatically attaches the `X-Platform-Connection`
+ * header to every request, enabling platform developers to manage resources
+ * in a connected user's org.
+ */
+export class ScopedPlatformClient {
+    constructor(
+        private readonly http: HttpClient,
+        private readonly connectionId: string,
+    ) {}
+
+    /**
+     * Generic scoped request — attaches the connection header automatically.
+     * Use the specific resource helpers below for typed responses.
+     */
+    async request<T>(
+        method: string,
+        path: string,
+        options?: { body?: unknown; query?: Record<string, string | number | undefined> },
+    ): Promise<OneclawResponse<T>> {
+        return this.http.request<T>(method, path, {
+            ...options,
+            headers: { "X-Platform-Connection": this.connectionId },
+        });
+    }
+
+    // Convenience methods for common delegated operations
+
+    get vaults() {
+        const req = this.request.bind(this);
+        return {
+            create: (data: { name: string; description?: string }) =>
+                req("POST", "/v1/vaults", { body: data }),
+            list: () => req("GET", "/v1/vaults"),
+        };
+    }
+
+    get agents() {
+        const req = this.request.bind(this);
+        return {
+            create: (data: Record<string, unknown>) =>
+                req("POST", "/v1/agents", { body: data }),
+            list: () => req("GET", "/v1/agents"),
+            update: (agentId: string, data: Record<string, unknown>) =>
+                req("PATCH", `/v1/agents/${agentId}`, { body: data }),
+        };
+    }
+
+    get automations() {
+        const req = this.request.bind(this);
+        return {
+            create: (data: Record<string, unknown>) =>
+                req("POST", "/v1/automations", { body: data }),
+            list: () => req("GET", "/v1/automations"),
+            delete: (id: string) => req("DELETE", `/v1/automations/${id}`),
+        };
+    }
+
+    get runtimes() {
+        const req = this.request.bind(this);
+        return {
+            create: (data: Record<string, unknown>) =>
+                req("POST", "/v1/runtimes", { body: data }),
+            list: () => req("GET", "/v1/runtimes"),
+            start: (id: string) => req("POST", `/v1/runtimes/${id}/start`),
+            stop: (id: string) => req("POST", `/v1/runtimes/${id}/stop`),
+            delete: (id: string) => req("DELETE", `/v1/runtimes/${id}`),
+        };
+    }
 }

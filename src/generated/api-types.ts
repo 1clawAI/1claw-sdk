@@ -4697,6 +4697,329 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/automations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List automations */
+        get: operations["listAutomations"];
+        put?: never;
+        /** Create automation */
+        post: operations["createAutomation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/automations/{automationId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get automation */
+        get: operations["getAutomation"];
+        put?: never;
+        post?: never;
+        /** Delete automation */
+        delete: operations["deleteAutomation"];
+        options?: never;
+        head?: never;
+        /** Update automation */
+        patch: operations["updateAutomation"];
+        trace?: never;
+    };
+    "/v1/automations/{automationId}/trigger": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Trigger automation */
+        post: operations["triggerAutomation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/automations/{automationId}/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List automation runs */
+        get: operations["listAutomationRuns"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/runtimes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List runtimes */
+        get: operations["listRuntimes"];
+        put?: never;
+        /** Create runtime */
+        post: operations["createRuntime"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/runtimes/{runtimeId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get runtime */
+        get: operations["getRuntime"];
+        put?: never;
+        post?: never;
+        /** Delete runtime */
+        delete: operations["deleteRuntime"];
+        options?: never;
+        head?: never;
+        /** Update runtime */
+        patch: operations["updateRuntime"];
+        trace?: never;
+    };
+    "/v1/runtimes/{runtimeId}/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start runtime */
+        post: operations["startRuntime"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/runtimes/{runtimeId}/stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Stop runtime */
+        post: operations["stopRuntime"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/runtimes/{runtimeId}/logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get runtime logs */
+        get: operations["getRuntimeLogs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/runtimes/slug-check/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Check slug availability */
+        get: operations["checkSlugAvailability"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/memory": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List memory namespaces */
+        get: operations["listMemoryNamespaces"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/memory/{namespace}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List entries in namespace */
+        get: operations["listMemoryEntries"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/memory/{namespace}/{key}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get memory entry */
+        get: operations["getMemoryEntry"];
+        /** Put memory entry */
+        put: operations["putMemoryEntry"];
+        post?: never;
+        /** Delete memory entry */
+        delete: operations["deleteMemoryEntry"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/memory/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Semantic search */
+        post: operations["searchMemory"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/card": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get agent card
+         * @description Public endpoint returning the agent's discovery card metadata.
+         */
+        get: operations["getAgentCard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/directory": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Public agent directory
+         * @description Browse the public directory of discoverable agents.
+         */
+        get: operations["listDirectory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/discovery": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update discovery settings */
+        patch: operations["updateDiscoverySettings"];
+        trace?: never;
+    };
+    "/v1/platform/marketplace": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Public marketplace
+         * @description Browse the public platform marketplace of agents and apps.
+         */
+        get: operations["listMarketplace"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -7751,6 +8074,229 @@ export interface components {
             redactions_applied: number;
             /** Format: date-time */
             created_at: string;
+        };
+        CreateAutomationRequest: {
+            name: string;
+            description?: string;
+            /** Format: uuid */
+            agent_id?: string;
+            /** @enum {string} */
+            trigger_type?: "schedule" | "webhook" | "event" | "manual";
+            trigger_config?: {
+                [key: string]: unknown;
+            };
+            action_type?: string;
+            action_config?: {
+                [key: string]: unknown;
+            };
+            /** @default true */
+            is_active: boolean;
+        };
+        UpdateAutomationRequest: {
+            name?: string;
+            description?: string;
+            /** Format: uuid */
+            agent_id?: string;
+            /** @enum {string} */
+            trigger_type?: "schedule" | "webhook" | "event" | "manual";
+            trigger_config?: {
+                [key: string]: unknown;
+            };
+            action_type?: string;
+            action_config?: {
+                [key: string]: unknown;
+            };
+            is_active?: boolean;
+        };
+        AutomationResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            description?: string | null;
+            /** Format: uuid */
+            agent_id?: string | null;
+            /** @enum {string} */
+            trigger_type: "schedule" | "webhook" | "event" | "manual";
+            trigger_config?: {
+                [key: string]: unknown;
+            } | null;
+            action_type?: string | null;
+            action_config?: {
+                [key: string]: unknown;
+            } | null;
+            is_active: boolean;
+            webhook_url?: string | null;
+            schedule_expression?: string | null;
+            /** Format: date-time */
+            next_run_at?: string | null;
+            /** Format: date-time */
+            last_run_at?: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        AutomationListResponse: {
+            automations: components["schemas"]["AutomationResponse"][];
+        };
+        AutomationRunResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            automation_id: string;
+            /** @enum {string} */
+            status: "pending" | "running" | "completed" | "failed";
+            /** Format: date-time */
+            started_at: string;
+            /** Format: date-time */
+            completed_at?: string | null;
+            result?: {
+                [key: string]: unknown;
+            } | null;
+            error?: string | null;
+        };
+        AutomationRunListResponse: {
+            runs: components["schemas"]["AutomationRunResponse"][];
+        };
+        CreateRuntimeRequest: {
+            name: string;
+            /** Format: uuid */
+            agent_id: string;
+            template?: string;
+            preset?: string;
+            image?: string;
+            env_public?: {
+                [key: string]: string;
+            };
+            idle_timeout_secs?: number;
+            /** @default false */
+            expose_http: boolean;
+            http_port?: number;
+            slug?: string;
+            /** @enum {string} */
+            inbound_auth?: "api_key" | "jwt" | "public";
+        };
+        UpdateRuntimeRequest: {
+            name?: string;
+            template?: string;
+            preset?: string;
+            image?: string;
+            env_public?: {
+                [key: string]: string;
+            };
+            idle_timeout_secs?: number;
+            expose_http?: boolean;
+            http_port?: number;
+            slug?: string;
+            /** @enum {string} */
+            inbound_auth?: "api_key" | "jwt" | "public";
+        };
+        RuntimeResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** Format: uuid */
+            agent_id: string;
+            template?: string | null;
+            preset?: string | null;
+            provider?: string | null;
+            /** @enum {string} */
+            status: "creating" | "running" | "stopping" | "stopped" | "failed" | "deleting";
+            image?: string | null;
+            env_public?: {
+                [key: string]: string;
+            } | null;
+            idle_timeout_secs?: number | null;
+            expose_http?: boolean | null;
+            slug?: string | null;
+            public_url?: string | null;
+            http_port?: number | null;
+            /** @enum {string|null} */
+            inbound_auth?: "api_key" | "jwt" | "public" | null;
+            monthly_hours_used?: number | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        RuntimeListResponse: {
+            runtimes: components["schemas"]["RuntimeResponse"][];
+        };
+        SlugCheckResponse: {
+            available: boolean;
+            slug: string;
+            reason?: string | null;
+        };
+        MemoryEntry: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            agent_id: string;
+            namespace: string;
+            key: string;
+            value: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+            /** Format: date-time */
+            ttl_expires_at?: string | null;
+        };
+        PutMemoryRequest: {
+            value: string;
+            ttl_seconds?: number | null;
+        };
+        MemorySearchRequest: {
+            namespace: string;
+            query: string;
+            /** @default 5 */
+            top_k: number;
+        };
+        MemorySearchResponse: {
+            results: {
+                key?: string;
+                value?: string;
+                score?: number;
+                namespace?: string;
+            }[];
+        };
+        MemoryNamespaceListResponse: {
+            namespaces: string[];
+        };
+        MemoryEntryListResponse: {
+            entries: components["schemas"]["MemoryEntry"][];
+        };
+        AgentCardResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            description?: string | null;
+            capabilities?: string[];
+            a2a_url?: string | null;
+            mcp_url?: string | null;
+            tags?: string[];
+        };
+        DirectoryEntry: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            description?: string | null;
+            tags?: string[];
+            capabilities?: string[];
+            a2a_url?: string | null;
+            mcp_url?: string | null;
+            org_name?: string | null;
+        };
+        DirectoryResponse: {
+            agents: components["schemas"]["DirectoryEntry"][];
+            total: number;
+            page: number;
+            per_page: number;
+        };
+        UpdateDiscoveryRequest: {
+            discoverable?: boolean;
+            public_description?: string;
+            public_tags?: string[];
         };
     };
     responses: {
@@ -13209,9 +13755,12 @@ export interface operations {
                 state?: string;
                 /** @description PKCE code challenge */
                 code_challenge?: string;
-                code_challenge_method?: "S256" | "plain";
+                /** @description Only S256 is supported (PKCE is mandatory for code grants) */
+                code_challenge_method?: "S256";
                 /** @description OIDC nonce for ID token replay protection */
                 nonce?: string;
+                /** @description Pre-fill the email field on the consent page */
+                login_hint?: string;
             };
             header?: never;
             path?: never;
@@ -13255,7 +13804,7 @@ export interface operations {
                     state?: string;
                     code_challenge?: string;
                     /** @enum {string} */
-                    code_challenge_method?: "S256" | "plain";
+                    code_challenge_method?: "S256";
                     nonce?: string;
                 };
             };
@@ -13298,7 +13847,7 @@ export interface operations {
                     client_id: string;
                     /** Format: uri */
                     redirect_uri: string;
-                    /** @description PKCE code verifier (required when code_challenge was used) */
+                    /** @description PKCE code verifier (required — PKCE S256 is mandatory for all code grants) */
                     code_verifier?: string;
                 };
             };
@@ -13841,6 +14390,670 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    listAutomations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Automation list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AutomationListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    createAutomation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAutomationRequest"];
+            };
+        };
+        responses: {
+            /** @description Automation created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AutomationResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    getAutomation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                automationId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Automation details */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AutomationResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deleteAutomation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                automationId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Automation deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateAutomation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                automationId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateAutomationRequest"];
+            };
+        };
+        responses: {
+            /** @description Automation updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AutomationResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    triggerAutomation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                automationId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Automation triggered */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AutomationRunResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listAutomationRuns: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                automationId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Automation run list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AutomationRunListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listRuntimes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Runtime list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RuntimeListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    createRuntime: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateRuntimeRequest"];
+            };
+        };
+        responses: {
+            /** @description Runtime created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RuntimeResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    getRuntime: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runtimeId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Runtime details */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RuntimeResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deleteRuntime: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runtimeId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Runtime deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateRuntime: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runtimeId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateRuntimeRequest"];
+            };
+        };
+        responses: {
+            /** @description Runtime updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RuntimeResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    startRuntime: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runtimeId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Runtime started */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RuntimeResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    stopRuntime: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runtimeId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Runtime stopped */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RuntimeResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getRuntimeLogs: {
+        parameters: {
+            query?: {
+                /** @description Only return logs after this timestamp */
+                since?: string;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                runtimeId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Runtime logs */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        lines?: {
+                            /** Format: date-time */
+                            timestamp?: string;
+                            message?: string;
+                            level?: string;
+                        }[];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    checkSlugAvailability: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Slug availability result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SlugCheckResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    listMemoryNamespaces: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Namespace list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemoryNamespaceListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listMemoryEntries: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+                namespace: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Memory entries */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemoryEntryListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getMemoryEntry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+                namespace: string;
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Memory entry */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemoryEntry"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    putMemoryEntry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+                namespace: string;
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PutMemoryRequest"];
+            };
+        };
+        responses: {
+            /** @description Memory entry stored */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemoryEntry"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deleteMemoryEntry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+                namespace: string;
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Memory entry deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    searchMemory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MemorySearchRequest"];
+            };
+        };
+        responses: {
+            /** @description Search results */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemorySearchResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getAgentCard: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Agent card */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentCardResponse"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listDirectory: {
+        parameters: {
+            query?: {
+                page?: number;
+                per_page?: number;
+                /** @description Comma-separated tag filter */
+                tags?: string;
+                /** @description Search query */
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Directory listing */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DirectoryResponse"];
+                };
+            };
+        };
+    };
+    updateDiscoverySettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateDiscoveryRequest"];
+            };
+        };
+        responses: {
+            /** @description Discovery settings updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentCardResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listMarketplace: {
+        parameters: {
+            query?: {
+                page?: number;
+                per_page?: number;
+                /** @description Search query */
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Marketplace listing */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DirectoryResponse"];
+                };
             };
         };
     };

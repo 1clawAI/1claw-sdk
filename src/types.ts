@@ -1839,3 +1839,253 @@ export interface SigningKeyBalanceResponse {
     balance_display: string;
     tokens?: TokenBalance[];
 }
+
+// ---------------------------------------------------------------------------
+// Memory — per-agent key-value storage with namespaces and optional TTL
+// ---------------------------------------------------------------------------
+
+export interface PutMemoryRequest {
+    value: unknown;
+    ttl_seconds?: number;
+}
+
+export interface MemoryEntryResponse {
+    id: string;
+    agent_id: string;
+    namespace: string;
+    key: string;
+    value: unknown;
+    ttl_expires_at?: string;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface MemoryEntryListResponse {
+    entries: MemoryEntryResponse[];
+}
+
+export interface NamespaceListResponse {
+    namespaces: string[];
+}
+
+// ---------------------------------------------------------------------------
+// Automations — scheduled / event-driven / webhook-triggered agent workflows
+// ---------------------------------------------------------------------------
+
+export interface CreateAutomationRequest {
+    name: string;
+    agent_id: string;
+    trigger_type: "cron" | "event" | "webhook";
+    cron_expr?: string;
+    timezone?: string;
+    event_filter?: Record<string, unknown>;
+    workflow_spec: Record<string, unknown>;
+}
+
+export interface UpdateAutomationRequest {
+    name?: string;
+    cron_expr?: string | null;
+    timezone?: string;
+    event_filter?: Record<string, unknown> | null;
+    workflow_spec?: Record<string, unknown>;
+    is_active?: boolean;
+}
+
+export interface AutomationResponse {
+    id: string;
+    agent_id: string;
+    name: string;
+    trigger_type: string;
+    cron_expr?: string;
+    timezone: string;
+    event_filter?: Record<string, unknown>;
+    workflow_spec: Record<string, unknown>;
+    is_active: boolean;
+    last_run_at?: string;
+    next_run_at?: string;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface AutomationListResponse {
+    automations: AutomationResponse[];
+}
+
+export interface AutomationRunResponse {
+    id: string;
+    automation_id: string;
+    agent_id: string;
+    status: string;
+    step_results?: unknown;
+    error?: string;
+    trigger_source?: string;
+    started_at: string;
+    finished_at?: string;
+    tokens_used: number;
+    cost_cents: number;
+}
+
+export interface AutomationRunListResponse {
+    runs: AutomationRunResponse[];
+}
+
+// ---------------------------------------------------------------------------
+// Runtimes — managed compute environments for agent code execution
+// ---------------------------------------------------------------------------
+
+export interface CreateRuntimeRequest {
+    name: string;
+    agent_id: string;
+    template?: string;
+    preset?: string;
+    image?: string;
+    env_public?: Record<string, string>;
+    idle_timeout_secs?: number;
+    expose_http?: boolean;
+    http_port?: number;
+    slug?: string;
+    inbound_auth?: "api_key" | "jwt" | "public";
+}
+
+export interface UpdateRuntimeRequest {
+    name?: string;
+    env_public?: Record<string, string>;
+    idle_timeout_secs?: number;
+    image?: string;
+    expose_http?: boolean;
+    http_port?: number;
+    slug?: string;
+    inbound_auth?: "api_key" | "jwt" | "public";
+}
+
+export interface RuntimeResponse {
+    id: string;
+    agent_id: string;
+    name: string;
+    template?: string;
+    preset: string;
+    provider: string;
+    status: string;
+    image?: string;
+    env_public?: Record<string, string>;
+    idle_timeout_secs: number;
+    last_activity_at?: string;
+    trial_hours_used?: number;
+    monthly_hours_used?: number;
+    expose_http: boolean;
+    slug?: string;
+    public_url?: string;
+    http_port?: number;
+    inbound_auth: string;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface RuntimeListResponse {
+    runtimes: RuntimeResponse[];
+}
+
+// ---------------------------------------------------------------------------
+// Discovery — agent cards, directory, and marketplace
+// ---------------------------------------------------------------------------
+
+export interface AgentCardResponse {
+    id: string;
+    name: string;
+    description: string;
+    tags: string[];
+    a2a_url?: string;
+    mcp_url?: string;
+    capabilities: string[];
+}
+
+export interface DirectoryEntry {
+    id: string;
+    name: string;
+    description: string;
+    tags: string[];
+    a2a_url?: string;
+    mcp_url?: string;
+    capabilities: string[];
+}
+
+export interface DirectoryResponse {
+    agents: DirectoryEntry[];
+    total: number;
+    page: number;
+    page_size: number;
+}
+
+export interface UpdateDiscoveryRequest {
+    discoverable?: boolean;
+    public_description?: string;
+    public_tags?: string[];
+}
+
+export interface MarketplaceAppEntry {
+    id: string;
+    name: string;
+    slug: string;
+    description?: string;
+    logo_url?: string;
+    category?: string;
+    listing_tags: string[];
+    listing_screenshots: string[];
+    pricing_summary?: string;
+}
+
+export interface MarketplaceResponse {
+    apps: MarketplaceAppEntry[];
+}
+
+export interface SlugCheckResponse {
+    slug: string;
+    available: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Platform Delegation (Phase 11)
+// ---------------------------------------------------------------------------
+
+export interface DelegationLogEntry {
+    id: string;
+    connection_id: string;
+    platform_app_id: string;
+    actor_id: string;
+    action: string;
+    resource_type: string | null;
+    resource_id: string | null;
+    success: boolean;
+    error: string | null;
+    created_at: string;
+}
+
+export interface DelegationLogResponse {
+    entries: DelegationLogEntry[];
+    total: number;
+}
+
+export interface ConnectionResourcesResponse {
+    vaults: Array<{ id: string; name: string }>;
+    agents: Array<{ id: string; name: string }>;
+    policies: Array<{ id: string }>;
+    automations: Array<{ id: string; name: string }>;
+    runtimes: Array<{ id: string; agent_id: string; preset: string }>;
+}
+
+export interface UpdateConnectionDelegationRequest {
+    delegation_enabled?: boolean;
+    delegation_scopes?: string[];
+}
+
+// ---------------------------------------------------------------------------
+// OAuth2 Credential Bindings
+// ---------------------------------------------------------------------------
+
+export interface OAuth2StatusResponse {
+    connected: boolean;
+    needs_reauth: boolean;
+    scopes: string[];
+    provider?: string;
+    expires_at?: string;
+}

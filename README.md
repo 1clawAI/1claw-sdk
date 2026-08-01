@@ -107,6 +107,10 @@ await client.auth.verifyEmailChange({ code: "123456" });
 | `client.passkeys`  | `list`, `registerBegin`, `registerComplete`, `assertBegin`, `assertComplete`, `delete`                               |
 | `client.risk`      | `listEvents`, `getVerdict`, `listVerdicts`, `createHoneytoken`, `listHoneytokens`, `deleteHoneytoken`                |
 | `client.webhooks`  | `create`, `list`, `get`, `update`, `delete`                                                                          |
+| `client.memory`    | `put`, `get`, `list`, `delete`, `search`, `listNamespaces`                                                           |
+| `client.automations` | `create`, `list`, `get`, `update`, `delete`, `trigger`, `listRuns`                                                 |
+| `client.runtimes`  | `create`, `list`, `get`, `update`, `delete`, `start`, `stop`, `logs`, `checkSlug`                                    |
+| `client.discovery` | `getAgentCard`, `directory`, `updateDiscovery`, `marketplace`                                                        |
 | `client.x402`      | `getPaymentRequirement`, `pay`, `verifyReceipt`, `withPayment`                                                      |
 
 **Platform bootstrap response:** `bootstrapUser()` returns a `summary` object containing `agent_api_key` (one-time, not retrievable later) and `signing_keys[]` (with chain, address, and public_key for each provisioned key).

@@ -24,7 +24,7 @@ export type {
     AccessRequestListResponse,
 } from "./resources/treasury";
 export { SigningKeysResource } from "./resources/signing-keys";
-export { PlatformResource } from "./resources/platform";
+export { PlatformResource, ScopedPlatformClient } from "./resources/platform";
 export { TreasuryWalletsResource } from "./resources/treasury-wallets";
 export { DevicesResource } from "./resources/devices";
 export type {
@@ -67,6 +67,10 @@ export type {
 export { TokensResource } from "./resources/tokens";
 export { BindingsResource } from "./resources/bindings";
 export { CardsResource } from "./resources/cards";
+export { MemoryResource } from "./resources/memory";
+export { AutomationsResource } from "./resources/automations";
+export { RuntimesResource } from "./resources/runtimes";
+export { DiscoveryResource } from "./resources/discovery";
 
 // DPoP (Demonstration of Proof-of-Possession)
 export { DPoPManager } from "./auth/dpop";
@@ -272,6 +276,38 @@ export type {
     UpdateCardRequest,
     ImportCardRequest,
     SearchGiftCardsRequest,
+    // Memory
+    PutMemoryRequest,
+    MemoryEntryResponse,
+    MemoryEntryListResponse,
+    NamespaceListResponse,
+    // Automations
+    CreateAutomationRequest,
+    UpdateAutomationRequest,
+    AutomationResponse,
+    AutomationListResponse,
+    AutomationRunResponse,
+    AutomationRunListResponse,
+    // Runtimes
+    CreateRuntimeRequest,
+    UpdateRuntimeRequest,
+    RuntimeResponse,
+    RuntimeListResponse,
+    SlugCheckResponse,
+    // Discovery
+    AgentCardResponse,
+    DirectoryEntry,
+    DirectoryResponse,
+    UpdateDiscoveryRequest,
+    MarketplaceAppEntry,
+    MarketplaceResponse,
+    // Platform Delegation
+    DelegationLogEntry,
+    DelegationLogResponse,
+    ConnectionResourcesResponse,
+    UpdateConnectionDelegationRequest,
+    // OAuth2
+    OAuth2StatusResponse,
     // Health
     HealthResponse,
     // MCP
