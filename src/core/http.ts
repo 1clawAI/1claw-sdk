@@ -278,6 +278,55 @@ export class HttpClient {
     }
 
     // -----------------------------------------------------------------------
+    // Convenience methods
+    // -----------------------------------------------------------------------
+
+    async get<T>(
+        path: string,
+        options?: { query?: Record<string, string | number | undefined>; headers?: Record<string, string> },
+    ): Promise<T> {
+        return this.requestOrThrow<T>("GET", path, options);
+    }
+
+    async post<T>(
+        path: string,
+        body?: unknown,
+        options?: { query?: Record<string, string | number | undefined>; headers?: Record<string, string> },
+    ): Promise<T> {
+        return this.requestOrThrow<T>("POST", path, { ...options, body });
+    }
+
+    async put<T>(
+        path: string,
+        body?: unknown,
+        options?: { query?: Record<string, string | number | undefined>; headers?: Record<string, string> },
+    ): Promise<T> {
+        return this.requestOrThrow<T>("PUT", path, { ...options, body });
+    }
+
+    async patch<T>(
+        path: string,
+        body?: unknown,
+        options?: { query?: Record<string, string | number | undefined>; headers?: Record<string, string> },
+    ): Promise<T> {
+        return this.requestOrThrow<T>("PATCH", path, { ...options, body });
+    }
+
+    async del<T = void>(
+        path: string,
+        options?: { headers?: Record<string, string> },
+    ): Promise<T> {
+        return this.requestOrThrow<T>("DELETE", path, options);
+    }
+
+    async delete<T = void>(
+        path: string,
+        options?: { headers?: Record<string, string> },
+    ): Promise<T> {
+        return this.del<T>(path, options);
+    }
+
+    // -----------------------------------------------------------------------
     // Private helpers
     // -----------------------------------------------------------------------
 

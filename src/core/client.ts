@@ -53,7 +53,7 @@ import { DiscoveryResource } from "../resources/discovery";
  * ```
  */
 export class OneclawClient {
-    private readonly http: HttpClient;
+    readonly http: HttpClient;
 
     /** Vault management — create, list, get, delete vaults. */
     readonly vault: VaultResource;
