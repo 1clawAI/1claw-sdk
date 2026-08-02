@@ -30,6 +30,8 @@ import { MemoryResource } from "../resources/memory";
 import { AutomationsResource } from "../resources/automations";
 import { RuntimesResource } from "../resources/runtimes";
 import { DiscoveryResource } from "../resources/discovery";
+import { ChatResource } from "../resources/chat";
+import { ChannelsResource } from "../resources/channels";
 
 /**
  * The main 1Claw SDK client. All API resources are exposed as
@@ -115,6 +117,10 @@ export class OneclawClient {
     readonly runtimes: RuntimesResource;
     /** Discovery — agent cards, directory, and marketplace. */
     readonly discovery: DiscoveryResource;
+    /** Chat — send messages to agents via Shroud LLM, manage conversations. */
+    readonly chat: ChatResource;
+    /** Channels — register external messaging channels (Telegram, WhatsApp, Discord). */
+    readonly channels: ChannelsResource;
 
     constructor(config: OneclawClientConfig) {
         this.http = new HttpClient(config);
@@ -157,6 +163,8 @@ export class OneclawClient {
         this.automations = new AutomationsResource(this.http);
         this.runtimes = new RuntimesResource(this.http);
         this.discovery = new DiscoveryResource(this.http);
+        this.chat = new ChatResource(this.http);
+        this.channels = new ChannelsResource(this.http);
     }
 
     private autoAuthenticateUserKey(config: OneclawClientConfig): void {

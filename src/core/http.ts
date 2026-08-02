@@ -326,6 +326,39 @@ export class HttpClient {
         return this.del<T>(path, options);
     }
 
+    /**
+     * Perform a request and return the raw `Response` object without parsing.
+     * Useful for SSE streaming or binary responses where the caller manages
+     * the response body directly.
+     */
+    async rawRequest(
+        method: string,
+        path: string,
+        options: {
+            body?: unknown;
+            headers?: Record<string, string>;
+        } = {},
+    ): Promise<Response> {
+        await this.ensureToken();
+        const url = this.buildUrl(path);
+        const headers: Record<string, string> = {
+            "Content-Type": "application/json",
+            ...options.headers,
+        };
+        if (this.token) {
+            headers["Authorization"] = `Bearer ${this.token}`;
+        }
+        if (this.dpopManager) {
+            await this.ensureDPoP();
+            headers["DPoP"] = await this.dpopManager.generateProof(method, url);
+        }
+        const init: RequestInit = { method, headers };
+        if (options.body !== undefined) {
+            init.body = JSON.stringify(options.body);
+        }
+        return fetch(url, init);
+    }
+
     // -----------------------------------------------------------------------
     // Private helpers
     // -----------------------------------------------------------------------

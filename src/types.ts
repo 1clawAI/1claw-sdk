@@ -2089,3 +2089,109 @@ export interface OAuth2StatusResponse {
     provider?: string;
     expires_at?: string;
 }
+
+// ---------------------------------------------------------------------------
+// Agent Chat
+// ---------------------------------------------------------------------------
+
+export interface SendChatMessageRequest {
+    message: string;
+    conversation_id?: string;
+    mode?: string;
+    model?: string;
+    provider?: string;
+    system_prompt?: string;
+}
+
+export interface ChatMessageResponse {
+    id: string;
+    conversation_id: string;
+    role: string;
+    content: string;
+    tool_calls?: unknown;
+    tool_results?: unknown;
+    tokens_prompt: number;
+    tokens_completion: number;
+    model?: string;
+    created_at: string;
+}
+
+export interface ChatConversationResponse {
+    id: string;
+    agent_id: string;
+    title?: string;
+    mode: string;
+    model?: string;
+    provider?: string;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface ChatConversationListResponse {
+    conversations: ChatConversationResponse[];
+}
+
+export interface ConversationDetailResponse {
+    conversation: ChatConversationResponse;
+    messages: ChatMessageResponse[];
+}
+
+export interface SendChatMessageResponse {
+    conversation_id: string;
+    message: ChatMessageResponse;
+}
+
+// ---------------------------------------------------------------------------
+// Agent Channels (Telegram, WhatsApp, Discord)
+// ---------------------------------------------------------------------------
+
+export interface CreateChannelRequest {
+    channel_type: string;
+    channel_name?: string;
+    config: Record<string, string>;
+}
+
+export interface UpdateChannelRequest {
+    channel_name?: string;
+    is_active?: boolean;
+    config?: Record<string, string>;
+}
+
+export interface ChannelResponse {
+    id: string;
+    org_id: string;
+    agent_id: string;
+    channel_type: string;
+    channel_name?: string;
+    webhook_path?: string;
+    webhook_url?: string;
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface ChannelListResponse {
+    channels: ChannelResponse[];
+}
+
+export interface SendChannelMessageRequest {
+    external_chat_id: string;
+    content: string;
+    reply_to?: string;
+}
+
+export interface ChannelMessageResponse {
+    id: string;
+    channel_id: string;
+    direction: string;
+    external_chat_id: string;
+    external_message_id?: string;
+    sender_name?: string;
+    content: string;
+    media_url?: string;
+    created_at: string;
+}
+
+export interface ChannelMessageListResponse {
+    messages: ChannelMessageResponse[];
+}

@@ -71,6 +71,8 @@ export { MemoryResource } from "./resources/memory";
 export { AutomationsResource } from "./resources/automations";
 export { RuntimesResource } from "./resources/runtimes";
 export { DiscoveryResource } from "./resources/discovery";
+export { ChatResource } from "./resources/chat";
+export { ChannelsResource } from "./resources/channels";
 
 // DPoP (Demonstration of Proof-of-Possession)
 export { DPoPManager } from "./auth/dpop";
@@ -308,6 +310,21 @@ export type {
     UpdateConnectionDelegationRequest,
     // OAuth2
     OAuth2StatusResponse,
+    // Chat
+    SendChatMessageRequest,
+    SendChatMessageResponse,
+    ChatConversationResponse,
+    ChatConversationListResponse,
+    ChatMessageResponse,
+    ConversationDetailResponse,
+    // Channels
+    CreateChannelRequest,
+    UpdateChannelRequest,
+    ChannelResponse,
+    ChannelListResponse,
+    SendChannelMessageRequest,
+    ChannelMessageResponse,
+    ChannelMessageListResponse,
     // Health
     HealthResponse,
     // MCP
