@@ -106,6 +106,9 @@ await client.auth.verifyEmailChange({ code: "123456" });
 | `client.devices`   | `register`, `list`, `delete`, `challenge`, `attest`, `setPushToken`                                                 |
 | `client.passkeys`  | `list`, `registerBegin`, `registerComplete`, `assertBegin`, `assertComplete`, `delete`                               |
 | `client.risk`      | `listEvents`, `getVerdict`, `listVerdicts`, `createHoneytoken`, `listHoneytokens`, `deleteHoneytoken`                |
+| `client.tokens`    | `list`, `listByChain`, `create`, `delete`                                                                            |
+| `client.bindings`  | `create`, `list`, `get`, `update`, `delete`, `rotateCredential`, `test`, `execute`, `listExecutions`                |
+| `client.cards`     | `order`, `list`, `get`, `reveal`, `update`, `void`, `refresh`, `import`, `searchGiftCards`                          |
 | `client.webhooks`  | `create`, `list`, `get`, `update`, `delete`                                                                          |
 | `client.memory`    | `put`, `get`, `list`, `delete`, `search`, `listNamespaces`                                                           |
 | `client.automations` | `create`, `list`, `get`, `update`, `delete`, `trigger`, `listRuns`                                                 |
@@ -552,7 +555,7 @@ const card = await client.cards.order("agent-id", {
 const status = await client.cards.get(card.id);
 
 // Reveal (human-only with password re-auth)
-const revealed = await client.cards.reveal(card.id, "my-password");
+const revealed = await client.cards.reveal(card.id, { password: "my-password" });
 // revealed.pan, revealed.cvv, revealed.disclaimer
 
 // Gift cards
