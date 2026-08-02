@@ -5020,6 +5020,224 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/agents/{agent_id}/chat": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send chat message
+         * @description Send a message to an agent and receive a response via Shroud LLM.
+         *     Supports SSE streaming when Accept: text/event-stream is set.
+         */
+        post: operations["sendChatMessage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/chat/conversations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List conversations
+         * @description List all chat conversations for an agent.
+         */
+        get: operations["listChatConversations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/chat/conversations/{conversation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get conversation
+         * @description Get a conversation with its full message history.
+         */
+        get: operations["getChatConversation"];
+        put?: never;
+        post?: never;
+        /**
+         * Archive conversation
+         * @description Archive (soft-delete) a chat conversation.
+         */
+        delete: operations["deleteChatConversation"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/channels": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List channels
+         * @description List all messaging channels for an agent.
+         */
+        get: operations["listChannels"];
+        put?: never;
+        /**
+         * Register channel
+         * @description Register a new external messaging channel (Telegram, WhatsApp, Discord)
+         *     for an agent. Human-only. Returns the channel with its webhook URL.
+         */
+        post: operations["createChannel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/channels/{channel_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete channel
+         * @description Delete a messaging channel. Human-only.
+         */
+        delete: operations["deleteChannel"];
+        options?: never;
+        head?: never;
+        /**
+         * Update channel
+         * @description Update a channel's name, active status, or config. Human-only.
+         */
+        patch: operations["updateChannel"];
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/channels/{channel_id}/send": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send outbound message
+         * @description Send an outbound message via a registered channel.
+         */
+        post: operations["sendChannelMessage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/channels/{channel_id}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Channel message history
+         * @description List inbound and outbound messages for a channel.
+         */
+        get: operations["listChannelMessages"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/webhooks/telegram/{webhook_path}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Telegram webhook
+         * @description Public webhook endpoint for receiving Telegram bot updates.
+         */
+        post: operations["telegramWebhook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/webhooks/whatsapp/{webhook_path}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * WhatsApp webhook verification
+         * @description Verification endpoint for WhatsApp Cloud API webhook setup.
+         */
+        get: operations["whatsappWebhookVerify"];
+        put?: never;
+        /**
+         * WhatsApp webhook
+         * @description Public webhook endpoint for receiving WhatsApp Cloud API events.
+         */
+        post: operations["whatsappWebhook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/webhooks/discord/{webhook_path}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Discord webhook
+         * @description Public webhook endpoint for receiving Discord bot interactions.
+         */
+        post: operations["discordWebhook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -8297,6 +8515,123 @@ export interface components {
             discoverable?: boolean;
             public_description?: string;
             public_tags?: string[];
+        };
+        SendChatMessageRequest: {
+            message: string;
+            /** Format: uuid */
+            conversation_id?: string;
+            mode?: string;
+            model?: string;
+            provider?: string;
+            system_prompt?: string;
+        };
+        ChatMessageResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            conversation_id?: string;
+            role?: string;
+            content?: string;
+            tool_calls?: unknown;
+            tool_results?: unknown;
+            tokens_prompt?: number;
+            tokens_completion?: number;
+            model?: string;
+            /** Format: date-time */
+            created_at?: string;
+        };
+        ChatConversationResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            agent_id?: string;
+            title?: string;
+            mode?: string;
+            model?: string;
+            provider?: string;
+            /** Format: date-time */
+            created_at?: string;
+            /** Format: date-time */
+            updated_at?: string;
+        };
+        ChatConversationListResponse: {
+            conversations?: components["schemas"]["ChatConversationResponse"][];
+        };
+        ConversationDetailResponse: {
+            conversation?: components["schemas"]["ChatConversationResponse"];
+            messages?: components["schemas"]["ChatMessageResponse"][];
+        };
+        SendChatMessageResponse: {
+            /** Format: uuid */
+            conversation_id?: string;
+            message?: components["schemas"]["ChatMessageResponse"];
+        };
+        CreateChannelRequest: {
+            /** @enum {string} */
+            channel_type: "telegram" | "whatsapp" | "discord";
+            channel_name?: string;
+            /**
+             * @description Platform-specific config.
+             *     Telegram: { bot_token }.
+             *     WhatsApp: { phone_number_id, access_token, verify_token }.
+             *     Discord: { bot_token, application_id }.
+             */
+            config: {
+                [key: string]: string;
+            };
+        };
+        UpdateChannelRequest: {
+            channel_name?: string;
+            is_active?: boolean;
+            config?: {
+                [key: string]: string;
+            };
+        };
+        ChannelResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            org_id?: string;
+            /** Format: uuid */
+            agent_id?: string;
+            /** @enum {string} */
+            channel_type?: "telegram" | "whatsapp" | "discord";
+            channel_name?: string;
+            webhook_path?: string;
+            webhook_url?: string;
+            is_active?: boolean;
+            /** Format: date-time */
+            created_at?: string;
+            /** Format: date-time */
+            updated_at?: string;
+        };
+        ChannelListResponse: {
+            channels?: components["schemas"]["ChannelResponse"][];
+        };
+        SendChannelMessageRequest: {
+            /** @description External platform chat/user ID */
+            external_chat_id: string;
+            content: string;
+            /** @description External message ID to reply to */
+            reply_to?: string;
+        };
+        ChannelMessageResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            channel_id?: string;
+            /** @enum {string} */
+            direction?: "inbound" | "outbound";
+            external_chat_id?: string;
+            external_message_id?: string;
+            sender_name?: string;
+            content?: string;
+            media_url?: string;
+            /** Format: date-time */
+            created_at?: string;
+        };
+        ChannelMessageListResponse: {
+            messages?: components["schemas"]["ChannelMessageResponse"][];
         };
     };
     responses: {
@@ -15054,6 +15389,363 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["DirectoryResponse"];
                 };
+            };
+        };
+    };
+    sendChatMessage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SendChatMessageRequest"];
+            };
+        };
+        responses: {
+            /** @description Chat response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SendChatMessageResponse"];
+                    "text/event-stream": string;
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    listChatConversations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Conversation list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatConversationListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    getChatConversation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+                conversation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Conversation detail */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversationDetailResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deleteChatConversation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+                conversation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Conversation archived */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listChannels: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Channel list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChannelListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    createChannel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateChannelRequest"];
+            };
+        };
+        responses: {
+            /** @description Channel created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChannelResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    deleteChannel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+                channel_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Channel deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateChannel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+                channel_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateChannelRequest"];
+            };
+        };
+        responses: {
+            /** @description Channel updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChannelResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    sendChannelMessage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+                channel_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SendChannelMessageRequest"];
+            };
+        };
+        responses: {
+            /** @description Message sent */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChannelMessageResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listChannelMessages: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+                channel_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Message list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChannelMessageListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    telegramWebhook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                webhook_path: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Webhook processed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    whatsappWebhookVerify: {
+        parameters: {
+            query?: {
+                "hub.mode"?: string;
+                "hub.verify_token"?: string;
+                "hub.challenge"?: string;
+            };
+            header?: never;
+            path: {
+                webhook_path: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Challenge response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    whatsappWebhook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                webhook_path: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Webhook processed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    discordWebhook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                webhook_path: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Webhook processed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
