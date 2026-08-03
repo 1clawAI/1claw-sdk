@@ -1905,6 +1905,10 @@ export interface AutomationResponse {
     next_run_at?: string;
     created_at: string;
     updated_at: string;
+    /** One-time on create (webhook trigger) — `whk_…` */
+    webhook_token?: string;
+    /** Public trigger URL including token — only on create/rotate */
+    webhook_url?: string;
 }
 
 export interface AutomationListResponse {
