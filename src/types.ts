@@ -1945,6 +1945,9 @@ export interface CreateRuntimeRequest {
     http_port?: number;
     slug?: string;
     inbound_auth?: "api_key" | "jwt" | "public";
+    shell_access_enabled?: boolean;
+    shell_auth_policy?: string;
+    shell_max_session_minutes?: number;
 }
 
 export interface UpdateRuntimeRequest {
@@ -1956,6 +1959,9 @@ export interface UpdateRuntimeRequest {
     http_port?: number;
     slug?: string;
     inbound_auth?: "api_key" | "jwt" | "public";
+    shell_access_enabled?: boolean;
+    shell_auth_policy?: string;
+    shell_max_session_minutes?: number;
 }
 
 export interface RuntimeResponse {
@@ -1977,12 +1983,31 @@ export interface RuntimeResponse {
     public_url?: string;
     http_port?: number;
     inbound_auth: string;
+    shell_access_enabled?: boolean;
+    shell_auth_policy?: string;
+    shell_max_session_minutes?: number;
     created_at: string;
     updated_at: string;
 }
 
 export interface RuntimeListResponse {
     runtimes: RuntimeResponse[];
+}
+
+export interface ShellSessionRequest {
+    password?: string;
+    totp_code?: string;
+    passkey_credential?: Record<string, unknown>;
+    /** Single-use `rat_` token from POST /v1/auth/reauth (purpose runtime_shell). */
+    reauth_token?: string;
+}
+
+export interface ShellSessionResponse {
+    session_token: string;
+    ws_url: string;
+    expires_in: number;
+    runtime_id: string;
+    max_session_minutes: number;
 }
 
 // ---------------------------------------------------------------------------

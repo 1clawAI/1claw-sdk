@@ -5,6 +5,8 @@ import type {
     RuntimeResponse,
     RuntimeListResponse,
     SlugCheckResponse,
+    ShellSessionRequest,
+    ShellSessionResponse,
     OneclawResponse,
 } from "../types";
 
@@ -80,6 +82,31 @@ export class RuntimesResource {
         return this.http.request<SlugCheckResponse>(
             "GET",
             `/v1/runtimes/slug-check/${encodeURIComponent(slug)}`,
+        );
+    }
+
+    /**
+     * Create an interactive shell WebSocket session (human-only, step-up auth).
+     * Runtime must have `shell_access_enabled` and typically be running.
+     */
+    async createShellSession(
+        runtimeId: string,
+        data: ShellSessionRequest = {},
+    ): Promise<OneclawResponse<ShellSessionResponse>> {
+        return this.http.request<ShellSessionResponse>(
+            "POST",
+            `/v1/runtimes/${runtimeId}/shell/session`,
+            { body: data },
+        );
+    }
+
+    /** Begin WebAuthn passkey assertion for shell step-up auth. */
+    async beginShellPasskey(
+        runtimeId: string,
+    ): Promise<OneclawResponse<Record<string, unknown>>> {
+        return this.http.request<Record<string, unknown>>(
+            "POST",
+            `/v1/runtimes/${runtimeId}/shell/passkey/begin`,
         );
     }
 }

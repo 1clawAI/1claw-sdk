@@ -4873,6 +4873,53 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/runtimes/{runtimeId}/shell/session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create interactive shell session
+         * @description Human-only. Creates a short-lived WebSocket session token for the
+         *     runtime's PTY terminal. Requires step-up auth via `password`,
+         *     `totp_code`, `passkey_credential`, or `reauth_token` (from
+         *     `POST /v1/auth/reauth` with purpose `runtime_shell`).
+         *     Runtime must have `shell_access_enabled` and be running.
+         *     Enabling shell on a running runtime may require stop/start, or
+         *     the server may auto-reconcile the sidecar on connect.
+         */
+        post: operations["createShellSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/runtimes/{runtimeId}/shell/passkey/begin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Begin shell passkey assertion
+         * @description Human-only. Starts a WebAuthn assertion ceremony for shell
+         *     step-up auth (social/Google users without a password).
+         */
+        post: operations["beginShellPasskey"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/agents/{agent_id}/memory": {
         parameters: {
             query?: never;
@@ -8293,35 +8340,54 @@ export interface components {
             /** Format: date-time */
             created_at: string;
         };
+        /**
+         * @description Create an automation. `workflow_spec` is required and must be either
+         *     a JSON array of steps or `{ "steps": [...] }`. Dashboard `schedule`
+         *     trigger_type is accepted and normalized to `cron`. For cron triggers,
+         *     `cron_expr` is required.
+         */
         CreateAutomationRequest: {
             name: string;
-            description?: string;
             /** Format: uuid */
-            agent_id?: string;
-            /** @enum {string} */
-            trigger_type?: "schedule" | "webhook" | "event" | "manual";
-            trigger_config?: {
+            agent_id: string;
+            /**
+             * @description cron | event | webhook | manual (alias schedule → cron)
+             * @enum {string}
+             */
+            trigger_type: "cron" | "event" | "webhook" | "manual" | "schedule";
+            /**
+             * @description Required when trigger_type is cron (or schedule)
+             * @example 0 *\/6 * * *
+             */
+            cron_expr?: string;
+            /**
+             * @default UTC
+             * @example UTC
+             */
+            timezone: string;
+            event_filter?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * @description Workflow steps. Accepts a bare array `[...]` or
+             *     `{ "steps": [...] }` (dashboard / preset shape).
+             */
+            workflow_spec: {
+                [key: string]: unknown;
+            }[] | {
                 [key: string]: unknown;
             };
-            action_type?: string;
-            action_config?: {
-                [key: string]: unknown;
-            };
-            /** @default true */
-            is_active: boolean;
         };
         UpdateAutomationRequest: {
             name?: string;
-            description?: string;
-            /** Format: uuid */
-            agent_id?: string;
-            /** @enum {string} */
-            trigger_type?: "schedule" | "webhook" | "event" | "manual";
-            trigger_config?: {
+            cron_expr?: string | null;
+            timezone?: string;
+            event_filter?: {
                 [key: string]: unknown;
-            };
-            action_type?: string;
-            action_config?: {
+            } | null;
+            workflow_spec?: {
+                [key: string]: unknown;
+            }[] | {
                 [key: string]: unknown;
             };
             is_active?: boolean;
@@ -8329,26 +8395,26 @@ export interface components {
         AutomationResponse: {
             /** Format: uuid */
             id: string;
-            name: string;
-            description?: string | null;
             /** Format: uuid */
-            agent_id?: string | null;
+            agent_id: string;
+            name: string;
             /** @enum {string} */
-            trigger_type: "schedule" | "webhook" | "event" | "manual";
-            trigger_config?: {
+            trigger_type: "cron" | "event" | "webhook" | "manual";
+            cron_expr?: string | null;
+            timezone: string;
+            event_filter?: {
                 [key: string]: unknown;
             } | null;
-            action_type?: string | null;
-            action_config?: {
+            workflow_spec: {
                 [key: string]: unknown;
-            } | null;
+            }[] | {
+                [key: string]: unknown;
+            };
             is_active: boolean;
-            webhook_url?: string | null;
-            schedule_expression?: string | null;
-            /** Format: date-time */
-            next_run_at?: string | null;
             /** Format: date-time */
             last_run_at?: string | null;
+            /** Format: date-time */
+            next_run_at?: string | null;
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
@@ -8362,16 +8428,19 @@ export interface components {
             id: string;
             /** Format: uuid */
             automation_id: string;
+            /** Format: uuid */
+            agent_id: string;
             /** @enum {string} */
-            status: "pending" | "running" | "completed" | "failed";
+            status: "pending" | "running" | "completed" | "failed" | "denied";
+            step_results?: unknown;
+            error?: string | null;
+            trigger_source?: string | null;
             /** Format: date-time */
             started_at: string;
             /** Format: date-time */
-            completed_at?: string | null;
-            result?: {
-                [key: string]: unknown;
-            } | null;
-            error?: string | null;
+            finished_at?: string | null;
+            tokens_used: number;
+            cost_cents: number;
         };
         AutomationRunListResponse: {
             runs: components["schemas"]["AutomationRunResponse"][];
@@ -8393,6 +8462,11 @@ export interface components {
             slug?: string;
             /** @enum {string} */
             inbound_auth?: "api_key" | "jwt" | "public";
+            /** @default false */
+            shell_access_enabled: boolean;
+            /** @description Step-up auth policy for shell (e.g. password, passkey, totp) */
+            shell_auth_policy?: string;
+            shell_max_session_minutes?: number;
         };
         UpdateRuntimeRequest: {
             name?: string;
@@ -8408,6 +8482,9 @@ export interface components {
             slug?: string;
             /** @enum {string} */
             inbound_auth?: "api_key" | "jwt" | "public";
+            shell_access_enabled?: boolean;
+            shell_auth_policy?: string;
+            shell_max_session_minutes?: number;
         };
         RuntimeResponse: {
             /** Format: uuid */
@@ -8431,6 +8508,9 @@ export interface components {
             http_port?: number | null;
             /** @enum {string|null} */
             inbound_auth?: "api_key" | "jwt" | "public" | null;
+            shell_access_enabled?: boolean;
+            shell_auth_policy?: string;
+            shell_max_session_minutes?: number;
             monthly_hours_used?: number | null;
             /** Format: date-time */
             created_at: string;
@@ -8444,6 +8524,29 @@ export interface components {
             available: boolean;
             slug: string;
             reason?: string | null;
+        };
+        /**
+         * @description Step-up credentials for an interactive shell session.
+         *     Provide one of password, totp_code, passkey_credential, or reauth_token.
+         */
+        ShellSessionRequest: {
+            password?: string;
+            totp_code?: string;
+            passkey_credential?: {
+                [key: string]: unknown;
+            };
+            /** @description Single-use `rat_` token from POST /v1/auth/reauth (purpose runtime_shell) */
+            reauth_token?: string;
+        };
+        ShellSessionResponse: {
+            session_token: string;
+            /** @description WebSocket URL for the PTY terminal */
+            ws_url: string;
+            /** Format: int64 */
+            expires_in: number;
+            /** Format: uuid */
+            runtime_id: string;
+            max_session_minutes: number;
         };
         MemoryEntry: {
             /** Format: uuid */
@@ -15127,6 +15230,63 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+        };
+    };
+    createShellSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runtimeId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShellSessionRequest"];
+            };
+        };
+        responses: {
+            /** @description Shell session created */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShellSessionResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    beginShellPasskey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runtimeId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Passkey challenge for shell session */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
         };
     };
     listMemoryNamespaces: {

@@ -296,6 +296,8 @@ export type {
     RuntimeResponse,
     RuntimeListResponse,
     SlugCheckResponse,
+    ShellSessionRequest,
+    ShellSessionResponse,
     // Discovery
     AgentCardResponse,
     DirectoryEntry,
