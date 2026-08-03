@@ -77,6 +77,16 @@ export class AutomationsResource {
         );
     }
 
+    /** Rotate webhook token for a webhook-triggered automation (one-time URL + token in response). */
+    async rotateWebhookToken(
+        automationId: string,
+    ): Promise<OneclawResponse<{ webhook_url: string; webhook_token: string }>> {
+        return this.http.request(
+            "POST",
+            `/v1/automations/${automationId}/rotate-webhook-token`,
+        );
+    }
+
     /** List runs for an automation. */
     async listRuns(
         automationId: string,

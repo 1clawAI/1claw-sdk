@@ -4768,6 +4768,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/automations/assist/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Draft automation from natural language */
+        post: operations["assistDraftAutomation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/automations/assist/session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mint short-lived Assist session token */
+        post: operations["assistAutomationSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/automations/webhook/{automationId}/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Public webhook trigger */
+        post: operations["webhookTriggerAutomation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/automations/{automationId}/rotate-webhook-token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Rotate webhook token */
+        post: operations["rotateAutomationWebhookToken"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/runtimes": {
         parameters: {
             query?: never;
@@ -8419,6 +8487,31 @@ export interface components {
             created_at: string;
             /** Format: date-time */
             updated_at: string;
+        };
+        AutomationCreatedResponse: components["schemas"]["AutomationResponse"] & {
+            /** @description Full POST URL including token (one-time on create) */
+            webhook_url?: string;
+            /** @description whk_ token segment (one-time on create) */
+            webhook_token?: string;
+        };
+        WebhookTokenRotatedResponse: {
+            webhook_url: string;
+            webhook_token: string;
+        };
+        AssistDraftResponse: {
+            draft: {
+                [key: string]: unknown;
+            };
+            reply: string;
+        };
+        AssistSessionResponse: {
+            access_token: string;
+            expires_in: number;
+            scopes: string[];
+            /** Format: uuid */
+            runtime_id?: string | null;
+            runtime_status?: string | null;
+            cli_hint: string;
         };
         AutomationListResponse: {
             automations: components["schemas"]["AutomationResponse"][];
@@ -14865,13 +14958,13 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Automation created */
+            /** @description Automation created (includes one-time webhook credentials when trigger_type is webhook) */
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AutomationResponse"];
+                    "application/json": components["schemas"]["AutomationCreatedResponse"];
                 };
             };
             400: components["responses"]["BadRequest"];
@@ -15000,6 +15093,114 @@ export interface operations {
                     "application/json": components["schemas"]["AutomationRunListResponse"];
                 };
             };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    assistDraftAutomation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    message: string;
+                    /** Format: uuid */
+                    agent_id?: string;
+                    timezone?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Reviewable automation draft */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistDraftResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    assistAutomationSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    runtime_id?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Assist session token */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistSessionResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    webhookTriggerAutomation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                automationId: string;
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Automation run queued */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AutomationRunResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    rotateAutomationWebhookToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                automationId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description New one-time webhook URL and token */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookTokenRotatedResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             404: components["responses"]["NotFound"];
         };
@@ -15177,9 +15378,8 @@ export interface operations {
     getRuntimeLogs: {
         parameters: {
             query?: {
-                /** @description Only return logs after this timestamp */
-                since?: string;
-                limit?: number;
+                /** @description Number of recent log lines to return */
+                tail?: number;
             };
             header?: never;
             path: {
@@ -15196,10 +15396,10 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        lines?: {
+                        entries: {
                             /** Format: date-time */
                             timestamp?: string;
-                            message?: string;
+                            message: string;
                             level?: string;
                         }[];
                     };

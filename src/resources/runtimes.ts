@@ -85,6 +85,18 @@ export class RuntimesResource {
         );
     }
 
+    /** Fetch recent container logs (`entries` from Cloud Logging / Docker). */
+    async logs(
+        runtimeId: string,
+        opts?: { tail?: number },
+    ): Promise<OneclawResponse<{ entries: Array<{ timestamp?: string; message: string }> }>> {
+        const tail = opts?.tail ?? 100;
+        return this.http.request(
+            "GET",
+            `/v1/runtimes/${runtimeId}/logs?tail=${tail}`,
+        );
+    }
+
     /**
      * Create an interactive shell WebSocket session (human-only, step-up auth).
      * Runtime must have `shell_access_enabled` and typically be running.

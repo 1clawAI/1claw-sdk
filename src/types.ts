@@ -2008,6 +2008,8 @@ export interface ShellSessionResponse {
     expires_in: number;
     runtime_id: string;
     max_session_minutes: number;
+    /** Sidecar PTY id for reconnect/reattach */
+    session_id?: string;
 }
 
 // ---------------------------------------------------------------------------
