@@ -4988,6 +4988,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/runtimes/{runtimeId}/chat": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Chat with a running runtime agent
+         * @description Human-only. Proxies to the runtime container's OpenAI-compatible
+         *     `POST /v1/chat/completions` (hermes / openclaw / openclaude chat bridge).
+         *     Starts the runtime if stopped. Streams SSE when `Accept: text/event-stream`
+         *     or `stream: true`. Conversation history is ephemeral (pass `messages`).
+         *     Requires a public URL (shell access, Shroud sidecar, or HTTP hosting).
+         */
+        post: operations["runtimeChat"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/agents/{agent_id}/memory": {
         parameters: {
             query?: never;
@@ -8640,6 +8664,22 @@ export interface components {
             /** Format: uuid */
             runtime_id: string;
             max_session_minutes: number;
+        };
+        /**
+         * @description Chat with the agent inside a runtime. Provide `message` and/or
+         *     a full OpenAI-style `messages` array (ephemeral history).
+         */
+        RuntimeChatRequest: {
+            /** @description Latest user message */
+            message?: string;
+            /** @description OpenAI chat messages (optional history) */
+            messages?: {
+                [key: string]: unknown;
+            }[];
+            model?: string;
+            provider?: string;
+            /** @description Request SSE streaming (default true when Accept is text/event-stream) */
+            stream?: boolean;
         };
         MemoryEntry: {
             /** Format: uuid */
@@ -15484,6 +15524,39 @@ export interface operations {
                     };
                 };
             };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    runtimeChat: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runtimeId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RuntimeChatRequest"];
+            };
+        };
+        responses: {
+            /** @description Chat completion (JSON) or SSE stream */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                    "text/event-stream": string;
+                };
+            };
+            400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
