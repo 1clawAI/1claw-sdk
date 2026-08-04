@@ -121,4 +121,27 @@ export class RuntimesResource {
             `/v1/runtimes/${runtimeId}/shell/passkey/begin`,
         );
     }
+
+    /**
+     * Chat with the agent inside a runtime (hermes / openclaw / openclaude).
+     * Proxies to the container's OpenAI-compatible chat bridge.
+     * For SSE, pass `stream: true` and use a raw fetch with Accept: text/event-stream
+     * (this helper returns the parsed JSON body for non-streaming calls).
+     */
+    async chat(
+        runtimeId: string,
+        data: {
+            message?: string;
+            messages?: Array<Record<string, unknown>>;
+            model?: string;
+            provider?: string;
+            stream?: boolean;
+        },
+    ): Promise<OneclawResponse<Record<string, unknown>>> {
+        return this.http.request<Record<string, unknown>>(
+            "POST",
+            `/v1/runtimes/${runtimeId}/chat`,
+            { body: data },
+        );
+    }
 }

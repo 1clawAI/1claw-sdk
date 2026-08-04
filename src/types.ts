@@ -2016,6 +2016,14 @@ export interface ShellSessionResponse {
     session_id?: string;
 }
 
+export interface RuntimeChatRequest {
+    message?: string;
+    messages?: Array<Record<string, unknown>>;
+    model?: string;
+    provider?: string;
+    stream?: boolean;
+}
+
 // ---------------------------------------------------------------------------
 // Discovery — agent cards, directory, and marketplace
 // ---------------------------------------------------------------------------
