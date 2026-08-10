@@ -4836,6 +4836,47 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/automations/{automationId}/runs/{runId}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancel a running automation run
+         * @description Cancel a run that is currently in `running` or `awaiting_approval` status.
+         *     Returns the updated run with status `cancelled`.
+         */
+        post: operations["cancelAutomationRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/automations/presets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List automation presets
+         * @description Public preset gallery of ready-to-use automation templates.
+         */
+        get: operations["listAutomationPresets"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/runtimes": {
         parameters: {
             query?: never;
@@ -8463,6 +8504,10 @@ export interface components {
             /**
              * @description Workflow steps. Accepts a bare array `[...]` or
              *     `{ "steps": [...] }` (dashboard / preset shape).
+             *     Supported step types: get_secret, put_secret, http_request,
+             *     rotate_secret, notify_human, ai_generate, memory_get,
+             *     memory_put, memory_search, notify, approval_request,
+             *     condition, execute_binding.
              */
             workflow_spec: {
                 [key: string]: unknown;
@@ -8548,7 +8593,7 @@ export interface components {
             /** Format: uuid */
             agent_id: string;
             /** @enum {string} */
-            status: "pending" | "running" | "completed" | "failed" | "denied";
+            status: "pending" | "running" | "completed" | "failed" | "denied" | "cancelled" | "awaiting_approval";
             step_results?: unknown;
             error?: string | null;
             trigger_source?: string | null;
@@ -8561,6 +8606,18 @@ export interface components {
         };
         AutomationRunListResponse: {
             runs: components["schemas"]["AutomationRunResponse"][];
+        };
+        AutomationPresetsResponse: {
+            presets: {
+                id?: string;
+                name?: string;
+                description?: string;
+                trigger_type?: string;
+                cron_expr?: string | null;
+                workflow_spec?: {
+                    [key: string]: unknown;
+                };
+            }[];
         };
         CreateRuntimeRequest: {
             name: string;
@@ -15243,6 +15300,52 @@ export interface operations {
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             404: components["responses"]["NotFound"];
+        };
+    };
+    cancelAutomationRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                automationId: string;
+                runId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Run cancelled */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AutomationRunResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listAutomationPresets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Automation preset list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AutomationPresetsResponse"];
+                };
+            };
         };
     };
     listRuntimes: {

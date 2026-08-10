@@ -32,6 +32,7 @@ import { RuntimesResource } from "../resources/runtimes";
 import { DiscoveryResource } from "../resources/discovery";
 import { ChatResource } from "../resources/chat";
 import { ChannelsResource } from "../resources/channels";
+import { WebhooksResource } from "../resources/webhooks";
 
 /**
  * The main 1Claw SDK client. All API resources are exposed as
@@ -121,6 +122,8 @@ export class OneclawClient {
     readonly chat: ChatResource;
     /** Channels — register external messaging channels (Telegram, WhatsApp, Discord). */
     readonly channels: ChannelsResource;
+    /** Webhooks — register and manage event notification webhooks. */
+    readonly webhooks: WebhooksResource;
 
     constructor(config: OneclawClientConfig) {
         this.http = new HttpClient(config);
@@ -165,6 +168,7 @@ export class OneclawClient {
         this.discovery = new DiscoveryResource(this.http);
         this.chat = new ChatResource(this.http);
         this.channels = new ChannelsResource(this.http);
+        this.webhooks = new WebhooksResource(this.http);
     }
 
     private autoAuthenticateUserKey(config: OneclawClientConfig): void {

@@ -6,6 +6,7 @@ import type {
     AutomationListResponse,
     AutomationRunResponse,
     AutomationRunListResponse,
+    AutomationPresetsResponse,
     OneclawResponse,
 } from "../types";
 
@@ -111,6 +112,25 @@ export class AutomationsResource {
         return this.http.request<AutomationRunResponse>(
             "GET",
             `/v1/automations/${automationId}/runs/${runId}`,
+        );
+    }
+
+    /** Cancel a running or awaiting_approval run. */
+    async cancelRun(
+        automationId: string,
+        runId: string,
+    ): Promise<OneclawResponse<AutomationRunResponse>> {
+        return this.http.request<AutomationRunResponse>(
+            "POST",
+            `/v1/automations/${automationId}/runs/${runId}/cancel`,
+        );
+    }
+
+    /** List public automation presets (no auth required). */
+    async getPresets(): Promise<OneclawResponse<AutomationPresetsResponse>> {
+        return this.http.request<AutomationPresetsResponse>(
+            "GET",
+            "/v1/automations/presets",
         );
     }
 }

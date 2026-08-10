@@ -1933,6 +1933,49 @@ export interface AutomationRunListResponse {
     runs: AutomationRunResponse[];
 }
 
+export interface AutomationPreset {
+    id: string;
+    name: string;
+    description?: string;
+    trigger_type: string;
+    cron_expr?: string | null;
+    workflow_spec: Record<string, unknown>;
+}
+
+export interface AutomationPresetsResponse {
+    presets: AutomationPreset[];
+}
+
+// ---------------------------------------------------------------------------
+// Webhooks — event notification system
+// ---------------------------------------------------------------------------
+
+export interface CreateWebhookRequest {
+    url: string;
+    events: string[];
+    secret?: string;
+}
+
+export interface UpdateWebhookRequest {
+    url?: string;
+    events?: string[];
+    is_active?: boolean;
+}
+
+export interface WebhookResponse {
+    id: string;
+    org_id: string;
+    url: string;
+    events: string[];
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface WebhookListResponse {
+    webhooks: WebhookResponse[];
+}
+
 // ---------------------------------------------------------------------------
 // Runtimes — managed compute environments for agent code execution
 // ---------------------------------------------------------------------------

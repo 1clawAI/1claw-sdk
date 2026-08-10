@@ -73,6 +73,7 @@ export { RuntimesResource } from "./resources/runtimes";
 export { DiscoveryResource } from "./resources/discovery";
 export { ChatResource } from "./resources/chat";
 export { ChannelsResource } from "./resources/channels";
+export { WebhooksResource } from "./resources/webhooks";
 
 // DPoP (Demonstration of Proof-of-Possession)
 export { DPoPManager } from "./auth/dpop";
@@ -290,6 +291,13 @@ export type {
     AutomationListResponse,
     AutomationRunResponse,
     AutomationRunListResponse,
+    AutomationPreset,
+    AutomationPresetsResponse,
+    // Webhooks
+    CreateWebhookRequest,
+    UpdateWebhookRequest,
+    WebhookResponse,
+    WebhookListResponse,
     // Runtimes
     CreateRuntimeRequest,
     UpdateRuntimeRequest,
