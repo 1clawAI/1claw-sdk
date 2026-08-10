@@ -1,6 +1,6 @@
 {
     "name": "@1claw/sdk",
-    "version": "0.43.3",
+    "version": "0.43.4",
     "description": "TypeScript SDK for 1Claw Vault — secret management for AI agents",
     "type": "module",
     "main": "dist/index.js",
@@ -21,7 +21,7 @@
     ],
     "scripts": {
         "generate": "openapi-typescript ../openapi-spec/openapi.yaml -o src/generated/api-types.ts",
-        "build": "tsc",
+        "build": "tsc && node scripts/fix-esm-imports.mjs",
         "clean": "rm -rf dist",
         "test": "vitest",
         "prepublishOnly": "npm run generate && npm run clean && npm run build"
