@@ -2305,3 +2305,75 @@ export interface ChannelMessageResponse {
 export interface ChannelMessageListResponse {
     messages: ChannelMessageResponse[];
 }
+
+// ---------------------------------------------------------------------------
+// OAuth Connected Accounts
+// ---------------------------------------------------------------------------
+
+export interface OAuthProviderScope {
+    scope: string;
+    label: string;
+    description: string;
+    default: boolean;
+}
+
+export interface OAuthProviderResponse {
+    slug: string;
+    display_name: string;
+    icon_url: string | null;
+    authorization_url: string;
+    token_url: string;
+    scopes_available: OAuthProviderScope[];
+    default_scopes: string[];
+    extra_auth_params: Record<string, string>;
+    requires_app_credentials: boolean;
+    documentation_url: string | null;
+}
+
+export interface OAuthProviderListResponse {
+    providers: OAuthProviderResponse[];
+}
+
+export interface OAuthConnectionResponse {
+    binding_id: string;
+    provider_slug: string;
+    provider_name: string;
+    scopes: string[];
+    status: string;
+    needs_reauth: boolean;
+    created_at: string;
+}
+
+export interface OAuthConnectionListResponse {
+    connections: OAuthConnectionResponse[];
+}
+
+export interface ConnectOAuthRequest {
+    provider_slug: string;
+    scopes?: string[];
+    redirect_after?: string;
+}
+
+export interface ConnectOAuthResponse {
+    authorization_url: string;
+}
+
+export interface OAuthAppCredentialResponse {
+    id: string;
+    provider_slug: string;
+    client_id: string;
+    redirect_uri: string | null;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface OAuthAppCredentialListResponse {
+    credentials: OAuthAppCredentialResponse[];
+}
+
+export interface SaveOAuthAppCredentialsRequest {
+    provider_slug: string;
+    client_id: string;
+    client_secret: string;
+    redirect_uri?: string;
+}

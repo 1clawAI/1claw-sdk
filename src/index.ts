@@ -74,6 +74,7 @@ export { DiscoveryResource } from "./resources/discovery";
 export { ChatResource } from "./resources/chat";
 export { ChannelsResource } from "./resources/channels";
 export { WebhooksResource } from "./resources/webhooks";
+export { OAuthConnectResource } from "./resources/oauth-connect";
 
 // DPoP (Demonstration of Proof-of-Possession)
 export { DPoPManager } from "./auth/dpop";
@@ -338,6 +339,17 @@ export type {
     SendChannelMessageRequest,
     ChannelMessageResponse,
     ChannelMessageListResponse,
+    // OAuth Connected Accounts
+    OAuthProviderScope,
+    OAuthProviderResponse,
+    OAuthProviderListResponse,
+    OAuthConnectionResponse,
+    OAuthConnectionListResponse,
+    ConnectOAuthRequest,
+    ConnectOAuthResponse,
+    OAuthAppCredentialResponse,
+    OAuthAppCredentialListResponse,
+    SaveOAuthAppCredentialsRequest,
     // Health
     HealthResponse,
     // MCP
