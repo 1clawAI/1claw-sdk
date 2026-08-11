@@ -102,12 +102,12 @@ await client.auth.verifyEmailChange({ code: "123456" });
 | `client.fiat` | `createOnrampSession`, `initiateOfframp` |
 | `client.signingKeys` | `create`, `list`, `rotate`, `deactivate`, `export`                                                               |
 | `client.agents` (Bankr) | `leaseBankrKey`, `listBankrKeys`, `revokeBankrKey` — privileged; `api_key` omitted for agent JWTs (use Shroud) |
-| `client.platform`  | `createApp`, `listApps`, `getApp`, `updateApp`, `deleteApp`, `rotateKey`, `createTemplate`, `listTemplates`, `upsertUser`, `listUsers`, `bootstrapUser`, `reissueClaim`, `claimPreview`, `claimRedeem`, `listConnectedApps`, `disconnectApp`, `grantAccess`, `listGrants`, `revokeGrant`, `createSpendPolicy`, `listSpendPolicies`, `setUserSpendPolicy`, `deleteSpendPolicy` |
+| `client.platform`  | `createApp`, `listApps`, `getApp`, `updateApp`, `deleteApp`, `rotateKey`, `createTemplate`, `listTemplates`, `upsertUser`, `listUsers`, `bootstrapUser`, `reissueClaim`, `claimPreview`, `claimRedeem`, `listConnectedApps`, `disconnectApp`, `grantAccess`, `listGrants`, `revokeGrant`, `createSpendPolicy`, `listSpendPolicies`, `setUserSpendPolicy`, `deleteSpendPolicy`, `updateConnectionDelegation` |
 | `client.devices`   | `register`, `list`, `delete`, `challenge`, `attest`, `setPushToken`                                                 |
 | `client.passkeys`  | `list`, `registerBegin`, `registerComplete`, `assertBegin`, `assertComplete`, `delete`                               |
 | `client.risk`      | `listEvents`, `getVerdict`, `listVerdicts`, `createHoneytoken`, `listHoneytokens`, `deleteHoneytoken`                |
 | `client.webhooks`  | `create`, `list`, `get`, `update`, `delete`                                                                          |
-| `client.memory`    | `put`, `get`, `list`, `delete`, `search`, `listNamespaces`                                                           |
+| `client.memory`    | `put`, `get`, `list`, `delete`, `search`, `listNamespaces`, `deleteNamespace`                                         |
 | `client.automations` | `create`, `list`, `get`, `update`, `delete`, `trigger`, `listRuns`                                                 |
 | `client.runtimes`  | `create`, `list`, `get`, `update`, `delete`, `start`, `stop`, `logs`, `checkSlug`                                    |
 | `client.discovery` | `getAgentCard`, `directory`, `updateDiscovery`, `marketplace`                                                        |

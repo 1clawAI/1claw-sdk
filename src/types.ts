@@ -1871,6 +1871,21 @@ export interface NamespaceListResponse {
     namespaces: string[];
 }
 
+export interface MemorySearchRequest {
+    namespace: string;
+    query: string;
+    top_k?: number;
+}
+
+export interface MemorySearchResponse {
+    results: Array<{
+        key: string;
+        value: unknown;
+        score: number;
+        namespace: string;
+    }>;
+}
+
 // ---------------------------------------------------------------------------
 // Automations — scheduled / event-driven / webhook-triggered agent workflows
 // ---------------------------------------------------------------------------
@@ -1878,7 +1893,7 @@ export interface NamespaceListResponse {
 export interface CreateAutomationRequest {
     name: string;
     agent_id: string;
-    trigger_type: "cron" | "event" | "webhook";
+    trigger_type: "cron" | "event" | "webhook" | "manual";
     cron_expr?: string;
     timezone?: string;
     event_filter?: Record<string, unknown>;
@@ -1912,6 +1927,14 @@ export interface AutomationResponse {
     webhook_token?: string;
     /** Public trigger URL including token — only on create/rotate */
     webhook_url?: string;
+    /** Status of the most recent run (enriched list). */
+    last_run_status?: string | null;
+    /** Total runs in the last 30 days (enriched list). */
+    total_runs?: number | null;
+    /** Success rate percentage (enriched list). */
+    success_rate?: number | null;
+    /** Agent display name (enriched list). */
+    agent_name?: string | null;
 }
 
 export interface AutomationListResponse {
@@ -1935,6 +1958,8 @@ export interface AutomationRunResponse {
 export interface AutomationRunListResponse {
     runs: AutomationRunResponse[];
 }
+
+export type AutomationRunStatus = 'running' | 'success' | 'failed' | 'timed_out' | 'cancelled' | 'awaiting_approval';
 
 export interface AutomationPreset {
     id: string;

@@ -284,6 +284,8 @@ export type {
     MemoryEntryResponse,
     MemoryEntryListResponse,
     NamespaceListResponse,
+    MemorySearchRequest,
+    MemorySearchResponse,
     // Automations
     CreateAutomationRequest,
     UpdateAutomationRequest,
@@ -291,6 +293,7 @@ export type {
     AutomationListResponse,
     AutomationRunResponse,
     AutomationRunListResponse,
+    AutomationRunStatus,
     AutomationPreset,
     AutomationPresetsResponse,
     // Webhooks

@@ -23,6 +23,7 @@ import type {
     GrantResourcesRequest,
     GrantResourcesResponse,
     GrantListResponse,
+    UpdateConnectionDelegationRequest,
     OneclawResponse,
 } from "../types";
 
@@ -340,6 +341,18 @@ export class PlatformResource {
         return this.http.request<void>(
             "DELETE",
             `/v1/platform/connections/${connectionId}/grants/${grantId}`,
+        );
+    }
+
+    /** Update delegation settings (enabled, scopes) on a connected app. User-only. */
+    async updateConnectionDelegation(
+        connectionId: string,
+        data: UpdateConnectionDelegationRequest,
+    ): Promise<OneclawResponse<Record<string, unknown>>> {
+        return this.http.request<Record<string, unknown>>(
+            "PATCH",
+            `/v1/platform/connected-apps/${connectionId}`,
+            { body: data },
         );
     }
 

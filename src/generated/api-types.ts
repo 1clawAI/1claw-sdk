@@ -3289,6 +3289,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/platform/apps/{appId}/templates/{template_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a bootstrap template */
+        delete: operations["deletePlatformTemplate"];
+        options?: never;
+        head?: never;
+        /**
+         * Update a bootstrap template
+         * @description Update an existing template's name, description, spec, or active status.
+         */
+        patch: operations["updatePlatformTemplate"];
+        trace?: never;
+    };
     "/v1/platform/users/upsert": {
         parameters: {
             query?: never;
@@ -3633,6 +3654,30 @@ export interface paths {
                 };
             };
         };
+        options?: never;
+        head?: never;
+        /**
+         * Update connection delegation
+         * @description Toggle delegation and update delegation scopes for a connected platform app. User-only.
+         */
+        patch: operations["updateConnectionDelegation"];
+        trace?: never;
+    };
+    "/v1/platform/connections/{connectionId}/delegation-log": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Delegation audit log
+         * @description List delegated actions performed by a platform app on behalf of this user.
+         */
+        get: operations["getDelegationLog"];
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -4768,6 +4813,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/automations/{automationId}/runs/{runId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get automation run
+         * @description Get details of a single automation run including step results and context.
+         */
+        get: operations["getAutomationRun"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/automations/assist/draft": {
         parameters: {
             query?: never;
@@ -5348,6 +5413,26 @@ export interface paths {
         get: operations["listChannelMessages"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/channels/{channel_id}/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Test channel connectivity
+         * @description Send a test message through the channel to verify connectivity and credentials.
+         */
+        post: operations["testChannel"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7981,6 +8066,8 @@ export interface components {
                 signing_key_chains?: string[];
                 /** @description One-time agent API key (ocv_ prefix). Store securely — not retrievable later. */
                 agent_api_key?: string | null;
+                /** @description EOA address when provision_eoa is true in the template */
+                agent_evm_address?: string | null;
                 /** @description Provisioned signing key details (chain, address, public key) */
                 signing_keys?: {
                     chain?: string;
@@ -7988,6 +8075,10 @@ export interface components {
                     public_key?: string;
                     address?: string;
                 }[];
+                /** @description IDs of runtimes provisioned by the template */
+                runtime_ids?: string[];
+                /** @description IDs of automations provisioned by the template */
+                automation_ids?: string[];
             };
         };
         ConnectedAppResponse: {
@@ -8552,6 +8643,14 @@ export interface components {
             last_run_at?: string | null;
             /** Format: date-time */
             next_run_at?: string | null;
+            /** @description Status of the most recent run (enriched list field) */
+            last_run_status?: string | null;
+            /** @description Total runs in the last 30 days (enriched list field) */
+            total_runs?: number | null;
+            /** @description Success rate percentage (enriched list field) */
+            success_rate?: number | null;
+            /** @description Resolved agent display name (enriched list field) */
+            agent_name?: string | null;
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
@@ -8593,10 +8692,14 @@ export interface components {
             /** Format: uuid */
             agent_id: string;
             /** @enum {string} */
-            status: "pending" | "running" | "completed" | "failed" | "denied" | "cancelled" | "awaiting_approval";
+            status: "running" | "success" | "failed" | "timed_out" | "cancelled" | "awaiting_approval";
             step_results?: unknown;
             error?: string | null;
             trigger_source?: string | null;
+            /** @description JSONB context passed between workflow steps */
+            context?: {
+                [key: string]: unknown;
+            } | null;
             /** Format: date-time */
             started_at: string;
             /** Format: date-time */
@@ -8893,6 +8996,14 @@ export interface components {
             webhook_path?: string;
             webhook_url?: string;
             is_active?: boolean;
+            /**
+             * @description Channel-specific configuration JSON. May include:
+             *     - sender_allowlist (array of strings): restrict which external senders can trigger the agent
+             *     - auto_respond_enabled (boolean): whether the agent auto-responds to inbound messages
+             */
+            config?: {
+                [key: string]: unknown;
+            } | null;
             /** Format: date-time */
             created_at?: string;
             /** Format: date-time */
@@ -13725,6 +13836,135 @@ export interface operations {
             };
         };
     };
+    deletePlatformTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appId: string;
+                template_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Template deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updatePlatformTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appId: string;
+                template_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    name?: string;
+                    description?: string | null;
+                    spec?: {
+                        [key: string]: unknown;
+                    };
+                    is_active?: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Template updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlatformTemplateResponse"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateConnectionDelegation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connectionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    delegation_enabled?: boolean;
+                    /** @description Scopes: vaults:read, vaults:write, agents:read, agents:write, secrets:read, secrets:write, automations:*, runtimes:* */
+                    delegation_scopes?: string[];
+                };
+            };
+        };
+        responses: {
+            /** @description Delegation settings updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        connection_id?: string;
+                        delegation_enabled?: boolean;
+                        delegation_scopes?: string[];
+                    };
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getDelegationLog: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connectionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Delegation log entries */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        entries?: {
+                            action?: string;
+                            scope?: string;
+                            resource_type?: string;
+                            /** Format: uuid */
+                            resource_id?: string;
+                            /** Format: date-time */
+                            timestamp?: string;
+                            details?: {
+                                [key: string]: unknown;
+                            } | null;
+                        }[];
+                    };
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
     listSpendPolicies: {
         parameters: {
             query?: never;
@@ -15194,6 +15434,31 @@ export interface operations {
             404: components["responses"]["NotFound"];
         };
     };
+    getAutomationRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                automationId: string;
+                runId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Automation run detail */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AutomationRunResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
     assistDraftAutomation: {
         parameters: {
             query?: never;
@@ -16187,6 +16452,44 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+        };
+    };
+    testChannel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+                channel_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Optional chat ID to send the test message to */
+                    external_chat_id?: string;
+                    /** @description Optional custom test message content */
+                    content?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Test result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        success?: boolean;
+                        message?: string | null;
+                        error?: string | null;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
         };
     };
     telegramWebhook: {

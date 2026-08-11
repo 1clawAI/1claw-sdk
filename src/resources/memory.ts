@@ -4,6 +4,8 @@ import type {
     MemoryEntryResponse,
     MemoryEntryListResponse,
     NamespaceListResponse,
+    MemorySearchRequest,
+    MemorySearchResponse,
     OneclawResponse,
 } from "../types";
 
@@ -87,6 +89,18 @@ export class MemoryResource {
         return this.http.request<{ deleted_count: number }>(
             "DELETE",
             `/v1/agents/${agentId}/memory/${encodeURIComponent(namespace)}`,
+        );
+    }
+
+    /** Semantic search over memory entries within a namespace. */
+    async search(
+        agentId: string,
+        data: MemorySearchRequest,
+    ): Promise<OneclawResponse<MemorySearchResponse>> {
+        return this.http.request<MemorySearchResponse>(
+            "POST",
+            `/v1/agents/${agentId}/memory/search`,
+            { body: data },
         );
     }
 }
