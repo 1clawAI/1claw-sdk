@@ -56,6 +56,36 @@ export interface SpendPolicyListResponse {
     policies: SpendPolicyResponse[];
 }
 
+export interface UpdateTemplateRequest {
+    name?: string;
+    description?: string;
+    spec?: Record<string, unknown>;
+    is_active?: boolean;
+}
+
+export interface PlatformAuditEvent {
+    id: string;
+    action: string;
+    actor_id: string;
+    resource_type?: string;
+    resource_id?: string;
+    metadata?: Record<string, unknown>;
+    created_at: string;
+}
+
+export interface PlatformAuditResponse {
+    events: PlatformAuditEvent[];
+    total: number;
+}
+
+export interface PlatformRuntimesResponse {
+    runtimes: Array<Record<string, unknown>>;
+}
+
+export interface PlatformAutomationsResponse {
+    automations: Array<Record<string, unknown>>;
+}
+
 /**
  * Platform API — build multi-tenant apps on top of 1Claw.
  * Manage platform apps, templates, user provisioning, and bootstrapping.
@@ -333,6 +363,62 @@ export class PlatformResource {
             "GET",
             `/v1/platform/connections/${connectionId}/delegation-log`,
             { query: params as Record<string, string | number | undefined> },
+        );
+    }
+
+    /** Update a template for a platform app. */
+    async updateTemplate(
+        appId: string,
+        templateId: string,
+        data: UpdateTemplateRequest,
+    ): Promise<OneclawResponse<TemplateResponse>> {
+        return this.http.request<TemplateResponse>(
+            "PATCH",
+            `/v1/platform/apps/${appId}/templates/${templateId}`,
+            { body: data },
+        );
+    }
+
+    /** Delete a template from a platform app. */
+    async deleteTemplate(
+        appId: string,
+        templateId: string,
+    ): Promise<OneclawResponse<void>> {
+        return this.http.request<void>(
+            "DELETE",
+            `/v1/platform/apps/${appId}/templates/${templateId}`,
+        );
+    }
+
+    /** Fetch platform audit events for an app. */
+    async platformAudit(
+        appId: string,
+        params?: { limit?: number; offset?: number },
+    ): Promise<OneclawResponse<PlatformAuditResponse>> {
+        return this.http.request<PlatformAuditResponse>(
+            "GET",
+            `/v1/platform/apps/${appId}/audit`,
+            { query: params as Record<string, string | number | undefined> },
+        );
+    }
+
+    /** List runtimes managed by a platform app. */
+    async listPlatformRuntimes(
+        appId: string,
+    ): Promise<OneclawResponse<PlatformRuntimesResponse>> {
+        return this.http.request<PlatformRuntimesResponse>(
+            "GET",
+            `/v1/platform/apps/${appId}/runtimes`,
+        );
+    }
+
+    /** List automations managed by a platform app. */
+    async listPlatformAutomations(
+        appId: string,
+    ): Promise<OneclawResponse<PlatformAutomationsResponse>> {
+        return this.http.request<PlatformAutomationsResponse>(
+            "GET",
+            `/v1/platform/apps/${appId}/automations`,
         );
     }
 

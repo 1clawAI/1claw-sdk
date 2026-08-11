@@ -1689,6 +1689,9 @@ export interface BootstrapResponse {
         signing_key_chains?: string[];
         agent_api_key?: string;
         signing_keys?: BootstrapSigningKey[];
+        agent_evm_address?: string;
+        runtime_ids?: string[];
+        automation_ids?: string[];
     };
 }
 
