@@ -317,6 +317,9 @@ export type {
     UpdateDiscoveryRequest,
     MarketplaceAppEntry,
     MarketplaceResponse,
+    OrgDirectoryAgent,
+    OrgDirectoryResponse,
+    OrgDirectoryParams,
     // Platform Delegation
     DelegationLogEntry,
     DelegationLogResponse,

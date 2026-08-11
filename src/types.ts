@@ -2132,6 +2132,33 @@ export interface UpdateDiscoveryRequest {
     public_tags?: string[];
 }
 
+export interface OrgDirectoryAgent {
+    id: string;
+    name: string;
+    public_description?: string | null;
+    public_tags: string[];
+    a2a_url?: string | null;
+    mcp_url?: string | null;
+    intents_api_enabled: boolean;
+    execution_intents_enabled: boolean;
+    memory_enabled: boolean;
+    shroud_enabled: boolean;
+}
+
+export interface OrgDirectoryResponse {
+    agents: OrgDirectoryAgent[];
+    total: number;
+    page: number;
+    page_size: number;
+}
+
+export interface OrgDirectoryParams {
+    q?: string;
+    tags?: string;
+    page?: number;
+    page_size?: number;
+}
+
 export interface MarketplaceAppEntry {
     id: string;
     name: string;

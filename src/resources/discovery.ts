@@ -4,6 +4,8 @@ import type {
     DirectoryResponse,
     UpdateDiscoveryRequest,
     MarketplaceResponse,
+    OrgDirectoryResponse,
+    OrgDirectoryParams,
     OneclawResponse,
 } from "../types";
 
@@ -40,6 +42,23 @@ export class DiscoveryResource {
         return this.http.request<DirectoryResponse>(
             "GET",
             `/v1/agents/directory${qs ? `?${qs}` : ""}`,
+        );
+    }
+
+    /** List agents within the caller's org for sub-agent discovery. */
+    async orgDirectory(
+        params?: OrgDirectoryParams,
+    ): Promise<OneclawResponse<OrgDirectoryResponse>> {
+        const searchParams = new URLSearchParams();
+        if (params?.q) searchParams.set("q", params.q);
+        if (params?.tags) searchParams.set("tags", params.tags);
+        if (params?.page) searchParams.set("page", String(params.page));
+        if (params?.page_size)
+            searchParams.set("page_size", String(params.page_size));
+        const qs = searchParams.toString();
+        return this.http.request<OrgDirectoryResponse>(
+            "GET",
+            `/v1/agents/org-directory${qs ? `?${qs}` : ""}`,
         );
     }
 

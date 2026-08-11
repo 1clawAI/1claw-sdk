@@ -5228,6 +5228,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/agents/org-directory": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List org agents
+         * @description List agents within the caller's organization for sub-agent discovery.
+         *     Returns agents with their capabilities, enabling agent-to-agent
+         *     coordination and discovery within an org. Requires authentication.
+         */
+        get: operations["listOrgDirectory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/agents/{agent_id}/discovery": {
         parameters: {
             query?: never;
@@ -5278,6 +5300,11 @@ export interface paths {
          * Send chat message
          * @description Send a message to an agent and receive a response via Shroud LLM.
          *     Supports SSE streaming when Accept: text/event-stream is set.
+         *
+         *     Agents can call this endpoint on other agents within the same
+         *     organization for inter-agent communication (agent-to-agent chat).
+         *     The caller must be authenticated and belong to the same org as
+         *     the target agent.
          */
         post: operations["sendChatMessage"];
         delete?: never;
@@ -5497,6 +5524,157 @@ export interface paths {
          * @description Public webhook endpoint for receiving Discord bot interactions.
          */
         post: operations["discordWebhook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/oauth/providers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List OAuth providers
+         * @description Returns the list of supported OAuth providers with their metadata,
+         *     available scopes, and authorization URLs. No authentication required.
+         */
+        get: operations["listOAuthProviders"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/oauth/connect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Initiate OAuth connection
+         * @description Start an OAuth authorization flow for the specified agent and provider.
+         *     Returns the authorization URL to redirect the user to. Human-only.
+         */
+        post: operations["connectOAuth"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/oauth/connections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List OAuth connections
+         * @description List all active OAuth connections for the specified agent.
+         */
+        get: operations["listOAuthConnections"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/oauth/disconnect/{binding_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Disconnect OAuth connection
+         * @description Disconnect an OAuth connection by revoking tokens and removing the binding.
+         *     Human-only.
+         */
+        post: operations["disconnectOAuth"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/oauth/app-credentials": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List OAuth app credentials
+         * @description List stored OAuth app credentials for the agent. Client secrets
+         *     are never returned in the response.
+         */
+        get: operations["listOAuthAppCredentials"];
+        put?: never;
+        /**
+         * Save OAuth app credentials
+         * @description Store custom OAuth app credentials (client ID/secret) for a provider.
+         *     Allows the agent to use a BYOA (Bring Your Own App) OAuth application
+         *     instead of 1Claw's shared credentials. Human-only.
+         */
+        post: operations["saveOAuthAppCredentials"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/oauth/app-credentials/{provider_slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete OAuth app credentials
+         * @description Remove stored OAuth app credentials for a specific provider. Human-only.
+         */
+        delete: operations["deleteOAuthAppCredentials"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/oauth/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * OAuth callback
+         * @description Public callback URL that OAuth providers redirect to after user authorization.
+         *     Exchanges the authorization code for tokens and redirects to the dashboard.
+         */
+        get: operations["oauthConnectCallback"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -8907,6 +9085,25 @@ export interface components {
             page: number;
             per_page: number;
         };
+        OrgDirectoryAgent: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            public_description?: string | null;
+            public_tags?: string[];
+            a2a_url?: string | null;
+            mcp_url?: string | null;
+            intents_api_enabled: boolean;
+            execution_intents_enabled: boolean;
+            memory_enabled: boolean;
+            shroud_enabled: boolean;
+        };
+        OrgDirectoryResponse: {
+            agents: components["schemas"]["OrgDirectoryAgent"][];
+            total: number;
+            page: number;
+            page_size: number;
+        };
         UpdateDiscoveryRequest: {
             discoverable?: boolean;
             public_description?: string;
@@ -9036,6 +9233,92 @@ export interface components {
         };
         ChannelMessageListResponse: {
             messages?: components["schemas"]["ChannelMessageResponse"][];
+        };
+        OAuthProviderScope: {
+            scope?: string;
+            label?: string;
+            description?: string;
+            default?: boolean;
+        };
+        OAuthProvider: {
+            /** @description Unique provider identifier (e.g. "github", "google", "slack") */
+            slug?: string;
+            display_name?: string;
+            /** Format: uri */
+            icon_url?: string;
+            /** Format: uri */
+            authorization_url?: string;
+            /** Format: uri */
+            token_url?: string;
+            scopes_available?: components["schemas"]["OAuthProviderScope"][];
+            default_scopes?: string[];
+            extra_auth_params?: {
+                [key: string]: string;
+            } | null;
+            /** @description Whether custom app credentials are required (vs. shared 1Claw app) */
+            requires_app_credentials?: boolean;
+            /** Format: uri */
+            documentation_url?: string | null;
+        };
+        OAuthProviderListResponse: {
+            providers?: components["schemas"]["OAuthProvider"][];
+        };
+        ConnectOAuthRequest: {
+            /** @description Provider to connect (e.g. "github", "google", "slack") */
+            provider_slug: string;
+            /** @description Override default scopes for this connection */
+            scopes?: string[];
+            /** @description URL to redirect to after the OAuth flow completes */
+            redirect_after?: string;
+        };
+        ConnectOAuthResponse: {
+            /**
+             * Format: uri
+             * @description Redirect the user to this URL to authorize the connection
+             */
+            authorization_url?: string;
+        };
+        OAuthConnectionResponse: {
+            /** Format: uuid */
+            binding_id?: string;
+            provider_slug?: string;
+            provider_name?: string;
+            scopes?: string[];
+            /** @enum {string} */
+            status?: "active" | "expired" | "revoked";
+            needs_reauth?: boolean;
+            /** Format: date-time */
+            created_at?: string;
+        };
+        OAuthConnectionListResponse: {
+            connections?: components["schemas"]["OAuthConnectionResponse"][];
+        };
+        SaveOAuthAppCredentialsRequest: {
+            /** @description Provider this credential is for */
+            provider_slug: string;
+            client_id: string;
+            /** @description Write-only; never returned in responses */
+            client_secret: string;
+            /**
+             * Format: uri
+             * @description Custom redirect URI override
+             */
+            redirect_uri?: string;
+        };
+        OAuthAppCredentialResponse: {
+            /** Format: uuid */
+            id?: string;
+            provider_slug?: string;
+            client_id?: string;
+            /** Format: uri */
+            redirect_uri?: string | null;
+            /** Format: date-time */
+            created_at?: string;
+            /** Format: date-time */
+            updated_at?: string;
+        };
+        OAuthAppCredentialListResponse: {
+            credentials?: components["schemas"]["OAuthAppCredentialResponse"][];
         };
     };
     responses: {
@@ -16139,6 +16422,34 @@ export interface operations {
             };
         };
     };
+    listOrgDirectory: {
+        parameters: {
+            query?: {
+                /** @description Search query to filter agents by name or description */
+                q?: string;
+                /** @description Comma-separated tag filter */
+                tags?: string;
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Org agent directory listing */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrgDirectoryResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
     updateDiscoverySettings: {
         parameters: {
             query?: never;
@@ -16581,6 +16892,202 @@ export interface operations {
         responses: {
             /** @description Webhook processed */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    listOAuthProviders: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Provider list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OAuthProviderListResponse"];
+                };
+            };
+        };
+    };
+    connectOAuth: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConnectOAuthRequest"];
+            };
+        };
+        responses: {
+            /** @description Authorization URL generated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConnectOAuthResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listOAuthConnections: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Connection list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OAuthConnectionListResponse"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    disconnectOAuth: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+                binding_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Connection disconnected */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listOAuthAppCredentials: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Credential list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OAuthAppCredentialListResponse"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    saveOAuthAppCredentials: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveOAuthAppCredentialsRequest"];
+            };
+        };
+        responses: {
+            /** @description Credentials saved */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OAuthAppCredentialResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deleteOAuthAppCredentials: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+                /** @description Provider identifier (e.g. "github", "google", "slack") */
+                provider_slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Credentials deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    oauthConnectCallback: {
+        parameters: {
+            query?: {
+                /** @description Authorization code from the OAuth provider */
+                code?: string;
+                /** @description Opaque state parameter for CSRF protection and session binding */
+                state?: string;
+                /** @description Error code if the authorization was denied or failed */
+                error?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Redirect to dashboard with success or error status */
+            302: {
                 headers: {
                     [name: string]: unknown;
                 };
