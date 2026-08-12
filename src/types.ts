@@ -2339,12 +2339,18 @@ export interface CreateChannelRequest {
     channel_type: string;
     channel_name?: string;
     config: Record<string, string>;
+    slash_commands_enabled?: boolean;
+    voice_transcription_enabled?: boolean;
 }
 
 export interface UpdateChannelRequest {
     channel_name?: string;
     is_active?: boolean;
     config?: Record<string, string>;
+    slash_commands_enabled?: boolean;
+    voice_transcription_enabled?: boolean;
+    auto_respond_enabled?: boolean;
+    sender_allowlist?: string[];
 }
 
 export interface ChannelResponse {
@@ -2356,6 +2362,10 @@ export interface ChannelResponse {
     webhook_path?: string;
     webhook_url?: string;
     is_active: boolean;
+    slash_commands_enabled: boolean;
+    voice_transcription_enabled: boolean;
+    unified_conversation_id?: string;
+    is_home_platform: boolean;
     created_at: string;
     updated_at: string;
 }
