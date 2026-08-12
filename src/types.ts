@@ -1362,10 +1362,21 @@ export interface UsageHistoryResponse {
 export interface LlmTokenBillingStatus {
     enabled: boolean;
     subscription_status?: string;
+    active_subscription_count?: number;
+    subscription_ids?: string[];
+    warning?: string;
 }
 
 export interface LlmCheckoutResponse {
-    checkout_url: string;
+    checkout_url?: string;
+    already_subscribed?: boolean;
+    subscription_id?: string;
+}
+
+export interface LlmCancelDuplicatesResponse {
+    cancelled_count: number;
+    cancelled_subscription_ids: string[];
+    remaining_subscription_ids: string[];
 }
 
 export interface LlmDisableResponse {

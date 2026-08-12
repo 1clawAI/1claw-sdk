@@ -5,6 +5,7 @@ import type {
     LlmTokenBillingStatus,
     LlmCheckoutResponse,
     LlmDisableResponse,
+    LlmCancelDuplicatesResponse,
     OneclawResponse,
 } from "../types";
 
@@ -64,6 +65,16 @@ export class BillingResource {
         return this.http.request<LlmDisableResponse>(
             "POST",
             "/v1/billing/llm-token-billing/disable",
+        );
+    }
+
+    /** Cancel duplicate LLM billing subscriptions, keeping one primary subscription. */
+    async cancelLlmDuplicateSubscriptions(): Promise<
+        OneclawResponse<LlmCancelDuplicatesResponse>
+    > {
+        return this.http.request<LlmCancelDuplicatesResponse>(
+            "POST",
+            "/v1/billing/llm-token-billing/cancel-duplicates",
         );
     }
 }
