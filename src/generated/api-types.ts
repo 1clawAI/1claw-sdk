@@ -9284,6 +9284,19 @@ export interface components {
             config: {
                 [key: string]: string;
             };
+            /**
+             * @description Enable Hermes-compatible slash commands on this channel. When true,
+             *     messages starting with `/` are handled before the LLM. Commands:
+             *     /help, /new, /reset, /clear, /model, /mode, /personality, /retry,
+             *     /undo, /compress, /summarize, /stop, /status, /skills, /usage, /sethome.
+             */
+            slash_commands_enabled?: boolean;
+            /** @description Enable voice message transcription */
+            voice_transcription_enabled?: boolean;
+            /** @description List of allowed sender IDs */
+            sender_allowlist?: string[];
+            /** @description Enable auto-respond */
+            auto_respond_enabled?: boolean;
         };
         UpdateChannelRequest: {
             channel_name?: string;
@@ -9291,6 +9304,10 @@ export interface components {
             config?: {
                 [key: string]: string;
             };
+            slash_commands_enabled?: boolean;
+            voice_transcription_enabled?: boolean;
+            sender_allowlist?: string[];
+            auto_respond_enabled?: boolean;
         };
         ChannelResponse: {
             /** Format: uuid */
@@ -9313,6 +9330,25 @@ export interface components {
             config?: {
                 [key: string]: unknown;
             } | null;
+            /**
+             * @description Whether Hermes-compatible slash commands are enabled for this channel.
+             *     Commands: /help, /new, /reset, /clear, /model, /mode, /personality, /retry,
+             *     /undo, /compress, /summarize, /stop, /status, /skills, /usage, /sethome.
+             */
+            slash_commands_enabled?: boolean;
+            /** @description Whether voice message transcription is enabled */
+            voice_transcription_enabled?: boolean;
+            /**
+             * Format: uuid
+             * @description ID linking this channel to a unified cross-platform conversation
+             */
+            unified_conversation_id?: string | null;
+            /** @description Whether this is the agent's home platform channel */
+            is_home_platform?: boolean;
+            /** @description List of allowed sender IDs for auto-respond */
+            sender_allowlist?: string[] | null;
+            /** @description Whether auto-respond is enabled for this channel */
+            auto_respond_enabled?: boolean;
             /** Format: date-time */
             created_at?: string;
             /** Format: date-time */
@@ -9340,6 +9376,17 @@ export interface components {
             sender_name?: string;
             content?: string;
             media_url?: string;
+            /** @description Whether this message was a voice message */
+            is_voice_message?: boolean;
+            /** @description Telegram voice file ID */
+            voice_file_id?: string | null;
+            /** @description Duration of voice message in seconds */
+            voice_duration_secs?: number | null;
+            /**
+             * @description Status of voice transcription
+             * @enum {string|null}
+             */
+            transcription_status?: "pending" | "completed" | "failed" | null;
             /** Format: date-time */
             created_at?: string;
         };
