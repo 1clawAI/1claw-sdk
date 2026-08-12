@@ -20,6 +20,7 @@ import type {
     ClaimRedeemResponse,
     RotatePlatformKeyRequest,
     RotatePlatformKeyResponse,
+    MarketplaceResponse,
     GrantResourcesRequest,
     GrantResourcesResponse,
     GrantListResponse,
@@ -87,6 +88,18 @@ export interface PlatformAutomationsResponse {
     automations: Array<Record<string, unknown>>;
 }
 
+export interface PlatformAppStatsResponse {
+    total_connections: number;
+    active_connections: number;
+    claimed_connections: number;
+    total_bootstraps: number;
+    total_grants: number;
+}
+
+export interface RotateWebhookSecretResponse {
+    webhook_secret: string;
+}
+
 /**
  * Platform API — build multi-tenant apps on top of 1Claw.
  * Manage platform apps, templates, user provisioning, and bootstrapping.
@@ -152,6 +165,37 @@ export class PlatformResource {
             "POST",
             `/v1/platform/apps/${appId}/rotate-key`,
             { body: data ?? {} },
+        );
+    }
+
+    /** Rotate a platform app's webhook signing secret. Returns the new secret (one-time). */
+    async rotateWebhookSecret(
+        appId: string,
+    ): Promise<OneclawResponse<RotateWebhookSecretResponse>> {
+        return this.http.request<RotateWebhookSecretResponse>(
+            "POST",
+            `/v1/platform/apps/${appId}/rotate-webhook-secret`,
+        );
+    }
+
+    /** Get aggregate statistics for a platform app (connections, bootstraps, grants). */
+    async getAppStats(
+        appId: string,
+    ): Promise<OneclawResponse<PlatformAppStatsResponse>> {
+        return this.http.request<PlatformAppStatsResponse>(
+            "GET",
+            `/v1/platform/apps/${appId}/stats`,
+        );
+    }
+
+    /** Browse the public platform marketplace (no auth required). */
+    async marketplace(
+        params?: { page?: number; per_page?: number; q?: string; category?: string },
+    ): Promise<OneclawResponse<MarketplaceResponse>> {
+        return this.http.request<MarketplaceResponse>(
+            "GET",
+            "/v1/platform/marketplace",
+            { query: params as Record<string, string | number | undefined>, skipAuth: true },
         );
     }
 

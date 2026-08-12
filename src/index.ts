@@ -14,7 +14,11 @@ export { ApprovalsResource } from "./resources/approvals";
 export { BillingResource } from "./resources/billing";
 export { AuditResource } from "./resources/audit";
 export { OrgResource } from "./resources/org";
-export { AuthResource } from "./resources/auth";
+export { AuthResource, generatePKCE, buildAuthorizeUrl } from "./resources/auth";
+export type {
+    OAuthTokenRequest,
+    OAuthTokenResponse,
+} from "./resources/auth";
 export { ApiKeysResource } from "./resources/api-keys";
 export { ChainsResource } from "./resources/chains";
 export { X402Resource } from "./resources/x402";
@@ -25,6 +29,9 @@ export type {
 } from "./resources/treasury";
 export { SigningKeysResource } from "./resources/signing-keys";
 export { PlatformResource, ScopedPlatformClient } from "./resources/platform";
+export type {
+    PlatformAppStatsResponse,
+} from "./resources/platform";
 export { TreasuryWalletsResource } from "./resources/treasury-wallets";
 export { DevicesResource } from "./resources/devices";
 export type {
@@ -260,6 +267,8 @@ export type {
     ClaimRedeemResponse,
     RotatePlatformKeyRequest,
     RotatePlatformKeyResponse,
+    PlatformAppStats,
+    RotateWebhookSecretResponse,
     // Execution Intents / Bindings
     CredentialSource,
     CreateBindingRequest,
@@ -342,6 +351,13 @@ export type {
     SendChannelMessageRequest,
     ChannelMessageResponse,
     ChannelMessageListResponse,
+    // OAuth / PKCE
+    PKCEPair,
+    UserInfoResponse,
+    BuildAuthorizeUrlParams,
+    OAuthRevokeRequest,
+    OAuthRevokeResponse,
+    OAuthConsentRevokeResponse,
     // OAuth Connected Accounts
     OAuthProviderScope,
     OAuthProviderResponse,

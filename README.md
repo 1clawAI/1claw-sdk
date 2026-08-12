@@ -97,7 +97,7 @@ await client.auth.verifyEmailChange({ code: "123456" });
 | `client.billing`   | `usage`, `history`, `llmTokenBilling`, `subscribeLlmTokenBilling`, `disableLlmTokenBilling` (LLM token billing / Stripe AI Gateway) |
 | `client.audit`     | `query`                                                                                                             |
 | `client.org`       | `listMembers`, `getAgentKeysVault`, `updateMemberRole`, `removeMember`                                              |
-| `client.auth`      | `login`, `signup`, `agentToken`, `apiKeyToken`, `google`, `socialLogin`, `sendEmailOtp`, `verifyEmailOtp`, `exchangeOAuthCode`, `changePassword`, `setPassword`, `changeEmail`, `verifyEmailChange`, `forgotPassword`, `resetPassword`, `exportData`, `exchangeFederatedToken`, `logout`, `getMe`, `updateMe`, `deleteMe` |
+| `client.auth`      | `login`, `signup`, `agentToken`, `apiKeyToken`, `google`, `socialLogin`, `sendEmailOtp`, `verifyEmailOtp`, `exchangeOAuthCode`, `revokeToken`, `revokeConsent`, `getUserInfo`, `changePassword`, `setPassword`, `changeEmail`, `verifyEmailChange`, `forgotPassword`, `resetPassword`, `exportData`, `exchangeFederatedToken`, `logout`, `getMe`, `updateMe`, `deleteMe` |
 | `client.apiKeys`   | `create`, `list`, `revoke`                                                                                          |
 | `client.treasury`  | `create`, `list`, `get`, `update`, `delete`, `addSigner`, `removeSigner`, `requestAccess`, `listAccessRequests`, `approveAccess`, `denyAccess`, `propose`, `listProposals`, `getProposal`, `signProposal`, `executeProposal` |
 | `client.treasuryWallets` | `generateWallets`, `listWallets`, `getWallet`, `getWalletBalance`, `sendFromWallet`, `swapFromWallet`, `exportWallet`, `rotateWallet`, `deactivateWallet`, `getEffectiveSpendPolicy` |
@@ -106,7 +106,7 @@ await client.auth.verifyEmailChange({ code: "123456" });
 | `client.fiat` | `createOnrampSession`, `initiateOfframp` |
 | `client.signingKeys` | `create`, `list`, `rotate`, `deactivate`, `export`                                                               |
 | `client.agents` (Bankr) | `leaseBankrKey`, `listBankrKeys`, `revokeBankrKey` — privileged; `api_key` omitted for agent JWTs (use Shroud) |
-| `client.platform`  | `createApp`, `listApps`, `getApp`, `updateApp`, `deleteApp`, `rotateKey`, `createTemplate`, `listTemplates`, `upsertUser`, `listUsers`, `bootstrapUser`, `reissueClaim`, `claimPreview`, `claimRedeem`, `listConnectedApps`, `disconnectApp`, `grantAccess`, `listGrants`, `revokeGrant`, `createSpendPolicy`, `listSpendPolicies`, `setUserSpendPolicy`, `deleteSpendPolicy`, `updateConnectionDelegation` |
+| `client.platform`  | `createApp`, `listApps`, `getApp`, `updateApp`, `deleteApp`, `rotateKey`, `rotateWebhookSecret`, `getAppStats`, `marketplace`, `createTemplate`, `listTemplates`, `upsertUser`, `listUsers`, `bootstrapUser`, `reissueClaim`, `claimPreview`, `claimRedeem`, `listConnectedApps`, `disconnectApp`, `grantAccess`, `listGrants`, `revokeGrant`, `createSpendPolicy`, `listSpendPolicies`, `setUserSpendPolicy`, `deleteSpendPolicy`, `updateConnectionDelegation` |
 | `client.devices`   | `register`, `list`, `delete`, `challenge`, `attest`, `setPushToken`                                                 |
 | `client.passkeys`  | `list`, `registerBegin`, `registerComplete`, `assertBegin`, `assertComplete`, `delete`                               |
 | `client.risk`      | `listEvents`, `getVerdict`, `listVerdicts`, `createHoneytoken`, `listHoneytokens`, `deleteHoneytoken`                |
@@ -354,6 +354,44 @@ await client.agents.update(agentId, {
 const agent = await client.agents.get(agentId);
 console.log(agent.data?.tx_count_today);           // e.g. 42
 console.log(agent.data?.tx_overhead_today_by_chain); // e.g. { "solana": "0.12" }
+```
+
+## OAuth2 / PKCE ("Sign in with 1Claw")
+
+The SDK provides helpers for implementing the full OAuth2 PKCE flow and managing tokens/consent:
+
+```typescript
+import { generatePKCE, buildAuthorizeUrl, createClient } from "@1claw/sdk";
+
+// 1. Generate PKCE pair
+const pkce = await generatePKCE();
+
+// 2. Build the authorize URL
+const authUrl = buildAuthorizeUrl("https://1claw.xyz", {
+    clientId: "your-platform-app-slug",
+    redirectUri: "https://yourapp.com/callback",
+    scopes: ["openid", "profile", "email"],
+    state: "random-state",
+    codeChallenge: pkce.codeChallenge,
+});
+
+// 3. After redirect, exchange the code for tokens
+const client = createClient({ baseUrl: "https://api.1claw.xyz" });
+const tokens = await client.auth.exchangeOAuthCode({
+    code: "authorization-code-from-callback",
+    client_id: "your-platform-app-slug",
+    redirect_uri: "https://yourapp.com/callback",
+    code_verifier: pkce.codeVerifier,
+});
+
+// 4. Fetch user info
+const userInfo = await client.auth.getUserInfo(tokens.data?.access_token);
+
+// 5. Revoke a token (RFC 7009)
+await client.auth.revokeToken({ token: "...", token_type_hint: "refresh_token" });
+
+// 6. Revoke consent for an app (invalidates all tokens)
+await client.auth.revokeConsent("platform-app-id");
 ```
 
 ## OIDC Federation (Anthropic WIF, GCP STS, AWS STS)

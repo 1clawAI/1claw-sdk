@@ -18,7 +18,69 @@ import type {
     DeleteAccountRequest,
     ExportDataResponse,
     OneclawResponse,
+    PKCEPair,
+    UserInfoResponse,
+    BuildAuthorizeUrlParams,
+    OAuthRevokeRequest,
+    OAuthRevokeResponse,
+    OAuthConsentRevokeResponse,
 } from "../types";
+
+/**
+ * Generate a PKCE code_verifier and code_challenge pair (S256).
+ *
+ * Works in browsers (Web Crypto) and Node 18+ (globalThis.crypto).
+ */
+export async function generatePKCE(): Promise<PKCEPair> {
+    const buf = new Uint8Array(32);
+    crypto.getRandomValues(buf);
+    const codeVerifier = base64url(buf);
+
+    const digest = await crypto.subtle.digest(
+        "SHA-256",
+        new TextEncoder().encode(codeVerifier),
+    );
+    const codeChallenge = base64url(new Uint8Array(digest));
+
+    return { codeVerifier, codeChallenge };
+}
+
+/**
+ * Build a full 1Claw OAuth authorize URL with all query parameters.
+ *
+ * Combine with `generatePKCE()` to implement a complete PKCE flow.
+ */
+export function buildAuthorizeUrl(
+    baseUrl: string,
+    params: BuildAuthorizeUrlParams,
+): string {
+    const url = new URL("/oauth/authorize", baseUrl);
+    url.searchParams.set("client_id", params.clientId);
+    url.searchParams.set("redirect_uri", params.redirectUri);
+    url.searchParams.set("response_type", params.responseType ?? "code");
+
+    if (params.scopes?.length) {
+        url.searchParams.set("scope", params.scopes.join(" "));
+    }
+    if (params.state) {
+        url.searchParams.set("state", params.state);
+    }
+    if (params.codeChallenge) {
+        url.searchParams.set("code_challenge", params.codeChallenge);
+        url.searchParams.set(
+            "code_challenge_method",
+            params.codeChallengeMethod ?? "S256",
+        );
+    }
+
+    return url.toString();
+}
+
+function base64url(bytes: Uint8Array): string {
+    let binary = "";
+    for (const b of bytes) binary += String.fromCharCode(b);
+    return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
 
 export interface EmailOtpSendRequest {
     email: string;
@@ -375,7 +437,7 @@ export class AuthResource {
         return res;
     }
 
-    /** Exchange an OAuth authorization code for tokens. */
+    /** Exchange an OAuth authorization code for tokens (supports PKCE via `code_verifier`). */
     async exchangeOAuthCode(
         params: OAuthTokenRequest,
     ): Promise<OneclawResponse<OAuthTokenResponse>> {
@@ -392,5 +454,57 @@ export class AuthResource {
             this.http.setToken(res.data.access_token);
         }
         return res;
+    }
+
+    /**
+     * Revoke an OAuth access or refresh token (RFC 7009).
+     * The token is invalidated immediately and can no longer be used.
+     */
+    async revokeToken(
+        params: OAuthRevokeRequest,
+    ): Promise<OneclawResponse<OAuthRevokeResponse>> {
+        return this.http.request<OAuthRevokeResponse>(
+            "POST",
+            "/v1/oauth/revoke",
+            { body: params, skipAuth: true },
+        );
+    }
+
+    /**
+     * Revoke OAuth consent for a specific platform app.
+     * All active tokens issued to the app are invalidated and the consent record is removed.
+     */
+    async revokeConsent(
+        appId: string,
+    ): Promise<OneclawResponse<OAuthConsentRevokeResponse>> {
+        return this.http.request<OAuthConsentRevokeResponse>(
+            "DELETE",
+            `/v1/oauth/consents/${appId}`,
+        );
+    }
+
+    /**
+     * Fetch the authenticated user's profile from the OAuth userinfo endpoint.
+     *
+     * @param accessToken - Bearer token obtained from `exchangeOAuthCode()`.
+     *   Uses the client's current token when omitted.
+     */
+    async getUserInfo(
+        accessToken?: string,
+    ): Promise<OneclawResponse<UserInfoResponse>> {
+        if (accessToken) {
+            return this.http.request<UserInfoResponse>(
+                "GET",
+                "/v1/oauth/userinfo",
+                {
+                    skipAuth: true,
+                    headers: { Authorization: `Bearer ${accessToken}` },
+                },
+            );
+        }
+        return this.http.request<UserInfoResponse>(
+            "GET",
+            "/v1/oauth/userinfo",
+        );
     }
 }

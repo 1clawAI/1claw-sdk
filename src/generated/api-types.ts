@@ -3222,6 +3222,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/platform/apps/{appId}/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get platform app statistics
+         * @description Returns aggregate statistics about a platform app's connected users, bootstraps, and grants.
+         */
+        get: operations["getPlatformAppStats"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/apps/{appId}/rotate-webhook-secret": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Rotate webhook secret
+         * @description Generate a new webhook signing secret for the platform app. The old secret is immediately invalidated. Returns the new secret (one-time).
+         */
+        post: operations["rotatePlatformWebhookSecret"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/platform/apps/{appId}/templates": {
         parameters: {
             query?: never;
@@ -4407,6 +4447,48 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/oauth/revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Revoke an OAuth token (RFC 7009)
+         * @description Revokes an access token or refresh token. The authorization server
+         *     invalidates the token so it can no longer be used. Follows RFC 7009.
+         */
+        post: operations["revokeOAuthToken"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/oauth/consents/{app_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Revoke consent for a platform app
+         * @description Revokes the user's previously granted OAuth consent for a specific platform app.
+         *     All active tokens issued to the app are invalidated and the consent record is deleted.
+         */
+        delete: operations["revokeOAuthConsent"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/risk/events": {
         parameters: {
             query?: never;
@@ -5276,7 +5358,7 @@ export interface paths {
         };
         /**
          * Public marketplace
-         * @description Browse the public platform marketplace of agents and apps.
+         * @description Browse the public platform marketplace of listed apps and agents. Returns approved platform apps with category, tags, pricing summaries, and screenshots.
          */
         get: operations["listMarketplace"];
         put?: never;
@@ -8239,6 +8321,8 @@ export interface components {
                 vault_id?: string | null;
                 /** Format: uuid */
                 agent_id?: string | null;
+                /** @description All agent IDs provisioned by the template (when multiple agents are defined) */
+                agent_ids?: string[];
                 policy_ids?: string[];
                 /** @description Chains with provisioned signing keys */
                 signing_key_chains?: string[];
@@ -8258,6 +8342,32 @@ export interface components {
                 /** @description IDs of automations provisioned by the template */
                 automation_ids?: string[];
             };
+        };
+        PlatformAppStatsResponse: {
+            /** @description Total number of user connections (all statuses) */
+            total_connections: number;
+            /** @description Number of active connections */
+            active_connections: number;
+            /** @description Number of claimed connections */
+            claimed_connections: number;
+            /** @description Total bootstrap operations performed */
+            total_bootstraps: number;
+            /** @description Total resource grants issued */
+            total_grants: number;
+        };
+        MarketplaceResponse: {
+            apps?: {
+                /** Format: uuid */
+                id?: string;
+                name?: string;
+                slug?: string;
+                description?: string;
+                logo_url?: string | null;
+                category?: string | null;
+                listing_tags?: string[];
+                listing_screenshots?: string[];
+                pricing_summary?: string | null;
+            }[];
         };
         ConnectedAppResponse: {
             /** Format: uuid */
@@ -8464,6 +8574,8 @@ export interface components {
             token_type: "Bearer";
             /** @description Token lifetime in seconds */
             expires_in: number;
+            /** @description Refresh token for obtaining new access tokens (when offline_access scope was granted) */
+            refresh_token?: string | null;
             /** @description OIDC ID token (when openid scope was granted) */
             id_token?: string | null;
             scope: string;
@@ -14119,6 +14231,64 @@ export interface operations {
             };
         };
     };
+    getPlatformAppStats: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description App statistics */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlatformAppStatsResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    rotatePlatformWebhookSecret: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description New webhook secret generated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description The new webhook signing secret (shown once) */
+                        webhook_secret: string;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description Only human users can rotate webhook secrets */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
     deletePlatformTemplate: {
         parameters: {
             query?: never;
@@ -15048,6 +15218,71 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+        };
+    };
+    revokeOAuthToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description The token to revoke (access_token or refresh_token) */
+                    token: string;
+                    /**
+                     * @description Hint about the type of token being revoked
+                     * @enum {string}
+                     */
+                    token_type_hint?: "access_token" | "refresh_token";
+                };
+            };
+        };
+        responses: {
+            /** @description Token revoked successfully (or was already invalid) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example true */
+                        revoked?: boolean;
+                    };
+                };
+            };
+        };
+    };
+    revokeOAuthConsent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The platform app ID whose consent to revoke */
+                app_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Consent revoked */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example true */
+                        revoked?: boolean;
+                        /** Format: uuid */
+                        app_id?: string;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
         };
     };
     listRiskEvents: {
@@ -16486,6 +16721,8 @@ export interface operations {
                 per_page?: number;
                 /** @description Search query */
                 q?: string;
+                /** @description Filter by app category */
+                category?: string;
             };
             header?: never;
             path?: never;
@@ -16499,7 +16736,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DirectoryResponse"];
+                    "application/json": components["schemas"]["MarketplaceResponse"];
                 };
             };
         };

@@ -1602,6 +1602,18 @@ export interface RotatePlatformKeyResponse {
     api_key_expires_at?: string | null;
 }
 
+export interface PlatformAppStats {
+    total_connections: number;
+    active_connections: number;
+    claimed_connections: number;
+    total_bootstraps: number;
+    total_grants: number;
+}
+
+export interface RotateWebhookSecretResponse {
+    webhook_secret: string;
+}
+
 export interface PlatformAppListResponse {
     apps: PlatformAppResponse[];
 }
@@ -1685,6 +1697,7 @@ export interface BootstrapResponse {
     summary: {
         vault_id?: string;
         agent_id?: string;
+        agent_ids?: string[];
         policy_ids: string[];
         signing_key_chains?: string[];
         agent_api_key?: string;
@@ -1769,6 +1782,46 @@ export interface ClaimRedeemResponse {
     agent_ids: string[];
     return_to: string | null;
     dashboard_url: string;
+}
+
+// ---------------------------------------------------------------------------
+// OAuth / PKCE helpers
+// ---------------------------------------------------------------------------
+
+export interface PKCEPair {
+    codeVerifier: string;
+    codeChallenge: string;
+}
+
+export interface UserInfoResponse {
+    sub: string;
+    email?: string;
+    name?: string;
+    wallet_address?: string;
+}
+
+export interface BuildAuthorizeUrlParams {
+    clientId: string;
+    redirectUri: string;
+    scopes?: string[];
+    state?: string;
+    codeChallenge?: string;
+    codeChallengeMethod?: "S256";
+    responseType?: "code";
+}
+
+export interface OAuthRevokeRequest {
+    token: string;
+    token_type_hint?: "access_token" | "refresh_token";
+}
+
+export interface OAuthRevokeResponse {
+    revoked: boolean;
+}
+
+export interface OAuthConsentRevokeResponse {
+    revoked: boolean;
+    app_id: string;
 }
 
 // ---------------------------------------------------------------------------
