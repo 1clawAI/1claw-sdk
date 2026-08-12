@@ -29,6 +29,10 @@ import type {
     LeaseBankrKeyRequest,
     LeaseBankrKeyResponse,
     BankrKeyLeaseListResponse,
+    CreateDelegationRequest,
+    UpdateDelegationRequest,
+    DelegationResponse,
+    DelegationListResponse,
     OneclawResponse,
 } from "../types";
 
@@ -373,6 +377,90 @@ export class AgentsResource {
         return this.http.request<void>(
             "DELETE",
             `/v1/agents/${agentId}/bankr-keys/${leaseId}`,
+        );
+    }
+
+    // ── Delegations ──────────────────────────────────────────────────
+
+    /**
+     * Create a delegation granting this agent permission to delegate
+     * tasks to another agent. Human-only (agents cannot self-create).
+     */
+    async createDelegation(
+        agentId: string,
+        data: CreateDelegationRequest,
+    ): Promise<OneclawResponse<DelegationResponse>> {
+        return this.http.request<DelegationResponse>(
+            "POST",
+            `/v1/agents/${agentId}/delegations`,
+            { body: data },
+        );
+    }
+
+    /**
+     * List all delegations configured for an agent (as delegator).
+     */
+    async listDelegations(
+        agentId: string,
+    ): Promise<OneclawResponse<DelegationListResponse>> {
+        return this.http.request<DelegationListResponse>(
+            "GET",
+            `/v1/agents/${agentId}/delegations`,
+        );
+    }
+
+    /**
+     * Get a specific delegation by ID.
+     */
+    async getDelegation(
+        agentId: string,
+        delegationId: string,
+    ): Promise<OneclawResponse<DelegationResponse>> {
+        return this.http.request<DelegationResponse>(
+            "GET",
+            `/v1/agents/${agentId}/delegations/${delegationId}`,
+        );
+    }
+
+    /**
+     * Update an existing delegation (tools, limits, active status).
+     */
+    async updateDelegation(
+        agentId: string,
+        delegationId: string,
+        data: UpdateDelegationRequest,
+    ): Promise<OneclawResponse<DelegationResponse>> {
+        return this.http.request<DelegationResponse>(
+            "PATCH",
+            `/v1/agents/${agentId}/delegations/${delegationId}`,
+            { body: data },
+        );
+    }
+
+    /**
+     * Revoke (delete) a delegation.
+     */
+    async revokeDelegation(
+        agentId: string,
+        delegationId: string,
+    ): Promise<OneclawResponse<void>> {
+        return this.http.request<void>(
+            "DELETE",
+            `/v1/agents/${agentId}/delegations/${delegationId}`,
+        );
+    }
+
+    /**
+     * Get effective delegations for an agent — includes delegations
+     * where this agent is the delegator, with daily usage stats.
+     * Agents can call this on their own ID.
+     */
+    async getEffectiveDelegations(
+        agentId: string,
+    ): Promise<OneclawResponse<DelegationListResponse>> {
+        return this.http.request<DelegationListResponse>(
+            "GET",
+            `/v1/agents/${agentId}/delegations/effective`,
         );
     }
 }

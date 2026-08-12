@@ -2475,3 +2475,54 @@ export interface SaveOAuthAppCredentialsRequest {
     client_secret: string;
     redirect_uri?: string;
 }
+
+// ---------------------------------------------------------------------------
+// Agent Delegations
+// ---------------------------------------------------------------------------
+
+export interface CreateDelegationRequest {
+    delegate_id: string;
+    allowed_tools?: string[];
+    blocked_tools?: string[];
+    max_daily_delegations?: number;
+    max_depth?: number;
+    guardrails?: Record<string, unknown>;
+    delegation_mode?: 'caller' | 'target' | 'both';
+    expires_at?: string;
+}
+
+export interface UpdateDelegationRequest {
+    allowed_tools?: string[];
+    blocked_tools?: string[];
+    max_daily_delegations?: number;
+    max_depth?: number;
+    guardrails?: Record<string, unknown>;
+    delegation_mode?: 'caller' | 'target' | 'both';
+    is_active?: boolean;
+    expires_at?: string;
+}
+
+export interface DelegationResponse {
+    id: string;
+    org_id: string;
+    delegator_id: string;
+    delegate_id: string;
+    delegator_name?: string;
+    delegate_name?: string;
+    allowed_tools: string[];
+    blocked_tools: string[];
+    max_daily_delegations?: number;
+    max_depth: number;
+    guardrails: Record<string, unknown>;
+    delegation_mode: string;
+    is_active: boolean;
+    created_by: string;
+    expires_at?: string;
+    created_at: string;
+    updated_at: string;
+    delegations_today?: number;
+}
+
+export interface DelegationListResponse {
+    delegations: DelegationResponse[];
+}
