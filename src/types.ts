@@ -2361,11 +2361,15 @@ export interface ChannelResponse {
     channel_name?: string;
     webhook_path?: string;
     webhook_url?: string;
+    webhook_secret?: string | null;
     is_active: boolean;
-    slash_commands_enabled: boolean;
-    voice_transcription_enabled: boolean;
-    unified_conversation_id?: string;
-    is_home_platform: boolean;
+    slash_commands_enabled?: boolean;
+    voice_transcription_enabled?: boolean;
+    unified_conversation_id?: string | null;
+    is_home_platform?: boolean;
+    sender_allowlist?: string[] | null;
+    auto_respond_enabled?: boolean;
+    metadata?: Record<string, unknown> | null;
     created_at: string;
     updated_at: string;
 }
@@ -2389,6 +2393,10 @@ export interface ChannelMessageResponse {
     sender_name?: string;
     content: string;
     media_url?: string;
+    is_voice_message?: boolean;
+    voice_file_id?: string | null;
+    voice_duration_secs?: number | null;
+    transcription_status?: 'pending' | 'completed' | 'failed' | null;
     created_at: string;
 }
 
