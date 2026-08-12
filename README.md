@@ -1,6 +1,10 @@
 # @1claw/sdk
 
-TypeScript SDK for **1Claw Vault** — HSM-backed secret management for AI agents and humans.
+TypeScript/JavaScript client for the 1Claw Vault API.
+
+This is the official SDK for Node.js, Next.js, and browser apps that call 1Claw over HTTP. It covers vaults, secrets, agents, policies, treasury, Intents API signing, execution bindings, platform apps, billing, and x402 payments. Types are generated from the OpenAPI spec, so request shapes stay in sync with the API.
+
+Agent keys auto-exchange for JWTs and refresh before expiry. If you're wiring an AI agent in Cursor or Claude Desktop, you probably want [@1claw/mcp](https://www.npmjs.com/package/@1claw/mcp) instead. If you're building a web app or backend service in TypeScript, start here.
 
 ## Install
 
