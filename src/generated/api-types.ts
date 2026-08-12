@@ -1516,6 +1516,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/agents/{agent_id}/delegations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List delegations for an agent
+         * @description List all delegations where this agent is the delegator.
+         */
+        get: operations["listDelegations"];
+        put?: never;
+        /**
+         * Create a delegation
+         * @description Grant an agent (delegator) permission to delegate tasks to another agent (delegate).
+         *     Human-only — agents cannot create their own delegations.
+         */
+        post: operations["createDelegation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/delegations/effective": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get effective delegations
+         * @description Get the effective delegations for an agent, including daily usage statistics.
+         *     Agents can call this on their own ID to discover what they are authorized to delegate to.
+         */
+        get: operations["getEffectiveDelegations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/delegations/{delegation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a specific delegation */
+        get: operations["getDelegation"];
+        put?: never;
+        post?: never;
+        /** Revoke a delegation */
+        delete: operations["revokeDelegation"];
+        options?: never;
+        head?: never;
+        /**
+         * Update a delegation
+         * @description Update delegation tools, limits, mode, or active status. Human-only.
+         */
+        patch: operations["updateDelegation"];
+        trace?: never;
+    };
     "/v1/agents/{agent_id}/sign": {
         parameters: {
             query?: never;
@@ -7233,6 +7301,82 @@ export interface components {
         BankrKeyLeaseListResponse: {
             leases?: components["schemas"]["BankrKeyLeaseResponse"][];
         };
+        CreateDelegationRequest: {
+            /**
+             * Format: uuid
+             * @description The agent ID to delegate to.
+             */
+            delegate_id: string;
+            /** @description Tool names the delegate may use. Empty means all tools allowed. */
+            allowed_tools?: string[];
+            /** @description Tool names the delegate may NOT use. */
+            blocked_tools?: string[];
+            /** @description Maximum delegation calls per UTC day. NULL means unlimited. */
+            max_daily_delegations?: number;
+            /**
+             * @description Maximum delegation chain depth (default 3).
+             * @default 3
+             */
+            max_depth: number;
+            /** @description Additional guardrail constraints for this delegation. */
+            guardrails?: Record<string, never>;
+            /**
+             * @description Execution mode: caller (use delegator's creds), target (use delegate's config), or both.
+             * @default caller
+             * @enum {string}
+             */
+            delegation_mode: "caller" | "target" | "both";
+            /**
+             * Format: date-time
+             * @description Optional expiration timestamp.
+             */
+            expires_at?: string;
+        };
+        UpdateDelegationRequest: {
+            allowed_tools?: string[];
+            blocked_tools?: string[];
+            max_daily_delegations?: number;
+            max_depth?: number;
+            guardrails?: Record<string, never>;
+            /** @enum {string} */
+            delegation_mode?: "caller" | "target" | "both";
+            is_active?: boolean;
+            /** Format: date-time */
+            expires_at?: string | null;
+        };
+        DelegationResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            org_id?: string;
+            /** Format: uuid */
+            delegator_id?: string;
+            /** Format: uuid */
+            delegate_id?: string;
+            delegator_name?: string;
+            delegate_name?: string;
+            allowed_tools?: string[];
+            blocked_tools?: string[];
+            max_daily_delegations?: number | null;
+            max_depth?: number;
+            guardrails?: Record<string, never>;
+            /** @enum {string} */
+            delegation_mode?: "caller" | "target" | "both";
+            is_active?: boolean;
+            /** Format: uuid */
+            created_by?: string;
+            /** Format: date-time */
+            expires_at?: string | null;
+            /** Format: date-time */
+            created_at?: string;
+            /** Format: date-time */
+            updated_at?: string;
+            /** @description Number of delegations used today (present in effective endpoint). */
+            delegations_today?: number;
+        };
+        DelegationListResponse: {
+            delegations?: components["schemas"]["DelegationResponse"][];
+        };
         SignIntentRequest: {
             /** @enum {string} */
             intent_type: "personal_sign" | "typed_data" | "eip712_digest" | "transaction";
@@ -12035,6 +12179,165 @@ export interface operations {
                 };
                 content?: never;
             };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listDelegations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of delegations */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DelegationListResponse"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createDelegation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDelegationRequest"];
+            };
+        };
+        responses: {
+            /** @description Delegation created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DelegationResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            /** @description Delegation already exists for this delegator/delegate pair */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    getEffectiveDelegations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Effective delegations with usage stats */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DelegationListResponse"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getDelegation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+                delegation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Delegation details */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DelegationResponse"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    revokeDelegation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+                delegation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Delegation revoked */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateDelegation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+                delegation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateDelegationRequest"];
+            };
+        };
+        responses: {
+            /** @description Delegation updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DelegationResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
         };
     };

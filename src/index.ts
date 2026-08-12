@@ -334,6 +334,11 @@ export type {
     DelegationLogResponse,
     ConnectionResourcesResponse,
     UpdateConnectionDelegationRequest,
+    // Agent Delegations
+    CreateDelegationRequest,
+    UpdateDelegationRequest,
+    DelegationResponse,
+    DelegationListResponse,
     // OAuth2
     OAuth2StatusResponse,
     // Chat

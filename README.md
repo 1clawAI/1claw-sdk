@@ -90,7 +90,7 @@ await client.auth.verifyEmailChange({ code: "123456" });
 | `client.vault`     | `create`, `get`, `list`, `delete`, `enableMpc`, `disableMpc`                                                        |
 | `client.secrets`   | `set`, `get`, `delete`, `list`, `rotate`                                                                            |
 | `client.access`    | `grantHuman`, `grantAgent`, `update`, `revoke`, `listGrants`                                                        |
-| `client.agents`    | `enroll` (also `AgentsResource.enroll(baseUrl, …)` static), `create`, `getSelf`, `get`, `list`, `update`, `delete`, `rotateKey`, `generateEoa`, `createSmartAccount`, `deleteSmartAccount`, `rotateSigner`, `submitTransaction`, `signTransaction`, `getTransaction`, `listTransactions`, `simulateTransaction`, `simulateBundle`, `sign` |
+| `client.agents`    | `enroll` (also `AgentsResource.enroll(baseUrl, …)` static), `create`, `getSelf`, `get`, `list`, `update`, `delete`, `rotateKey`, `generateEoa`, `createSmartAccount`, `deleteSmartAccount`, `rotateSigner`, `submitTransaction`, `signTransaction`, `getTransaction`, `listTransactions`, `simulateTransaction`, `simulateBundle`, `sign`, `createDelegation`, `listDelegations`, `getDelegation`, `updateDelegation`, `revokeDelegation`, `getEffectiveDelegations` |
 | `client.chains`    | `list`, `get`, `adminList`, `create`, `update`, `delete`                                                            |
 | `client.sharing`   | `create`, `access`, `listOutbound`, `listInbound`, `accept`, `decline`, `revoke`                                    |
 | `client.approvals` | `request`, `list`, `approve`, `deny`, `check`, `subscribe`                                                          |
@@ -329,6 +329,39 @@ When `execution_require_tee` is true:
 - Agents must route through `shroud.1claw.xyz`
 
 Both require `intents_api_enabled` / `execution_intents_enabled` to be on first.
+
+### Agent-to-Agent Delegation
+
+Human-controlled authorization for inter-agent task delegation. Agents cannot delegate to other agents without an explicit delegation record created by a human.
+
+```typescript
+// Create a delegation (human-only)
+await client.agents.createDelegation(orchestratorId, {
+    delegate_id: subAgentId,
+    allowed_tools: ["delegate_task", "search_memory"],
+    max_daily_delegations: 100,
+    max_depth: 2,
+    delegation_mode: "caller",
+    expires_at: "2026-12-31T23:59:59Z",
+});
+
+// List delegations for an agent
+const delegations = await client.agents.listDelegations(agentId);
+
+// Get effective delegations (agent-callable — for runtime tool discovery)
+const effective = await client.agents.getEffectiveDelegations(agentId);
+
+// Update a delegation (human-only)
+await client.agents.updateDelegation(agentId, delegationId, {
+    max_daily_delegations: 200,
+    is_active: false,
+});
+
+// Revoke a delegation (human-only)
+await client.agents.revokeDelegation(agentId, delegationId);
+```
+
+Delegation modes: `caller` (delegate uses its own credentials), `target` (delegate uses target's config), `both` (either mode per invocation).
 
 ### Overhead Budget and Transaction Count Limits
 
