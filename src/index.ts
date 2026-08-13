@@ -82,6 +82,11 @@ export { ChatResource } from "./resources/chat";
 export { ChannelsResource } from "./resources/channels";
 export { WebhooksResource } from "./resources/webhooks";
 export { OAuthConnectResource } from "./resources/oauth-connect";
+export { CedarPoliciesResource } from "./resources/cedar-policies";
+export { OpaPoliciesResource } from "./resources/opa-policies";
+export { SubOrgsResource } from "./resources/sub-orgs";
+export { PortfolioResource } from "./resources/portfolio";
+export type { PortfolioParams } from "./resources/portfolio";
 
 // DPoP (Demonstration of Proof-of-Possession)
 export { DPoPManager } from "./auth/dpop";
@@ -374,6 +379,34 @@ export type {
     OAuthAppCredentialResponse,
     OAuthAppCredentialListResponse,
     SaveOAuthAppCredentialsRequest,
+    // Policy Engine v2
+    PolicyResponseV2,
+    ImportKeyRequest,
+    // Cedar Policies
+    CreateCedarPolicyRequest,
+    CedarPolicyResponse,
+    CedarPolicyListResponse,
+    CedarPolicyTestRequest,
+    CedarPolicyTestResponse,
+    // OPA Policies
+    CreateOpaPolicyRequest,
+    OpaPolicyResponse,
+    OpaPolicyListResponse,
+    OpaPolicyTestRequest,
+    OpaPolicyTestResponse,
+    // Sub-Organizations
+    CreateSubOrgRequest,
+    SubOrgResponse,
+    SubOrgListResponse,
+    SubOrgPermissionRequest,
+    SubOrgAddUserRequest,
+    SubOrgGenerateWalletsRequest,
+    // Portfolio
+    PortfolioResponse,
+    PortfolioWalletEntry,
+    PortfolioTokenBalance,
+    // Smart Account Import
+    ImportSmartAccountRequest,
     // Health
     HealthResponse,
     // MCP

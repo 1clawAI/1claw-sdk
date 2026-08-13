@@ -34,6 +34,10 @@ import { ChatResource } from "../resources/chat";
 import { ChannelsResource } from "../resources/channels";
 import { WebhooksResource } from "../resources/webhooks";
 import { OAuthConnectResource } from "../resources/oauth-connect";
+import { CedarPoliciesResource } from "../resources/cedar-policies";
+import { OpaPoliciesResource } from "../resources/opa-policies";
+import { SubOrgsResource } from "../resources/sub-orgs";
+import { PortfolioResource } from "../resources/portfolio";
 
 /**
  * The main 1Claw SDK client. All API resources are exposed as
@@ -127,6 +131,14 @@ export class OneclawClient {
     readonly webhooks: WebhooksResource;
     /** OAuth Connected Accounts — manage OAuth connections for agents. */
     readonly oauthConnect: OAuthConnectResource;
+    /** Cedar policy engine — create and test Cedar authorization policies. */
+    readonly cedarPolicies: CedarPoliciesResource;
+    /** OPA policy engine — create and test Rego policies. */
+    readonly opaPolicies: OpaPoliciesResource;
+    /** Sub-organizations — partition resources under the parent org. */
+    readonly subOrgs: SubOrgsResource;
+    /** Portfolio — unified view of all wallet balances across chains. */
+    readonly portfolio: PortfolioResource;
 
     constructor(config: OneclawClientConfig) {
         this.http = new HttpClient(config);
@@ -173,6 +185,10 @@ export class OneclawClient {
         this.channels = new ChannelsResource(this.http);
         this.webhooks = new WebhooksResource(this.http);
         this.oauthConnect = new OAuthConnectResource(this.http);
+        this.cedarPolicies = new CedarPoliciesResource(this.http);
+        this.opaPolicies = new OpaPoliciesResource(this.http);
+        this.subOrgs = new SubOrgsResource(this.http);
+        this.portfolio = new PortfolioResource(this.http);
     }
 
     private autoAuthenticateUserKey(config: OneclawClientConfig): void {

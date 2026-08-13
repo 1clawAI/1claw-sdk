@@ -1,5 +1,5 @@
 import type { HttpClient } from "../core/http";
-import type { OneclawResponse } from "../types";
+import type { OneclawResponse, ImportKeyRequest } from "../types";
 
 export interface GenerateTreasuryWalletsRequest {
     chains?: string[];
@@ -45,6 +45,14 @@ export interface SendFromWalletRequest {
     amount: string;
     token_contract?: string;
     gasless?: boolean;
+    token_mint?: string;
+    memo?: string;
+    destination_tag?: number;
+    fee_rate_sat_per_vbyte?: number;
+    xrpl_tx_json?: Record<string, unknown>;
+    fee_limit_sun?: number;
+    token_decimals?: number;
+    ttl?: number;
 }
 
 export interface SendFromWalletResponse {
@@ -206,6 +214,19 @@ export class TreasuryWalletsResource {
         return this.http.request<SpendPolicyResponse>(
             "GET",
             "/v1/treasury/wallets/spend-policy",
+        );
+    }
+
+    /** Import an existing private key as a treasury wallet. Requires re-authentication via password. */
+    async importWallet(
+        chain: string,
+        body: ImportKeyRequest,
+        password: string,
+    ): Promise<OneclawResponse<TreasuryWalletResponse>> {
+        return this.http.request<TreasuryWalletResponse>(
+            "POST",
+            `/v1/treasury/wallets/${chain}/import`,
+            { body, headers: { "X-Auth-Confirm": password } },
         );
     }
 }

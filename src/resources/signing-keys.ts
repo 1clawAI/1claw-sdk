@@ -1,6 +1,7 @@
 import type { HttpClient } from "../core/http";
 import type {
     CreateSigningKeyRequest,
+    ImportKeyRequest,
     SigningKeyResponse,
     SigningKeyExportResponse,
     SigningKeyListResponse,
@@ -66,6 +67,20 @@ export class SigningKeysResource {
             "POST",
             `/v1/agents/${agentId}/signing-keys/${chain}/export`,
             { headers: { "X-Auth-Confirm": password } },
+        );
+    }
+
+    /** Import an existing private key as a signing key. Requires re-authentication via password. */
+    async importKey(
+        agentId: string,
+        chain: string,
+        body: ImportKeyRequest,
+        password: string,
+    ): Promise<OneclawResponse<SigningKeyResponse>> {
+        return this.http.request<SigningKeyResponse>(
+            "POST",
+            `/v1/agents/${agentId}/signing-keys/${chain}/import`,
+            { body, headers: { "X-Auth-Confirm": password } },
         );
     }
 

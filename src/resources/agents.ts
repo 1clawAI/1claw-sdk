@@ -33,6 +33,7 @@ import type {
     UpdateDelegationRequest,
     DelegationResponse,
     DelegationListResponse,
+    ImportSmartAccountRequest,
     OneclawResponse,
 } from "../types";
 
@@ -461,6 +462,20 @@ export class AgentsResource {
         return this.http.request<DelegationListResponse>(
             "GET",
             `/v1/agents/${agentId}/delegations/effective`,
+        );
+    }
+
+    /**
+     * Import an existing Safe smart account for an agent.
+     */
+    async importSmartAccount(
+        agentId: string,
+        body: ImportSmartAccountRequest,
+    ): Promise<OneclawResponse<unknown>> {
+        return this.http.request(
+            "POST",
+            `/v1/agents/${agentId}/smart-accounts/import`,
+            { body },
         );
     }
 }

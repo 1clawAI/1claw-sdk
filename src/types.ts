@@ -277,6 +277,9 @@ export interface PolicyResponse {
     created_by: string;
     created_by_type: string;
     created_at: string;
+    effect?: "allow" | "deny";
+    priority?: number;
+    attribute_conditions?: Record<string, unknown>;
 }
 
 export interface PolicyListResponse {
@@ -2536,4 +2539,165 @@ export interface DelegationResponse {
 
 export interface DelegationListResponse {
     delegations: DelegationResponse[];
+}
+
+// ---------------------------------------------------------------------------
+// Policy Engine v2
+// ---------------------------------------------------------------------------
+
+export interface PolicyResponseV2 extends PolicyResponse {
+    effect: "allow" | "deny";
+    priority: number;
+    attribute_conditions: Record<string, unknown>;
+}
+
+// ---------------------------------------------------------------------------
+// Key Import
+// ---------------------------------------------------------------------------
+
+export interface ImportKeyRequest {
+    private_key: string;
+    format?: "hex" | "base64" | "wif";
+}
+
+// ---------------------------------------------------------------------------
+// Cedar Policies
+// ---------------------------------------------------------------------------
+
+export interface CreateCedarPolicyRequest {
+    policy_text: string;
+    description?: string;
+}
+
+export interface CedarPolicyResponse {
+    id: string;
+    policy_text: string;
+    description?: string;
+    created_at: string;
+    created_by: string;
+}
+
+export interface CedarPolicyListResponse {
+    policies: CedarPolicyResponse[];
+}
+
+export interface CedarPolicyTestRequest {
+    principal: string;
+    action: string;
+    resource: string;
+    context?: Record<string, unknown>;
+}
+
+export interface CedarPolicyTestResponse {
+    decision: "allow" | "deny";
+    reasons: string[];
+}
+
+// ---------------------------------------------------------------------------
+// OPA Policies
+// ---------------------------------------------------------------------------
+
+export interface CreateOpaPolicyRequest {
+    rego_module: string;
+    description?: string;
+    data?: Record<string, unknown>;
+}
+
+export interface OpaPolicyResponse {
+    id: string;
+    rego_module: string;
+    description?: string;
+    data?: Record<string, unknown>;
+    created_at: string;
+    created_by: string;
+}
+
+export interface OpaPolicyListResponse {
+    policies: OpaPolicyResponse[];
+}
+
+export interface OpaPolicyTestRequest {
+    input: Record<string, unknown>;
+    data?: Record<string, unknown>;
+}
+
+export interface OpaPolicyTestResponse {
+    result: Record<string, unknown>;
+    decision: "allow" | "deny";
+}
+
+// ---------------------------------------------------------------------------
+// Sub-Organizations
+// ---------------------------------------------------------------------------
+
+export interface CreateSubOrgRequest {
+    name: string;
+    description?: string;
+    billing_model?: "inherit" | "independent";
+}
+
+export interface SubOrgResponse {
+    id: string;
+    parent_org_id: string;
+    name: string;
+    description?: string;
+    billing_model: string;
+    status: "active" | "archived";
+    created_at: string;
+}
+
+export interface SubOrgListResponse {
+    sub_orgs: SubOrgResponse[];
+}
+
+export interface SubOrgPermissionRequest {
+    permission: string;
+    resource_ids?: string[];
+}
+
+export interface SubOrgAddUserRequest {
+    user_id: string;
+    role?: "admin" | "member" | "viewer";
+}
+
+export interface SubOrgGenerateWalletsRequest {
+    chains?: string[];
+}
+
+// ---------------------------------------------------------------------------
+// Portfolio
+// ---------------------------------------------------------------------------
+
+export interface PortfolioResponse {
+    wallets: PortfolioWalletEntry[];
+    total_usd_estimate?: string;
+}
+
+export interface PortfolioWalletEntry {
+    wallet_type: "treasury" | "signing_key" | "smart_account";
+    chain: string;
+    address: string;
+    native_balance: string;
+    native_balance_usd?: string;
+    tokens?: PortfolioTokenBalance[];
+}
+
+export interface PortfolioTokenBalance {
+    contract_address: string;
+    symbol: string;
+    name?: string;
+    balance: string;
+    balance_usd?: string;
+    decimals: number;
+}
+
+// ---------------------------------------------------------------------------
+// Smart Account Import
+// ---------------------------------------------------------------------------
+
+export interface ImportSmartAccountRequest {
+    chain: string;
+    chain_id: number;
+    safe_address: string;
+    verify?: boolean;
 }
