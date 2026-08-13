@@ -2523,8 +2523,8 @@ export interface paths {
          * Generate multi-chain wallets for the authenticated user
          * @description Generates keypairs for the requested chains (or all supported chains if omitted).
          *     Private keys are stored in a per-org `__treasury-keys` vault with tier-appropriate
-         *     MPC custody. Skips chains where the user already has an active wallet. Requires
-         *     Pro or higher billing tier. Human users only — agents get 403.
+         *     MPC custody. Skips chains where the user already has an active wallet. Available
+         *     on all tiers (counts toward wallet quota). Human users only — agents get 403.
          */
         post: operations["generateTreasuryWallets"];
         delete?: never;
@@ -2604,7 +2604,7 @@ export interface paths {
          * Rotate the user's wallet key for a chain
          * @description Generates a new keypair, deactivates the old wallet, and creates a
          *     new active wallet. The old private key version is retained in the
-         *     vault for audit. Requires Pro or higher.
+         *     vault for audit. Counts toward wallet quota (does not require a paid plan).
          */
         post: operations["rotateTreasuryWallet"];
         delete?: never;
@@ -8096,6 +8096,7 @@ export interface components {
                 vaults?: components["schemas"]["UsageMeter"];
                 team_members?: components["schemas"]["UsageMeter"];
                 intent_transactions?: components["schemas"]["UsageMeter"];
+                wallets?: components["schemas"]["UsageMeter"];
                 shares?: components["schemas"]["UsageMeter"];
             };
         };
