@@ -792,6 +792,40 @@ Shroud enforces the agent's `allowed_models` and `denied_models` restrictions au
 
 See the [Shroud Security Guide](https://docs.1claw.xyz/docs/guides/shroud) for full configuration options.
 
+## v0.47 — Turnkey Parity
+
+New SDK resources for enterprise and treasury features:
+
+```typescript
+// Unified portfolio across treasury wallets, signing keys, and smart accounts
+const portfolio = await client.portfolio.get({ include_tokens: true });
+
+// Cedar declarative policies (Team+ tier)
+await client.cedarPolicies.create({ name: "allow-read", cedar_text: "permit(...);" });
+await client.cedarPolicies.test({ principal_type: "agent", action: "read", ... });
+
+// OPA Rego policies (Business+ tier)
+await client.opaPolicies.create({ name: "deny-export", rego_source: "package oneclaw\n..." });
+
+// Sub-organizations (Enterprise hierarchy)
+await client.subOrgs.create({ name: "Engineering" });
+await client.subOrgs.list();
+
+// Import existing Gnosis Safe smart accounts
+await client.agents.importSmartAccount(agentId, {
+    chain: "ethereum",
+    chain_id: 1,
+    safe_address: "0x...",
+    verify: true,
+});
+
+// BYOK signing key import (human-only, requires password re-auth)
+await client.signingKeys.import(agentId, "ethereum", {
+    private_key: "0x...",
+    format: "hex",
+}, { authConfirm: "your-password" });
+```
+
 ## OpenAPI Types
 
 The SDK's request types are generated from the **OpenAPI 3.1** spec, published as [@1claw/openapi-spec](https://www.npmjs.com/package/@1claw/openapi-spec). Advanced users can access the raw generated types:

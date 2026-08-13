@@ -6121,6 +6121,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/org/sub-orgs/{sub_org_id}/permissions/{permission}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Revoke a sub-organization permission
+         * @description Revoke a specific permission scope from the sub-organization.
+         */
+        delete: operations["revokeSubOrgPermission"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/org/sub-orgs/{sub_org_id}/wallets/generate": {
         parameters: {
             query?: never;
@@ -10173,6 +10193,18 @@ export interface components {
              * @default true
              */
             verify: boolean;
+        };
+        ImportSmartAccountResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            agent_id?: string;
+            chain?: string;
+            chain_id?: number;
+            safe_address?: string;
+            nonce?: number | null;
+            /** Format: date-time */
+            created_at?: string;
         };
     };
     responses: {
@@ -18726,6 +18758,30 @@ export interface operations {
             404: components["responses"]["NotFound"];
         };
     };
+    revokeSubOrgPermission: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sub_org_id: string;
+                /** @description The permission scope to revoke */
+                permission: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Permission revoked */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
     generateSubOrgWallets: {
         parameters: {
             query?: never;
@@ -18755,7 +18811,12 @@ export interface operations {
     };
     getPortfolio: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Comma-separated list of chain names to filter by (e.g. "ethereum,solana") */
+                chains?: string;
+                /** @description Whether to include token balances alongside native balances */
+                include_tokens?: boolean;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -18794,7 +18855,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ImportSmartAccountResponse"];
+                };
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
