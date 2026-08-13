@@ -1454,6 +1454,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/agents/{agent_id}/signing-keys/{chain}/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Import a signing key for a chain
+         * @description Import an existing private key for a specific chain. Human-only,
+         *     requires password re-authentication.
+         */
+        post: operations["importSigningKey"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/agents/{agent_id}/bankr-keys/lease": {
         parameters: {
             query?: never;
@@ -2178,6 +2199,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/billing/llm-token-billing/cancel-duplicates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancel duplicate LLM billing subscriptions
+         * @description Cancels extra Stripe LLM billing subscriptions for the org, keeping a single primary subscription (active preferred over trialing). Does not change the org LLM billing enabled setting.
+         */
+        post: operations["cancelLlmDuplicateSubscriptions"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/billing/overage-method": {
         parameters: {
             query?: never;
@@ -2631,6 +2672,27 @@ export interface paths {
          *     `X-Auth-Confirm` header (account password). Human users only.
          */
         post: operations["swapFromTreasuryWallet"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/treasury/wallets/{chain}/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Import a treasury wallet
+         * @description Import an existing private key as a treasury wallet. Human-only,
+         *     requires password re-authentication via X-Auth-Confirm header.
+         */
+        post: operations["importTreasuryWallet"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5831,6 +5893,296 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/org/cedar-policies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Cedar policies
+         * @description List all Cedar policies for the organization.
+         */
+        get: operations["listCedarPolicies"];
+        put?: never;
+        /**
+         * Create a Cedar policy
+         * @description Create a new Cedar policy for the organization. Team+ tier required.
+         */
+        post: operations["createCedarPolicy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/org/cedar-policies/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a Cedar policy
+         * @description Retrieve a specific Cedar policy by ID.
+         */
+        get: operations["getCedarPolicy"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete a Cedar policy
+         * @description Delete a Cedar policy by ID.
+         */
+        delete: operations["deleteCedarPolicy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/org/cedar-policies/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Test Cedar policy evaluation
+         * @description Evaluate the organization's Cedar policies against a test request.
+         */
+        post: operations["testCedarPolicy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/org/opa-policies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List OPA policies
+         * @description List all OPA policies for the organization.
+         */
+        get: operations["listOpaPolicies"];
+        put?: never;
+        /**
+         * Create an OPA policy
+         * @description Create a new OPA Rego policy for the organization. Business+ tier required.
+         */
+        post: operations["createOpaPolicy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/org/opa-policies/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get an OPA policy
+         * @description Retrieve a specific OPA policy by ID.
+         */
+        get: operations["getOpaPolicy"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete an OPA policy
+         * @description Delete an OPA policy by ID.
+         */
+        delete: operations["deleteOpaPolicy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/org/opa-policies/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Test OPA policy evaluation
+         * @description Evaluate the organization's OPA policies against a test input.
+         */
+        post: operations["testOpaPolicy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/org/sub-orgs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List sub-organizations
+         * @description List all sub-organizations under the current org.
+         */
+        get: operations["listSubOrgs"];
+        put?: never;
+        /**
+         * Create a sub-organization
+         * @description Create a new sub-organization under the current org.
+         */
+        post: operations["createSubOrg"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/org/sub-orgs/{sub_org_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a sub-organization
+         * @description Retrieve a specific sub-organization by ID.
+         */
+        get: operations["getSubOrg"];
+        put?: never;
+        post?: never;
+        /**
+         * Archive a sub-organization
+         * @description Archive (soft-delete) a sub-organization.
+         */
+        delete: operations["deleteSubOrg"];
+        options?: never;
+        head?: never;
+        /**
+         * Update a sub-organization
+         * @description Update sub-organization name, description, or billing model.
+         */
+        patch: operations["updateSubOrg"];
+        trace?: never;
+    };
+    "/v1/org/sub-orgs/{sub_org_id}/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add a user to a sub-organization
+         * @description Add a user to a sub-organization with a specified role.
+         */
+        post: operations["addSubOrgUser"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/org/sub-orgs/{sub_org_id}/permissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Grant permissions to a sub-organization
+         * @description Grant a permission scope to the sub-organization.
+         */
+        post: operations["grantSubOrgPermission"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/org/sub-orgs/{sub_org_id}/wallets/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate wallets for a sub-organization
+         * @description Generate treasury wallets for specified chains within the sub-org.
+         */
+        post: operations["generateSubOrgWallets"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/portfolio": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get unified portfolio
+         * @description Returns an aggregated view of all wallet balances (treasury wallets,
+         *     signing keys, smart accounts) with USD estimates.
+         */
+        get: operations["getPortfolio"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/smart-accounts/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Import an existing Safe smart account
+         * @description Import an existing Safe smart account for an agent. Optionally verifies
+         *     on-chain that the agent's EOA is a signer on the Safe.
+         */
+        post: operations["importSmartAccount"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -6314,6 +6666,16 @@ export interface components {
             };
             /** Format: date-time */
             expires_at?: string;
+            /**
+             * @default allow
+             * @enum {string}
+             */
+            effect: "allow" | "deny";
+            /** @default 0 */
+            priority: number;
+            attribute_conditions?: {
+                [key: string]: unknown;
+            };
         };
         UpdatePolicyRequest: {
             permissions?: string[];
@@ -6322,6 +6684,16 @@ export interface components {
             };
             /** Format: date-time */
             expires_at?: string;
+            /**
+             * @default allow
+             * @enum {string}
+             */
+            effect: "allow" | "deny";
+            /** @default 0 */
+            priority: number;
+            attribute_conditions?: {
+                [key: string]: unknown;
+            };
         };
         PolicyResponse: {
             /** Format: uuid */
@@ -6341,6 +6713,16 @@ export interface components {
             created_by_type?: string;
             /** Format: date-time */
             created_at: string;
+            /**
+             * @default allow
+             * @enum {string}
+             */
+            effect: "allow" | "deny";
+            /** @default 0 */
+            priority: number;
+            attribute_conditions?: {
+                [key: string]: unknown;
+            };
         };
         PolicyListResponse: {
             policies?: components["schemas"]["PolicyResponse"][];
@@ -7736,10 +8118,20 @@ export interface components {
             subscription_status?: "active" | "inactive";
             credit_balance?: components["schemas"]["LlmCreditBalance"];
             billing_cycle_usage?: components["schemas"]["LlmBillingCycleUsage"];
+            active_subscription_count?: number;
+            subscription_ids?: string[];
+            warning?: string;
         };
         LlmCheckoutResponse: {
             /** Format: uri */
             checkout_url?: string;
+            already_subscribed?: boolean;
+            subscription_id?: string;
+        };
+        LlmCancelDuplicatesResponse: {
+            cancelled_count: number;
+            cancelled_subscription_ids: string[];
+            remaining_subscription_ids: string[];
         };
         LlmDisableResponse: {
             enabled?: boolean;
@@ -8058,7 +8450,7 @@ export interface components {
         TreasuryWalletSendRequest: {
             /** @description Destination address (0x-prefixed) */
             to: string;
-            /** @description Value in wei */
+            /** @description Value in wei (or major-unit decimal string for non-EVM) */
             value_wei: string;
             /** @description Hex-encoded calldata (optional) */
             data?: string;
@@ -8069,6 +8461,22 @@ export interface components {
              * @default false
              */
             gasless: boolean;
+            /** @description Token contract address / mint (ERC-20, SPL, TRC-20, Cardano policy_id.asset_name) */
+            token_mint?: string;
+            /** @description Transaction memo (Solana Memo Program, XRP Memos, Tron extra_data) */
+            memo?: string;
+            /** @description XRP destination tag */
+            destination_tag?: number;
+            /** @description Bitcoin fee rate in sat/vbyte */
+            fee_rate_sat_per_vbyte?: number;
+            /** @description Raw XRPL transaction JSON for advanced XRP transaction types */
+            xrpl_tx_json?: Record<string, never>;
+            /** @description Tron fee limit in sun */
+            fee_limit_sun?: number;
+            /** @description Token decimals (required for non-EVM token transfers when not in known_tokens) */
+            token_decimals?: number;
+            /** @description Cardano transaction TTL (slot number) */
+            ttl?: number;
         };
         TreasuryWalletSendResponse: {
             tx_hash: string;
@@ -9622,6 +10030,149 @@ export interface components {
         };
         OAuthAppCredentialListResponse: {
             credentials?: components["schemas"]["OAuthAppCredentialResponse"][];
+        };
+        ImportKeyRequest: {
+            /** @description The private key to import */
+            private_key: string;
+            /**
+             * @description Key format (default hex)
+             * @enum {string}
+             */
+            format?: "hex" | "base64" | "wif";
+        };
+        CreateCedarPolicyRequest: {
+            /** @description Cedar policy text */
+            policy_text: string;
+            description?: string;
+        };
+        CedarPolicyResponse: {
+            /** Format: uuid */
+            id?: string;
+            policy_text?: string;
+            description?: string;
+            /** Format: date-time */
+            created_at?: string;
+            /** Format: uuid */
+            created_by?: string;
+        };
+        CedarPolicyListResponse: {
+            policies?: components["schemas"]["CedarPolicyResponse"][];
+        };
+        CedarPolicyTestRequest: {
+            principal: string;
+            action: string;
+            resource: string;
+            context?: Record<string, never>;
+        };
+        CedarPolicyTestResponse: {
+            /** @enum {string} */
+            decision?: "allow" | "deny";
+            reasons?: string[];
+        };
+        CreateOpaPolicyRequest: {
+            /** @description OPA Rego module source */
+            rego_module: string;
+            description?: string;
+            /** @description Static data document for the policy */
+            data?: Record<string, never>;
+        };
+        OpaPolicyResponse: {
+            /** Format: uuid */
+            id?: string;
+            rego_module?: string;
+            description?: string;
+            data?: Record<string, never>;
+            /** Format: date-time */
+            created_at?: string;
+            /** Format: uuid */
+            created_by?: string;
+        };
+        OpaPolicyListResponse: {
+            policies?: components["schemas"]["OpaPolicyResponse"][];
+        };
+        OpaPolicyTestRequest: {
+            /** @description Input document for policy evaluation */
+            input: Record<string, never>;
+            /** @description Optional data override */
+            data?: Record<string, never>;
+        };
+        OpaPolicyTestResponse: {
+            result?: Record<string, never>;
+            /** @enum {string} */
+            decision?: "allow" | "deny";
+        };
+        CreateSubOrgRequest: {
+            name: string;
+            description?: string;
+            /**
+             * @default inherit
+             * @enum {string}
+             */
+            billing_model: "inherit" | "independent";
+        };
+        SubOrgResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            parent_org_id?: string;
+            name?: string;
+            description?: string;
+            billing_model?: string;
+            /** @enum {string} */
+            status?: "active" | "archived";
+            /** Format: date-time */
+            created_at?: string;
+        };
+        SubOrgListResponse: {
+            sub_orgs?: components["schemas"]["SubOrgResponse"][];
+        };
+        SubOrgPermissionRequest: {
+            /** @description Permission to grant (e.g. vaults:read, agents:write) */
+            permission: string;
+            resource_ids?: string[];
+        };
+        SubOrgAddUserRequest: {
+            /** Format: uuid */
+            user_id: string;
+            /**
+             * @default member
+             * @enum {string}
+             */
+            role: "admin" | "member" | "viewer";
+        };
+        SubOrgGenerateWalletsRequest: {
+            chains?: string[];
+        };
+        PortfolioResponse: {
+            wallets?: components["schemas"]["PortfolioWalletEntry"][];
+            total_usd_estimate?: string;
+        };
+        PortfolioWalletEntry: {
+            /** @enum {string} */
+            wallet_type?: "treasury" | "signing_key" | "smart_account";
+            chain?: string;
+            address?: string;
+            native_balance?: string;
+            native_balance_usd?: string;
+            tokens?: components["schemas"]["PortfolioTokenBalance"][];
+        };
+        PortfolioTokenBalance: {
+            contract_address?: string;
+            symbol?: string;
+            name?: string;
+            balance?: string;
+            balance_usd?: string;
+            decimals?: number;
+        };
+        ImportSmartAccountRequest: {
+            chain: string;
+            chain_id: number;
+            safe_address: string;
+            /**
+             * @description Verify on-chain Safe ownership
+             * @default true
+             */
+            verify: boolean;
         };
     };
     responses: {
@@ -12109,6 +12660,35 @@ export interface operations {
             404: components["responses"]["NotFound"];
         };
     };
+    importSigningKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+                chain: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImportKeyRequest"];
+            };
+        };
+        responses: {
+            /** @description Signing key imported */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SigningKeyResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
     leaseBankrKey: {
         parameters: {
             query?: never;
@@ -13321,6 +13901,26 @@ export interface operations {
             };
         };
     };
+    cancelLlmDuplicateSubscriptions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Duplicate subscriptions cancelled */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LlmCancelDuplicatesResponse"];
+                };
+            };
+        };
+    };
     billingOverageMethod: {
         parameters: {
             query?: never;
@@ -14119,6 +14719,34 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+        };
+    };
+    importTreasuryWallet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                chain: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImportKeyRequest"];
+            };
+        };
+        responses: {
+            /** @description Treasury wallet imported */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TreasuryWalletResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
         };
     };
     getEffectiveSpendPolicy: {
@@ -17680,6 +18308,497 @@ export interface operations {
                 };
                 content?: never;
             };
+        };
+    };
+    listCedarPolicies: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Cedar policies list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CedarPolicyListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    createCedarPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCedarPolicyRequest"];
+            };
+        };
+        responses: {
+            /** @description Cedar policy created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CedarPolicyResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    getCedarPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Cedar policy details */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CedarPolicyResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deleteCedarPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Cedar policy deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    testCedarPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CedarPolicyTestRequest"];
+            };
+        };
+        responses: {
+            /** @description Policy evaluation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CedarPolicyTestResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    listOpaPolicies: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OPA policies list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OpaPolicyListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    createOpaPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateOpaPolicyRequest"];
+            };
+        };
+        responses: {
+            /** @description OPA policy created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OpaPolicyResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    getOpaPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OPA policy details */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OpaPolicyResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deleteOpaPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OPA policy deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    testOpaPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OpaPolicyTestRequest"];
+            };
+        };
+        responses: {
+            /** @description Policy evaluation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OpaPolicyTestResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    listSubOrgs: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sub-organizations list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubOrgListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    createSubOrg: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateSubOrgRequest"];
+            };
+        };
+        responses: {
+            /** @description Sub-organization created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubOrgResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    getSubOrg: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sub_org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sub-organization details */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubOrgResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deleteSubOrg: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sub_org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sub-organization archived */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateSubOrg: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sub_org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateSubOrgRequest"];
+            };
+        };
+        responses: {
+            /** @description Sub-organization updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubOrgResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    addSubOrgUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sub_org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubOrgAddUserRequest"];
+            };
+        };
+        responses: {
+            /** @description User added to sub-organization */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    grantSubOrgPermission: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sub_org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubOrgPermissionRequest"];
+            };
+        };
+        responses: {
+            /** @description Permission granted */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    generateSubOrgWallets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sub_org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["SubOrgGenerateWalletsRequest"];
+            };
+        };
+        responses: {
+            /** @description Wallets generated */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getPortfolio: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Portfolio summary */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PortfolioResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    importSmartAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImportSmartAccountRequest"];
+            };
+        };
+        responses: {
+            /** @description Smart account imported */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
         };
     };
 }
