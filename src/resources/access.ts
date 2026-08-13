@@ -14,6 +14,12 @@ export interface GrantOptions {
     conditions?: Record<string, unknown>;
     /** ISO-8601 expiry for the grant. */
     expires_at?: string;
+    /** Policy effect: "allow" (default) or "deny". */
+    effect?: "allow" | "deny";
+    /** Priority for conflict resolution (higher wins). Default 0. */
+    priority?: number;
+    /** Attribute-based conditions (required_tags, principal_role, etc.). */
+    attribute_conditions?: Record<string, unknown>;
 }
 
 /**
@@ -40,6 +46,9 @@ export class AccessResource {
             permissions,
             conditions: options.conditions,
             expires_at: options.expires_at,
+            effect: options.effect ?? "allow",
+            priority: options.priority ?? 0,
+            attribute_conditions: options.attribute_conditions,
         };
         return this.http.request<PolicyResponse>(
             "POST",
@@ -65,6 +74,9 @@ export class AccessResource {
             permissions,
             conditions: options.conditions,
             expires_at: options.expires_at,
+            effect: options.effect ?? "allow",
+            priority: options.priority ?? 0,
+            attribute_conditions: options.attribute_conditions,
         };
         return this.http.request<PolicyResponse>(
             "POST",
