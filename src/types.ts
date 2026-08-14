@@ -280,6 +280,7 @@ export interface PolicyResponse {
     effect?: "allow" | "deny";
     priority?: number;
     attribute_conditions?: Record<string, unknown>;
+    consensus_trigger?: ConsensusTrigger;
 }
 
 export interface PolicyListResponse {
@@ -2700,4 +2701,137 @@ export interface ImportSmartAccountRequest {
     chain_id: number;
     safe_address: string;
     verify?: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Policy Backend Settings (Cedar/OPA Enforcement v2)
+// ---------------------------------------------------------------------------
+
+export interface PolicyBackendSettings {
+    backend: "builtin" | "cedar" | "opa" | "builtin+cedar" | "builtin+opa";
+    mode: "shadow" | "enforce";
+    scope: string[];
+    breaker_behavior: "fail_closed" | "fail_open_builtin";
+}
+
+export interface UpdatePolicyBackendSettingsRequest {
+    backend?: "builtin" | "cedar" | "opa" | "builtin+cedar" | "builtin+opa";
+    mode?: "shadow" | "enforce";
+    scope?: string[];
+    breaker_behavior?: "fail_closed" | "fail_open_builtin";
+}
+
+export interface ShadowReportResponse {
+    concordance_rate: number;
+    total_evaluated: number;
+    divergent_count: number;
+    sample_events: ShadowDivergenceEvent[];
+}
+
+export interface ShadowDivergenceEvent {
+    timestamp: string;
+    action: string;
+    principal_type: string;
+    principal_id: string;
+    resource: string;
+    builtin_decision: string;
+    backend_decision: string;
+    reason?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Contract ABI Registry
+// ---------------------------------------------------------------------------
+
+export interface CreateContractAbiRequest {
+    chain: string;
+    contract_address: string;
+    abi_json: unknown;
+    name?: string;
+    description?: string;
+    token_decimals?: number;
+}
+
+export interface ContractAbiResponse {
+    id: string;
+    org_id: string;
+    chain: string;
+    contract_address: string;
+    abi_json: unknown;
+    name?: string;
+    description?: string;
+    token_decimals?: number;
+    created_at: string;
+}
+
+export interface ContractAbiListResponse {
+    abis: ContractAbiResponse[];
+}
+
+// ---------------------------------------------------------------------------
+// Pending Approvals (Consensus Policies)
+// ---------------------------------------------------------------------------
+
+export interface SubmitPendingApprovalRequest {
+    policy_id: string;
+    action: string;
+    action_payload: Record<string, unknown>;
+}
+
+export interface PendingApprovalResponse {
+    id: string;
+    org_id: string;
+    policy_id: string;
+    action: string;
+    action_payload: Record<string, unknown>;
+    status: "pending" | "approved" | "rejected" | "executed" | "expired" | "cancelled";
+    submitted_by: string;
+    submitted_by_type: string;
+    required_approvals: number;
+    current_approvals: number;
+    signatures: PendingApprovalSignature[];
+    expires_at?: string;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface PendingApprovalSignature {
+    signer_id: string;
+    signer_type: string;
+    decision: "approve" | "reject";
+    payload_hash: string;
+    reason?: string;
+    created_at: string;
+}
+
+export interface PendingApprovalListResponse {
+    pending_approvals: PendingApprovalResponse[];
+}
+
+export interface ApprovePendingApprovalRequest {
+    decision: "approve" | "reject";
+    payload_hash: string;
+    reason?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Consensus Trigger (on Access Policies)
+// ---------------------------------------------------------------------------
+
+export interface ConsensusTrigger {
+    conditions: ConsensusCondition[];
+    approval: ApprovalRequirement;
+    expiry_secs?: number;
+    self_approval_allowed?: boolean;
+}
+
+export interface ConsensusCondition {
+    type: string;
+    threshold_gwei?: number;
+    [key: string]: unknown;
+}
+
+export interface ApprovalRequirement {
+    min_approvals: number;
+    required_roles?: string[];
 }

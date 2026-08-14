@@ -5,6 +5,7 @@ import type {
     PolicyResponse,
     PolicyListResponse,
     OneclawResponse,
+    ConsensusTrigger,
 } from "../types";
 
 export interface GrantOptions {
@@ -20,6 +21,8 @@ export interface GrantOptions {
     priority?: number;
     /** Attribute-based conditions (required_tags, principal_role, etc.). */
     attribute_conditions?: Record<string, unknown>;
+    /** Consensus trigger — requires multi-party approval for matching operations. */
+    consensus_trigger?: ConsensusTrigger;
 }
 
 /**
@@ -39,7 +42,7 @@ export class AccessResource {
         permissions: string[],
         options: GrantOptions = {},
     ): Promise<OneclawResponse<PolicyResponse>> {
-        const body: CreatePolicyRequest = {
+        const body: CreatePolicyRequest & { consensus_trigger?: ConsensusTrigger } = {
             secret_path_pattern: options.secretPathPattern ?? "**",
             principal_type: "user",
             principal_id: userId,
@@ -49,6 +52,7 @@ export class AccessResource {
             effect: options.effect ?? "allow",
             priority: options.priority ?? 0,
             attribute_conditions: options.attribute_conditions,
+            consensus_trigger: options.consensus_trigger,
         };
         return this.http.request<PolicyResponse>(
             "POST",
@@ -67,7 +71,7 @@ export class AccessResource {
         permissions: string[],
         options: GrantOptions = {},
     ): Promise<OneclawResponse<PolicyResponse>> {
-        const body: CreatePolicyRequest = {
+        const body: CreatePolicyRequest & { consensus_trigger?: ConsensusTrigger } = {
             secret_path_pattern: options.secretPathPattern ?? "**",
             principal_type: "agent",
             principal_id: agentId,
@@ -77,6 +81,7 @@ export class AccessResource {
             effect: options.effect ?? "allow",
             priority: options.priority ?? 0,
             attribute_conditions: options.attribute_conditions,
+            consensus_trigger: options.consensus_trigger,
         };
         return this.http.request<PolicyResponse>(
             "POST",

@@ -87,6 +87,8 @@ export { OpaPoliciesResource } from "./resources/opa-policies";
 export { SubOrgsResource } from "./resources/sub-orgs";
 export { PortfolioResource } from "./resources/portfolio";
 export type { PortfolioParams } from "./resources/portfolio";
+export { ContractAbisResource } from "./resources/contract-abis";
+export { PendingApprovalsResource } from "./resources/pending-approvals";
 
 // DPoP (Demonstration of Proof-of-Possession)
 export { DPoPManager } from "./auth/dpop";
@@ -407,6 +409,25 @@ export type {
     PortfolioTokenBalance,
     // Smart Account Import
     ImportSmartAccountRequest,
+    // Policy Backend Settings
+    PolicyBackendSettings,
+    UpdatePolicyBackendSettingsRequest,
+    ShadowReportResponse,
+    ShadowDivergenceEvent,
+    // Contract ABI Registry
+    CreateContractAbiRequest,
+    ContractAbiResponse,
+    ContractAbiListResponse,
+    // Pending Approvals (Consensus)
+    SubmitPendingApprovalRequest,
+    PendingApprovalResponse,
+    PendingApprovalSignature,
+    PendingApprovalListResponse,
+    ApprovePendingApprovalRequest,
+    // Consensus Trigger
+    ConsensusTrigger,
+    ConsensusCondition,
+    ApprovalRequirement,
     // Health
     HealthResponse,
     // MCP

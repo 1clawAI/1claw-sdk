@@ -6029,6 +6029,187 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/org/settings/policy-backend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get policy backend settings
+         * @description Returns the org's Cedar/OPA enforcement configuration. Default mode is shadow.
+         *     Owner/admin only.
+         */
+        get: operations["getPolicyBackendSettings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update policy backend settings
+         * @description Configure backend (builtin, cedar, opa, builtin+cedar, builtin+opa), mode (shadow/enforce),
+         *     scope actions, and circuit breaker behavior. Owner/admin only.
+         */
+        patch: operations["updatePolicyBackendSettings"];
+        trace?: never;
+    };
+    "/v1/org/policy-shadow-report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get policy shadow divergence report
+         * @description Returns divergence statistics when running Cedar/OPA in shadow mode.
+         *     Owner/admin only.
+         */
+        get: operations["getPolicyShadowReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/org/contract-abis": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List contract ABIs
+         * @description List org contract ABIs, optionally filtered by chain. Owner/admin only.
+         */
+        get: operations["listContractAbis"];
+        put?: never;
+        /**
+         * Register a contract ABI
+         * @description Upload an org-scoped ABI for transaction decoding. Owner/admin only.
+         */
+        post: operations["createContractAbi"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/org/contract-abis/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a contract ABI */
+        get: operations["getContractAbi"];
+        put?: never;
+        post?: never;
+        /** Delete a contract ABI */
+        delete: operations["deleteContractAbi"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/pending-approvals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List pending approvals */
+        get: operations["listPendingApprovals"];
+        put?: never;
+        /**
+         * Submit action for approval
+         * @description Submit a signing or transaction action that matches a consensus policy trigger.
+         */
+        post: operations["submitPendingApproval"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/pending-approvals/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get pending approval details */
+        get: operations["getPendingApproval"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/pending-approvals/{id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve or reject a pending approval */
+        post: operations["approvePendingApproval"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/pending-approvals/{id}/execute": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Execute an approved action
+         * @description Human-only. Marks the approval as executed after verifying signatures.
+         */
+        post: operations["executePendingApproval"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/pending-approvals/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel a pending approval */
+        post: operations["cancelPendingApproval"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/org/sub-orgs": {
         parameters: {
             query?: never;
@@ -6696,6 +6877,7 @@ export interface components {
             attribute_conditions?: {
                 [key: string]: unknown;
             };
+            consensus_trigger?: components["schemas"]["ConsensusTrigger"];
         };
         UpdatePolicyRequest: {
             permissions?: string[];
@@ -6714,6 +6896,7 @@ export interface components {
             attribute_conditions?: {
                 [key: string]: unknown;
             };
+            consensus_trigger?: components["schemas"]["ConsensusTrigger"];
         };
         PolicyResponse: {
             /** Format: uuid */
@@ -6743,6 +6926,7 @@ export interface components {
             attribute_conditions?: {
                 [key: string]: unknown;
             };
+            consensus_trigger?: components["schemas"]["ConsensusTrigger"];
         };
         PolicyListResponse: {
             policies?: components["schemas"]["PolicyResponse"][];
@@ -10062,65 +10246,303 @@ export interface components {
             format?: "hex" | "base64" | "wif";
         };
         CreateCedarPolicyRequest: {
+            name: string;
             /** @description Cedar policy text */
-            policy_text: string;
-            description?: string;
+            cedar_text: string;
         };
         CedarPolicyResponse: {
             /** Format: uuid */
             id?: string;
-            policy_text?: string;
-            description?: string;
-            /** Format: date-time */
-            created_at?: string;
+            /** Format: uuid */
+            org_id?: string;
+            name?: string;
+            cedar_text?: string;
+            is_active?: boolean;
+            /**
+             * @description Dynamic status from org policy backend config
+             * @enum {string}
+             */
+            enforcement_status?: "shadow" | "enforce" | "inactive";
             /** Format: uuid */
             created_by?: string;
+            /** Format: date-time */
+            created_at?: string;
+            /** Format: date-time */
+            updated_at?: string;
         };
         CedarPolicyListResponse: {
             policies?: components["schemas"]["CedarPolicyResponse"][];
         };
         CedarPolicyTestRequest: {
-            principal: string;
+            /** @description Optional inline Cedar text to test */
+            cedar_text?: string;
+            principal_type: string;
+            /** Format: uuid */
+            principal_id: string;
             action: string;
-            resource: string;
+            resource_path: string;
+            /** Format: uuid */
+            vault_id: string;
             context?: Record<string, never>;
         };
         CedarPolicyTestResponse: {
             /** @enum {string} */
             decision?: "allow" | "deny";
-            reasons?: string[];
+            backend?: string;
+            /** @enum {string} */
+            enforcement_status?: "shadow" | "enforce" | "inactive";
+            note?: string;
         };
         CreateOpaPolicyRequest: {
+            name: string;
             /** @description OPA Rego module source */
-            rego_module: string;
-            description?: string;
-            /** @description Static data document for the policy */
-            data?: Record<string, never>;
+            rego_source?: string;
+            /** @description Optional WASM bundle (base64) */
+            wasm_bundle_base64?: string;
+            /** @default oneclaw/allow */
+            entrypoint: string;
         };
         OpaPolicyResponse: {
             /** Format: uuid */
             id?: string;
-            rego_module?: string;
-            description?: string;
-            data?: Record<string, never>;
-            /** Format: date-time */
-            created_at?: string;
+            /** Format: uuid */
+            org_id?: string;
+            name?: string;
+            rego_source?: string;
+            has_wasm_bundle?: boolean;
+            entrypoint?: string;
+            is_active?: boolean;
+            /** @enum {string} */
+            enforcement_status?: "shadow" | "enforce" | "inactive";
             /** Format: uuid */
             created_by?: string;
+            /** Format: date-time */
+            created_at?: string;
+            /** Format: date-time */
+            updated_at?: string;
         };
         OpaPolicyListResponse: {
             policies?: components["schemas"]["OpaPolicyResponse"][];
         };
         OpaPolicyTestRequest: {
-            /** @description Input document for policy evaluation */
-            input: Record<string, never>;
-            /** @description Optional data override */
-            data?: Record<string, never>;
+            principal_type: string;
+            /** Format: uuid */
+            principal_id: string;
+            action: string;
+            resource_path: string;
+            /** Format: uuid */
+            vault_id: string;
+            context?: Record<string, never>;
         };
         OpaPolicyTestResponse: {
-            result?: Record<string, never>;
             /** @enum {string} */
             decision?: "allow" | "deny";
+            backend?: string;
+            /** @enum {string} */
+            enforcement_status?: "shadow" | "enforce" | "inactive";
+            note?: string;
+        };
+        PolicyBackendSettingsResponse: {
+            /** @enum {string} */
+            backend?: "builtin" | "cedar" | "opa" | "builtin+cedar" | "builtin+opa";
+            /** @enum {string} */
+            mode?: "shadow" | "enforce";
+            scope?: string[];
+            /** @enum {string} */
+            breaker_behavior?: "fail_closed" | "fail_open_builtin";
+            /** Format: int64 */
+            policy_version?: number;
+        };
+        UpdatePolicyBackendSettingsRequest: {
+            /** @enum {string} */
+            backend?: "builtin" | "cedar" | "opa" | "builtin+cedar" | "builtin+opa";
+            /** @enum {string} */
+            mode?: "shadow" | "enforce";
+            scope?: string[];
+            /** @enum {string} */
+            breaker_behavior?: "fail_closed" | "fail_open_builtin";
+        };
+        PolicyShadowReportResponse: {
+            /** Format: int64 */
+            total_evaluated?: number;
+            /** Format: int64 */
+            total_divergences?: number;
+            /** Format: int64 */
+            total_errors?: number;
+            /** Format: double */
+            concordance_rate?: number;
+            sample_events?: components["schemas"]["PolicyShadowEvent"][];
+            /** Format: date-time */
+            period_start?: string;
+            /** Format: date-time */
+            period_end?: string;
+        };
+        PolicyShadowEvent: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            org_id?: string;
+            backend?: string;
+            action?: string;
+            builtin_decision?: string;
+            backend_decision?: string;
+            divergent?: boolean;
+            sampled?: boolean;
+            eval_duration_ms?: number;
+            error_text?: string;
+            /** Format: uuid */
+            caller_id?: string;
+            resource_path?: string;
+            /** Format: date-time */
+            created_at?: string;
+        };
+        CreateContractAbiRequest: {
+            chain: string;
+            contract_address: string;
+            abi_json: Record<string, never>[];
+            name?: string;
+            description?: string;
+            token_decimals?: number;
+        };
+        ContractAbiResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            org_id?: string;
+            chain?: string;
+            contract_address?: string;
+            abi_json?: Record<string, never>[];
+            name?: string;
+            description?: string;
+            token_decimals?: number;
+            /** Format: uuid */
+            created_by?: string;
+            /** Format: date-time */
+            created_at?: string;
+            /** Format: date-time */
+            updated_at?: string;
+        };
+        ContractAbiListResponse: {
+            abis?: components["schemas"]["ContractAbiResponse"][];
+        };
+        ConsensusTrigger: {
+            conditions: components["schemas"]["ConsensusCondition"][];
+            approval: components["schemas"]["ApprovalRequirement"];
+            /**
+             * Format: int64
+             * @default 86400
+             */
+            expiry_secs: number;
+            /** @default false */
+            self_approval_allowed: boolean;
+        };
+        ConsensusCondition: {
+            /** @enum {string} */
+            type: "value_above";
+            /** Format: int64 */
+            threshold_gwei: number;
+        } | {
+            /** @enum {string} */
+            type: "chain_in";
+            chains: string[];
+        } | {
+            /** @enum {string} */
+            type: "to_address_in";
+            addresses: string[];
+        } | {
+            /** @enum {string} */
+            type: "function_selector_in";
+            selectors: string[];
+        } | {
+            /** @enum {string} */
+            type: "erc20_amount_above";
+            threshold_raw: string;
+        } | {
+            /** @enum {string} */
+            type: "intent_type_in";
+            intent_types: string[];
+        } | {
+            /** @enum {string} */
+            type: "always";
+        };
+        ApprovalRequirement: {
+            min_approvals: number;
+            required_roles?: string[];
+            per_role_minimums?: {
+                [key: string]: number;
+            };
+        };
+        SubmitPendingApprovalRequest: {
+            /** Format: uuid */
+            policy_id: string;
+            action: string;
+            action_payload: Record<string, never>;
+        };
+        SubmitPendingApprovalResponse: {
+            /** Format: uuid */
+            pending_approval_id?: string;
+            required_approvals?: number;
+            current_approvals?: number;
+            /** Format: date-time */
+            expires_at?: string;
+            status?: string;
+            message?: string;
+        };
+        ApprovePendingApprovalRequest: {
+            /** @enum {string} */
+            decision: "approve" | "reject";
+            payload_hash: string;
+            reason?: string;
+        };
+        PendingApprovalResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            org_id?: string;
+            /** Format: uuid */
+            policy_id?: string;
+            action?: string;
+            action_payload?: Record<string, never>;
+            payload_hash?: string;
+            /** Format: uuid */
+            submitted_by?: string;
+            submitted_by_type?: string;
+            status?: string;
+            required_approvals?: number;
+            current_approvals?: number;
+            /** Format: date-time */
+            expires_at?: string;
+            /** Format: date-time */
+            executed_at?: string;
+            /** Format: date-time */
+            created_at?: string;
+            /** Format: date-time */
+            updated_at?: string;
+            signatures?: components["schemas"]["ApprovalSignatureResponse"][];
+        };
+        ApprovalSignatureResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            approver_id?: string;
+            approver_type?: string;
+            decision?: string;
+            reason?: string;
+            /** Format: date-time */
+            created_at?: string;
+        };
+        PendingApprovalListResponse: {
+            pending_approvals?: components["schemas"]["PendingApprovalResponse"][];
+            /** Format: int64 */
+            total?: number;
+        };
+        ExecutePendingApprovalResponse: {
+            /** Format: uuid */
+            pending_approval_id?: string;
+            status?: string;
+            /** Format: date-time */
+            executed_at?: string;
+            result?: Record<string, never>;
         };
         CreateSubOrgRequest: {
             name: string;
@@ -18581,6 +19003,339 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+        };
+    };
+    getPolicyBackendSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Policy backend settings */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PolicyBackendSettingsResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    updatePolicyBackendSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePolicyBackendSettingsRequest"];
+            };
+        };
+        responses: {
+            /** @description Updated settings */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PolicyBackendSettingsResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    getPolicyShadowReport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Shadow divergence report */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PolicyShadowReportResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    listContractAbis: {
+        parameters: {
+            query?: {
+                /** @description Filter by chain name */
+                chain?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description ABI list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContractAbiListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    createContractAbi: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateContractAbiRequest"];
+            };
+        };
+        responses: {
+            /** @description ABI registered */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContractAbiResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    getContractAbi: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description ABI details */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContractAbiResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deleteContractAbi: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description ABI deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listPendingApprovals: {
+        parameters: {
+            query?: {
+                status?: string;
+                agent_id?: string;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Pending approvals list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PendingApprovalListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    submitPendingApproval: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmitPendingApprovalRequest"];
+            };
+        };
+        responses: {
+            /** @description Approval required */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubmitPendingApprovalResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getPendingApproval: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Pending approval with signatures */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PendingApprovalResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    approvePendingApproval: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApprovePendingApprovalRequest"];
+            };
+        };
+        responses: {
+            /** @description Updated pending approval */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PendingApprovalResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    executePendingApproval: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Action executed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExecutePendingApprovalResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    cancelPendingApproval: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Cancelled pending approval */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PendingApprovalResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
         };
     };
     listSubOrgs: {

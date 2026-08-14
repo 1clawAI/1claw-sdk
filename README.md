@@ -792,6 +792,45 @@ Shroud enforces the agent's `allowed_models` and `denied_models` restrictions au
 
 See the [Shroud Security Guide](https://docs.1claw.xyz/docs/guides/shroud) for full configuration options.
 
+## v0.48 — Cedar/OPA Enforcement v2
+
+Policy backend settings, contract ABI registry, and consensus pending approvals:
+
+```typescript
+// Org policy backend (shadow mode default)
+const settings = await client.org.getPolicyBackendSettings();
+await client.org.updatePolicyBackendSettings({ mode: "shadow", backend: "builtin+cedar" });
+const report = await client.org.getPolicyShadowReport();
+
+// Contract ABI registry (owner/admin)
+await client.contractAbis.create({
+    chain: "ethereum",
+    contract_address: "0x...",
+    abi_json: [...],
+});
+await client.contractAbis.list({ chain: "ethereum" });
+
+// Consensus pending approvals
+await client.pendingApprovals.submit({
+    policy_id: "...",
+    action: "sign",
+    action_payload: { chain: "ethereum", to: "0x...", value: "0" },
+});
+await client.pendingApprovals.list({ status: "pending" });
+
+// Access policies with consensus_trigger
+await client.access.createPolicy(vaultId, {
+    secret_path_pattern: "keys/*",
+    principal_type: "agent",
+    principal_id: agentId,
+    permissions: ["read"],
+    consensus_trigger: {
+        conditions: [{ type: "always" }],
+        approval: { min_approvals: 2 },
+    },
+});
+```
+
 ## v0.47 — Turnkey Parity
 
 New SDK resources for enterprise and treasury features:

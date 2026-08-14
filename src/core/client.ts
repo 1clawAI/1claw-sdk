@@ -38,6 +38,8 @@ import { CedarPoliciesResource } from "../resources/cedar-policies";
 import { OpaPoliciesResource } from "../resources/opa-policies";
 import { SubOrgsResource } from "../resources/sub-orgs";
 import { PortfolioResource } from "../resources/portfolio";
+import { ContractAbisResource } from "../resources/contract-abis";
+import { PendingApprovalsResource } from "../resources/pending-approvals";
 
 /**
  * The main 1Claw SDK client. All API resources are exposed as
@@ -139,6 +141,10 @@ export class OneclawClient {
     readonly subOrgs: SubOrgsResource;
     /** Portfolio — unified view of all wallet balances across chains. */
     readonly portfolio: PortfolioResource;
+    /** Contract ABI registry — upload and manage contract ABIs for policy evaluation. */
+    readonly contractAbis: ContractAbisResource;
+    /** Pending approvals — consensus-based approval workflows for policy-gated actions. */
+    readonly pendingApprovals: PendingApprovalsResource;
 
     constructor(config: OneclawClientConfig) {
         this.http = new HttpClient(config);
@@ -189,6 +195,8 @@ export class OneclawClient {
         this.opaPolicies = new OpaPoliciesResource(this.http);
         this.subOrgs = new SubOrgsResource(this.http);
         this.portfolio = new PortfolioResource(this.http);
+        this.contractAbis = new ContractAbisResource(this.http);
+        this.pendingApprovals = new PendingApprovalsResource(this.http);
     }
 
     private autoAuthenticateUserKey(config: OneclawClientConfig): void {
