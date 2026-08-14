@@ -42,7 +42,7 @@ export class AccessResource {
         permissions: string[],
         options: GrantOptions = {},
     ): Promise<OneclawResponse<PolicyResponse>> {
-        const body: CreatePolicyRequest & { consensus_trigger?: ConsensusTrigger } = {
+        const body: CreatePolicyRequest = {
             secret_path_pattern: options.secretPathPattern ?? "**",
             principal_type: "user",
             principal_id: userId,
@@ -52,7 +52,9 @@ export class AccessResource {
             effect: options.effect ?? "allow",
             priority: options.priority ?? 0,
             attribute_conditions: options.attribute_conditions,
-            consensus_trigger: options.consensus_trigger,
+            ...(options.consensus_trigger
+                ? { consensus_trigger: options.consensus_trigger as CreatePolicyRequest["consensus_trigger"] }
+                : {}),
         };
         return this.http.request<PolicyResponse>(
             "POST",
@@ -71,7 +73,7 @@ export class AccessResource {
         permissions: string[],
         options: GrantOptions = {},
     ): Promise<OneclawResponse<PolicyResponse>> {
-        const body: CreatePolicyRequest & { consensus_trigger?: ConsensusTrigger } = {
+        const body: CreatePolicyRequest = {
             secret_path_pattern: options.secretPathPattern ?? "**",
             principal_type: "agent",
             principal_id: agentId,
@@ -81,7 +83,9 @@ export class AccessResource {
             effect: options.effect ?? "allow",
             priority: options.priority ?? 0,
             attribute_conditions: options.attribute_conditions,
-            consensus_trigger: options.consensus_trigger,
+            ...(options.consensus_trigger
+                ? { consensus_trigger: options.consensus_trigger as CreatePolicyRequest["consensus_trigger"] }
+                : {}),
         };
         return this.http.request<PolicyResponse>(
             "POST",

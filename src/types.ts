@@ -2815,23 +2815,9 @@ export interface ApprovePendingApprovalRequest {
 }
 
 // ---------------------------------------------------------------------------
-// Consensus Trigger (on Access Policies)
+// Consensus Trigger (on Access Policies) — from generated spec
 // ---------------------------------------------------------------------------
 
-export interface ConsensusTrigger {
-    conditions: ConsensusCondition[];
-    approval: ApprovalRequirement;
-    expiry_secs?: number;
-    self_approval_allowed?: boolean;
-}
-
-export interface ConsensusCondition {
-    type: string;
-    threshold_gwei?: number;
-    [key: string]: unknown;
-}
-
-export interface ApprovalRequirement {
-    min_approvals: number;
-    required_roles?: string[];
-}
+export type ConsensusTrigger = ApiSchemas["ConsensusTrigger"];
+export type ConsensusCondition = ApiSchemas["ConsensusCondition"];
+export type ApprovalRequirement = ApiSchemas["ApprovalRequirement"];
