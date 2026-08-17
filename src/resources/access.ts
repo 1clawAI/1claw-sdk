@@ -23,6 +23,8 @@ export interface GrantOptions {
     attribute_conditions?: Record<string, unknown>;
     /** Consensus trigger — requires multi-party approval for matching operations. */
     consensus_trigger?: ConsensusTrigger;
+    /** Signing-time AND conditions (all tiers). Ignored on secret reads. */
+    tx_conditions?: Record<string, unknown>;
 }
 
 /**
@@ -55,6 +57,9 @@ export class AccessResource {
             ...(options.consensus_trigger
                 ? { consensus_trigger: options.consensus_trigger as CreatePolicyRequest["consensus_trigger"] }
                 : {}),
+            ...(options.tx_conditions
+                ? { tx_conditions: options.tx_conditions as CreatePolicyRequest["tx_conditions"] }
+                : {}),
         };
         return this.http.request<PolicyResponse>(
             "POST",
@@ -85,6 +90,9 @@ export class AccessResource {
             attribute_conditions: options.attribute_conditions,
             ...(options.consensus_trigger
                 ? { consensus_trigger: options.consensus_trigger as CreatePolicyRequest["consensus_trigger"] }
+                : {}),
+            ...(options.tx_conditions
+                ? { tx_conditions: options.tx_conditions as CreatePolicyRequest["tx_conditions"] }
                 : {}),
         };
         return this.http.request<PolicyResponse>(

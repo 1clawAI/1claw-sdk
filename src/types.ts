@@ -281,6 +281,7 @@ export interface PolicyResponse {
     priority?: number;
     attribute_conditions?: Record<string, unknown>;
     consensus_trigger?: ConsensusTrigger;
+    tx_conditions?: Record<string, unknown>;
 }
 
 export interface PolicyListResponse {
@@ -1057,6 +1058,8 @@ export interface SubmitTransactionRequest {
      * Account, Sequence, Fee, LastLedgerSequence, and SigningPubKey are auto-filled.
      */
     xrpl_tx_json?: Record<string, unknown>;
+    /** Pending approval ID — resubmit with this after consensus approval is executed. */
+    approval_id?: string;
 }
 
 /**
@@ -1269,6 +1272,8 @@ export interface SignIntentRequest {
      * Account, Sequence, Fee, LastLedgerSequence, and SigningPubKey are auto-filled.
      */
     xrpl_tx_json?: Record<string, unknown>;
+    /** Pending approval ID — resubmit with this after consensus approval is executed. */
+    approval_id?: string;
 }
 
 export interface SignIntentResponse {
@@ -2750,6 +2755,7 @@ export interface CreateContractAbiRequest {
     name?: string;
     description?: string;
     token_decimals?: number;
+    interface_kind?: "evm_abi" | "solana_idl";
 }
 
 export interface ContractAbiResponse {
@@ -2761,6 +2767,7 @@ export interface ContractAbiResponse {
     name?: string;
     description?: string;
     token_decimals?: number;
+    interface_kind?: "evm_abi" | "solana_idl";
     created_at: string;
 }
 

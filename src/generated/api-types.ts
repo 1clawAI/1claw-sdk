@@ -6878,6 +6878,7 @@ export interface components {
                 [key: string]: unknown;
             };
             consensus_trigger?: components["schemas"]["ConsensusTrigger"];
+            tx_conditions?: components["schemas"]["TxConditions"];
         };
         UpdatePolicyRequest: {
             permissions?: string[];
@@ -6897,6 +6898,7 @@ export interface components {
                 [key: string]: unknown;
             };
             consensus_trigger?: components["schemas"]["ConsensusTrigger"];
+            tx_conditions?: components["schemas"]["TxConditions"];
         };
         PolicyResponse: {
             /** Format: uuid */
@@ -6927,6 +6929,7 @@ export interface components {
                 [key: string]: unknown;
             };
             consensus_trigger?: components["schemas"]["ConsensusTrigger"];
+            tx_conditions?: components["schemas"]["TxConditions"];
         };
         PolicyListResponse: {
             policies?: components["schemas"]["PolicyResponse"][];
@@ -7758,6 +7761,11 @@ export interface components {
             xrpl_tx_json?: {
                 [key: string]: unknown;
             };
+            /**
+             * Format: uuid
+             * @description Optional pending approval ID. When consensus policies match, clients resubmit with this field set to bypass the 202 gate after the approval has been executed.
+             */
+            approval_id?: string;
         };
         SignTransactionRequest: {
             /** @description Destination address (0x-prefixed) */
@@ -8009,6 +8017,11 @@ export interface components {
             xrpl_tx_json?: {
                 [key: string]: unknown;
             };
+            /**
+             * Format: uuid
+             * @description Optional pending approval ID. When consensus policies match, clients resubmit with this field set to bypass the 202 gate after the approval has been executed.
+             */
+            approval_id?: string;
         };
         SignIntentResponse: {
             intent_type?: string;
@@ -10398,11 +10411,18 @@ export interface components {
         };
         CreateContractAbiRequest: {
             chain: string;
+            /** @description Contract address, or Solana program id when interface_kind is solana_idl */
             contract_address: string;
-            abi_json: Record<string, never>[];
+            /** @description EVM ABI JSON array, or Solana IDL object when interface_kind is solana_idl */
+            abi_json: Record<string, never>[] | Record<string, never>;
             name?: string;
             description?: string;
             token_decimals?: number;
+            /**
+             * @default evm_abi
+             * @enum {string}
+             */
+            interface_kind: "evm_abi" | "solana_idl";
         };
         ContractAbiResponse: {
             /** Format: uuid */
@@ -10411,10 +10431,16 @@ export interface components {
             org_id?: string;
             chain?: string;
             contract_address?: string;
-            abi_json?: Record<string, never>[];
+            /** @description EVM ABI JSON array, or Solana IDL object */
+            abi_json?: Record<string, never>[] | Record<string, never>;
             name?: string;
             description?: string;
             token_decimals?: number;
+            /**
+             * @default evm_abi
+             * @enum {string}
+             */
+            interface_kind: "evm_abi" | "solana_idl";
             /** Format: uuid */
             created_by?: string;
             /** Format: date-time */
@@ -10424,6 +10450,24 @@ export interface components {
         };
         ContractAbiListResponse: {
             abis?: components["schemas"]["ContractAbiResponse"][];
+        };
+        /**
+         * @description Signing-time AND conditions on access policies (all tiers).
+         *     Ignored on secret reads. Evaluated when a TransactionContext is present.
+         */
+        TxConditions: {
+            function_name_in?: string[];
+            function_selector_in?: string[];
+            erc20_amount_above?: string;
+            /** @description Native value threshold in gwei */
+            value_above?: string;
+            to_address_in?: string[];
+            chain_in?: string[];
+            intent_type_in?: string[];
+            decode_failed?: boolean;
+            program_id_in?: string[];
+        } & {
+            [key: string]: unknown;
         };
         ConsensusTrigger: {
             conditions: components["schemas"]["ConsensusCondition"][];

@@ -7,6 +7,21 @@ import type {
 import { errorFromResponse, PaymentRequiredError } from "./errors";
 import { DPoPManager } from "../auth/dpop";
 
+function runtimeBindingHeaders(): Record<string, string> {
+    try {
+        const id =
+            typeof process !== "undefined" && process.env
+                ? process.env.ONECLAW_RUNTIME_ID
+                : undefined;
+        if (id && id.length > 0) {
+            return { "X-1Claw-Runtime-Id": id };
+        }
+    } catch {
+        // Non-Node runtimes
+    }
+    return {};
+}
+
 /**
  * Internal HTTP transport used by every resource module.
  * Handles authentication headers, 402 auto-pay, and error mapping.
@@ -182,6 +197,7 @@ export class HttpClient {
         const url = this.buildUrl(path, options.query);
         const headers: Record<string, string> = {
             "Content-Type": "application/json",
+            ...runtimeBindingHeaders(),
             ...options.headers,
         };
         if (!options.skipAuth && this.token) {
@@ -245,6 +261,7 @@ export class HttpClient {
         const url = this.buildUrl(path, options.query);
         const headers: Record<string, string> = {
             "Content-Type": "application/json",
+            ...runtimeBindingHeaders(),
             ...options.headers,
         };
         if (this.token) {
@@ -343,6 +360,7 @@ export class HttpClient {
         const url = this.buildUrl(path);
         const headers: Record<string, string> = {
             "Content-Type": "application/json",
+            ...runtimeBindingHeaders(),
             ...options.headers,
         };
         if (this.token) {
