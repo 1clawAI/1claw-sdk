@@ -281,7 +281,7 @@ export interface PolicyResponse {
     priority?: number;
     attribute_conditions?: Record<string, unknown>;
     consensus_trigger?: ConsensusTrigger;
-    tx_conditions?: Record<string, unknown>;
+    tx_conditions?: TxConditions;
 }
 
 export interface PolicyListResponse {
@@ -2828,3 +2828,42 @@ export interface ApprovePendingApprovalRequest {
 export type ConsensusTrigger = ApiSchemas["ConsensusTrigger"];
 export type ConsensusCondition = ApiSchemas["ConsensusCondition"];
 export type ApprovalRequirement = ApiSchemas["ApprovalRequirement"];
+
+// ---------------------------------------------------------------------------
+// Policy Engine v2 — hand-written types for new fields (v0.49)
+// ---------------------------------------------------------------------------
+
+/** Flat condition set used by consensus composability (skip_when / require_when). */
+export interface FlatConditionSet {
+    value_above?: string;
+    chain_in?: string[];
+    to_address_in?: string[];
+    function_selector_in?: string[];
+    erc20_amount_above?: string;
+    intent_type_in?: string[];
+    always?: boolean;
+}
+
+/** Signing-time conditions on access policies (all tiers). */
+export interface TxConditions {
+    match_mode?: "all" | "any";
+    function_name_in?: string[];
+    function_selector_in?: string[];
+    erc20_amount_above?: string;
+    value_above?: string;
+    to_address_in?: string[];
+    chain_in?: string[];
+    intent_type_in?: string[];
+    decode_failed?: boolean;
+    program_id_in?: string[];
+    deep_inspect?: boolean;
+}
+
+/** Time window condition for policy evaluation. */
+export interface TimeWindow {
+    start_hour?: number;
+    end_hour?: number;
+    days_of_week?: number[];
+    timezone?: string;
+    cron_expr?: string;
+}

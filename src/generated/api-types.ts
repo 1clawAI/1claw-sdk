@@ -10452,10 +10452,19 @@ export interface components {
             abis?: components["schemas"]["ContractAbiResponse"][];
         };
         /**
-         * @description Signing-time AND conditions on access policies (all tiers).
+         * @description Signing-time conditions on access policies (all tiers).
          *     Ignored on secret reads. Evaluated when a TransactionContext is present.
+         *     Fields are combined according to `match_mode` (default AND).
          */
         TxConditions: {
+            /**
+             * @description How individual condition fields are combined.
+             *     "all" (default): every present field must match (AND).
+             *     "any": at least one present field must match (OR).
+             * @default all
+             * @enum {string}
+             */
+            match_mode: "all" | "any";
             function_name_in?: string[];
             function_selector_in?: string[];
             erc20_amount_above?: string;
@@ -10466,6 +10475,13 @@ export interface components {
             intent_type_in?: string[];
             decode_failed?: boolean;
             program_id_in?: string[];
+            /**
+             * @description When true, conditions are also evaluated against inner calls
+             *     extracted from wrapper transactions (multicall, Safe execTransaction,
+             *     ERC-4337 handleOps). A match on any inner call counts as an overall match.
+             * @default false
+             */
+            deep_inspect: boolean;
         } & {
             [key: string]: unknown;
         };
@@ -10479,6 +10495,54 @@ export interface components {
             expiry_secs: number;
             /** @default false */
             self_approval_allowed: boolean;
+            /**
+             * @description When ALL conditions in ANY entry match, consensus is bypassed.
+             *     Useful for exempting known-safe recipients or low-value transfers.
+             */
+            skip_when?: components["schemas"]["FlatConditionSet"][];
+            /**
+             * @description Consensus is ONLY required when at least one entry matches.
+             *     If set and none match, consensus is skipped entirely.
+             */
+            require_when?: components["schemas"]["FlatConditionSet"][];
+            /**
+             * @description When true, also evaluate conditions against inner calls extracted
+             *     from wrapper transactions (multicall, Safe execTransaction,
+             *     ERC-4337 handleOps).
+             * @default false
+             */
+            deep_inspect: boolean;
+        };
+        /**
+         * @description Flat condition set used by consensus composability. Each present field
+         *     is AND-combined within the set. At least one field must be specified
+         *     (unless `always` is true).
+         */
+        FlatConditionSet: {
+            /** @description Native value threshold in gwei (numeric string) */
+            value_above?: string;
+            chain_in?: string[];
+            to_address_in?: string[];
+            function_selector_in?: string[];
+            /** @description ERC-20 raw token amount threshold (numeric string) */
+            erc20_amount_above?: string;
+            intent_type_in?: string[];
+            /** @description When true, this entry always matches regardless of other fields */
+            always?: boolean;
+        };
+        /**
+         * @description Time window condition for policy evaluation. Used inside the policy
+         *     `conditions` JSON to restrict when the policy is active.
+         */
+        TimeWindow: {
+            start_hour?: number;
+            end_hour?: number;
+            /** @description Days when policy is active (0=Sunday, 6=Saturday) */
+            days_of_week?: number[];
+            /** @description IANA timezone identifier (e.g. "America/New_York"). Defaults to UTC. */
+            timezone?: string;
+            /** @description Cron expression (6-field with seconds) for fine-grained scheduling. */
+            cron_expr?: string;
         };
         ConsensusCondition: {
             /** @enum {string} */
