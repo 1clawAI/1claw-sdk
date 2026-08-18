@@ -93,11 +93,15 @@ export class PasskeysResource {
 
     async registerComplete(
         options: PasskeyRegisterCompleteRequest,
+        confirm?: string,
     ): Promise<OneclawResponse<PasskeyRegisterCompleteResponse>> {
         return this.http.request<PasskeyRegisterCompleteResponse>(
             "POST",
             "/v1/auth/passkeys/register/complete",
-            { body: options },
+            {
+                body: options,
+                headers: confirm ? { "X-Auth-Confirm": confirm } : undefined,
+            },
         );
     }
 
@@ -128,10 +132,14 @@ export class PasskeysResource {
         );
     }
 
-    async revoke(passkeyId: string): Promise<OneclawResponse<void>> {
+    async revoke(
+        passkeyId: string,
+        confirm: string,
+    ): Promise<OneclawResponse<void>> {
         return this.http.request<void>(
             "DELETE",
             `/v1/auth/passkeys/${passkeyId}`,
+            { headers: { "X-Auth-Confirm": confirm } },
         );
     }
 }

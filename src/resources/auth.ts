@@ -332,17 +332,24 @@ export class AuthResource {
     /** Delete the current user's account and all associated data. */
     async deleteMe(
         request: DeleteAccountRequest,
+        confirm?: string,
     ): Promise<OneclawResponse<void>> {
         return this.http.request<void>("DELETE", "/v1/auth/me", {
             body: request,
+            headers: confirm ? { "X-Auth-Confirm": confirm } : undefined,
         });
     }
 
     /** Export the current user's personal data (GDPR/data-portability). */
-    async exportData(): Promise<OneclawResponse<ExportDataResponse>> {
+    async exportData(
+        confirm?: string,
+    ): Promise<OneclawResponse<ExportDataResponse>> {
         return this.http.request<ExportDataResponse>(
             "POST",
             "/v1/auth/export-data",
+            {
+                headers: confirm ? { "X-Auth-Confirm": confirm } : undefined,
+            },
         );
     }
 
