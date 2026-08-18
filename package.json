@@ -50,6 +50,7 @@
         "url": "https://github.com/1clawAI/1claw-sdk.git"
     },
     "devDependencies": {
+        "@types/node": "^20.19.33",
         "openapi-typescript": "^7.13.0",
         "typescript": "^5.0.0",
         "vitest": "^4.1.0"
