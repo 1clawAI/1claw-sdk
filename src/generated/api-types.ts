@@ -7298,6 +7298,18 @@ export interface components {
              * @description Optional expiration time for the agent's API key.
              */
             api_key_expires_at?: string | null;
+            /** @description Named environment for this agent (production, preview, development, or custom). */
+            environment?: string;
+            /**
+             * @description When true, the environment tag cannot be changed after creation.
+             * @default false
+             */
+            environment_locked: boolean;
+            /**
+             * @description When true, env var resolve endpoints auto-fill environment from this agent's tag.
+             * @default false
+             */
+            env_auto_resolve: boolean;
         };
         UpdateAgentRequest: {
             name?: string;
@@ -7397,6 +7409,16 @@ export interface components {
              * @description Optional expiration time for the agent's API key. Set to null to clear.
              */
             api_key_expires_at?: string | null;
+            /** @description Named environment for this agent (production, preview, development, or custom). */
+            environment?: string | null;
+            /** @description When true, the environment tag cannot be changed after creation. */
+            environment_locked?: boolean;
+            /** @description When true, env var resolve endpoints auto-fill environment from this agent's tag. */
+            env_auto_resolve?: boolean;
+            /** @description Per-environment guardrail overrides keyed by environment slug. */
+            per_environment_guardrails?: {
+                [key: string]: unknown;
+            };
         };
         AgentResponse: {
             /** Format: uuid */
@@ -7533,6 +7555,16 @@ export interface components {
             last_active_at?: string;
             /** @description Multi-chain; one Safe per chain */
             smart_accounts?: components["schemas"]["AgentSmartAccountResponse"][];
+            /** @description Named environment this agent belongs to (production, preview, development, or custom). */
+            environment?: string | null;
+            /** @description When true, the environment tag is locked and cannot be changed. */
+            environment_locked?: boolean;
+            /** @description When true, env var resolve endpoints auto-fill environment from this agent's tag. */
+            env_auto_resolve?: boolean;
+            /** @description Per-environment guardrail overrides keyed by environment slug. */
+            per_environment_guardrails?: {
+                [key: string]: unknown;
+            };
         };
         KnownToken: {
             /** Format: uuid */

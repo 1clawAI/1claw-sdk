@@ -89,12 +89,14 @@ export class EnvVarsResource {
     );
   }
 
-  async resolve(vaultId: string, environment: string, gitBranch?: string) {
-    let params = `?environment=${environment}`;
-    if (gitBranch) params += `&git_branch=${encodeURIComponent(gitBranch)}`;
+  async resolve(vaultId: string, environment?: string, gitBranch?: string) {
+    const params: string[] = [];
+    if (environment) params.push(`environment=${encodeURIComponent(environment)}`);
+    if (gitBranch) params.push(`git_branch=${encodeURIComponent(gitBranch)}`);
+    const qs = params.length > 0 ? `?${params.join("&")}` : "";
     return this.http.request<ResolveEnvVarsResponse>(
       "GET",
-      `/v1/vaults/${vaultId}/env-vars/resolve${params}`,
+      `/v1/vaults/${vaultId}/env-vars/resolve${qs}`,
     );
   }
 }
