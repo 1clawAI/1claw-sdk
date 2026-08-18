@@ -151,6 +151,35 @@ const { vars, sources } = await client.envVars.resolve(vaultId, "production");
 await client.envVars.delete(vaultId, "DATABASE_URL");
 ```
 
+### Agent Environment Tagging (v0.52)
+
+Tag agents with a named environment for policy scoping and env var resolution:
+
+```typescript
+// Create an agent tagged for preview deployments
+await client.agents.create({
+  name: "preview-bot",
+  environment: "preview",
+  env_auto_resolve: true,
+});
+
+// Update environment and per-environment guardrails
+await client.agents.update(agentId, {
+  environment: "production",
+  environment_locked: true,
+  per_environment_guardrails: {
+    production: { max_value: "1.0", daily_limit: "10.0" },
+    preview: { max_value: "0.1", daily_limit: "1.0" },
+  },
+});
+
+// Resolve env vars — when env_auto_resolve is true on the agent JWT,
+// omit environment and the server uses the agent's tag
+const { vars } = await client.envVars.resolve(vaultId);
+```
+
+Agent JWTs include an `environment` claim when set. Policy conditions support `environment_in` for environment-scoped access.
+
 **Agent create response:** `agents.create()` returns `{ agent: AgentResponse, api_key?: string }`. The `api_key` is only present for `auth_method: "api_key"` and is shown once — use `data.agent.id` and `data.api_key` from the response.
 
 **Access grants:** `grantAgent(vaultId, agentId, permissions, options?)` — positional args; options include `secretPathPattern`, `conditions`, `expires_at`.
