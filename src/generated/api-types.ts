@@ -1155,6 +1155,101 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/vaults/{vault_id}/env-vars": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List environment variables
+         * @description List all environment variables for a vault, optionally filtered by environment.
+         */
+        get: operations["listEnvVars"];
+        put?: never;
+        /** Create environment variable */
+        post: operations["createEnvVar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/vaults/{vault_id}/env-vars/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Resolve environment variables
+         * @description Resolve the final KEY=VALUE set for an environment with full precedence (shared < vault < branch override).
+         */
+        get: operations["resolveEnvVars"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/vaults/{vault_id}/env-vars/{key}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get environment variable */
+        get: operations["getEnvVar"];
+        put?: never;
+        post?: never;
+        /** Delete environment variable */
+        delete: operations["deleteEnvVar"];
+        options?: never;
+        head?: never;
+        /** Update environment variable */
+        patch: operations["updateEnvVar"];
+        trace?: never;
+    };
+    "/v1/vaults/{vault_id}/environments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List vault environments */
+        get: operations["listVaultEnvironments"];
+        put?: never;
+        /** Create custom environment */
+        post: operations["createVaultEnvironment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/vaults/{vault_id}/environments/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete custom environment */
+        delete: operations["deleteVaultEnvironment"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/agents/enroll": {
         parameters: {
             query?: never;
@@ -2041,6 +2136,92 @@ export interface paths {
         head?: never;
         /** Update a member's role */
         patch: operations["updateMemberRole"];
+        trace?: never;
+    };
+    "/v1/org/env-vars": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List org shared environment variables */
+        get: operations["listOrgEnvVars"];
+        put?: never;
+        /** Create org shared environment variable */
+        post: operations["createOrgEnvVar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/org/env-vars/{key}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update org shared environment variable */
+        patch: operations["updateOrgEnvVar"];
+        trace?: never;
+    };
+    "/v1/org/env-vars/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete org shared environment variable */
+        delete: operations["deleteOrgEnvVar"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/org/env-vars/{id}/link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Link org shared env var to a vault */
+        post: operations["linkOrgEnvVar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/org/env-vars/{id}/links/{vault_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Unlink org shared env var from a vault */
+        delete: operations["unlinkOrgEnvVar"];
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/v1/billing/usage": {
@@ -9834,6 +10015,8 @@ export interface components {
             template?: string;
             preset?: string;
             image?: string;
+            /** @description Vault environment to resolve env vars from (e.g. production, preview, development) */
+            environment?: string;
             env_public?: {
                 [key: string]: string;
             };
@@ -9855,6 +10038,8 @@ export interface components {
             template?: string;
             preset?: string;
             image?: string;
+            /** @description Vault environment to resolve env vars from */
+            environment?: string;
             env_public?: {
                 [key: string]: string;
             };
@@ -9880,6 +10065,8 @@ export interface components {
             /** @enum {string} */
             status: "creating" | "running" | "stopping" | "stopped" | "failed" | "deleting";
             image?: string | null;
+            /** @description Vault environment for env var resolution */
+            environment?: string | null;
             env_public?: {
                 [key: string]: string;
             } | null;
@@ -10812,6 +10999,112 @@ export interface components {
             nonce?: number | null;
             /** Format: date-time */
             created_at?: string;
+        };
+        EnvVar: {
+            /** Format: uuid */
+            id?: string;
+            key?: string;
+            environments?: string[];
+            git_branch?: string | null;
+            sensitive?: boolean;
+            comment?: string | null;
+            /** @description Null for sensitive vars in list responses */
+            value?: string | null;
+            version?: number;
+            created_by?: string | null;
+            /** Format: date-time */
+            created_at?: string;
+            /** Format: date-time */
+            updated_at?: string;
+        };
+        CreateEnvVarRequest: {
+            /** @description Uppercase alphanumeric + underscore, 1-256 chars */
+            key: string;
+            value: string;
+            /**
+             * @default [
+             *       "production",
+             *       "preview",
+             *       "development"
+             *     ]
+             */
+            environments: string[];
+            /** @description Branch override (preview only) */
+            git_branch?: string;
+            /** @default false */
+            sensitive: boolean;
+            comment?: string;
+        };
+        UpdateEnvVarRequest: {
+            value?: string;
+            environments?: string[];
+            sensitive?: boolean;
+            comment?: string;
+        };
+        ResolveEnvVarsResponse: {
+            vars?: {
+                [key: string]: string;
+            };
+            sources?: {
+                [key: string]: "shared" | "vault" | "branch_override";
+            };
+            environment?: string;
+            git_branch?: string | null;
+            /** Format: date-time */
+            resolved_at?: string;
+        };
+        VaultEnvironment: {
+            /** Format: uuid */
+            id?: string;
+            slug?: string;
+            description?: string | null;
+            is_builtin?: boolean;
+            copied_from?: string | null;
+            is_detached?: boolean;
+            /** Format: date-time */
+            created_at?: string;
+        };
+        CreateEnvironmentRequest: {
+            /** @description Lowercase alphanumeric + hyphens, 2-30 chars */
+            slug: string;
+            description?: string;
+            /** @description Copy env vars from this environment */
+            copy_from?: string;
+        };
+        OrgEnvVar: {
+            /** Format: uuid */
+            id?: string;
+            key?: string;
+            environments?: string[];
+            sensitive?: boolean;
+            comment?: string | null;
+            value?: string | null;
+            version?: number;
+            linked_vaults?: string[];
+            /** Format: date-time */
+            created_at?: string;
+            /** Format: date-time */
+            updated_at?: string;
+        };
+        CreateOrgEnvVarRequest: {
+            key: string;
+            value: string;
+            /**
+             * @default [
+             *       "production",
+             *       "preview",
+             *       "development"
+             *     ]
+             */
+            environments: string[];
+            /** @default false */
+            sensitive: boolean;
+            comment?: string;
+        };
+        UpdateOrgEnvVarRequest: {
+            value?: string;
+            environments?: string[];
+            comment?: string;
         };
     };
     responses: {
@@ -12765,6 +13058,236 @@ export interface operations {
             404: components["responses"]["NotFound"];
         };
     };
+    listEnvVars: {
+        parameters: {
+            query?: {
+                /** @description Filter by environment (production, preview, development, or custom) */
+                environment?: string;
+            };
+            header?: never;
+            path: {
+                vault_id: components["parameters"]["VaultId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Environment variable list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        env_vars?: components["schemas"]["EnvVar"][];
+                    };
+                };
+            };
+        };
+    };
+    createEnvVar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                vault_id: components["parameters"]["VaultId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateEnvVarRequest"];
+            };
+        };
+        responses: {
+            /** @description Environment variable created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnvVar"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+        };
+    };
+    resolveEnvVars: {
+        parameters: {
+            query: {
+                environment: string;
+                git_branch?: string;
+            };
+            header?: never;
+            path: {
+                vault_id: components["parameters"]["VaultId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Resolved environment variables */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResolveEnvVarsResponse"];
+                };
+            };
+        };
+    };
+    getEnvVar: {
+        parameters: {
+            query?: {
+                environment?: string;
+            };
+            header?: never;
+            path: {
+                vault_id: components["parameters"]["VaultId"];
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Environment variable */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnvVar"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deleteEnvVar: {
+        parameters: {
+            query?: {
+                environment?: string;
+            };
+            header?: never;
+            path: {
+                vault_id: components["parameters"]["VaultId"];
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    updateEnvVar: {
+        parameters: {
+            query?: {
+                environment?: string;
+            };
+            header?: never;
+            path: {
+                vault_id: components["parameters"]["VaultId"];
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["UpdateEnvVarRequest"];
+            };
+        };
+        responses: {
+            /** @description Environment variable updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnvVar"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listVaultEnvironments: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                vault_id: components["parameters"]["VaultId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Vault environment list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        environments?: components["schemas"]["VaultEnvironment"][];
+                    };
+                };
+            };
+        };
+    };
+    createVaultEnvironment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                vault_id: components["parameters"]["VaultId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateEnvironmentRequest"];
+            };
+        };
+        responses: {
+            /** @description Environment created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VaultEnvironment"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+        };
+    };
+    deleteVaultEnvironment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                vault_id: components["parameters"]["VaultId"];
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     enrollAgent: {
         parameters: {
             query?: never;
@@ -14369,6 +14892,148 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["OrgMemberResponse"];
                 };
+            };
+        };
+    };
+    listOrgEnvVars: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Org shared environment variable list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        env_vars?: components["schemas"]["OrgEnvVar"][];
+                    };
+                };
+            };
+        };
+    };
+    createOrgEnvVar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateOrgEnvVarRequest"];
+            };
+        };
+        responses: {
+            /** @description Org shared env var created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrgEnvVar"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+        };
+    };
+    updateOrgEnvVar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["UpdateOrgEnvVarRequest"];
+            };
+        };
+        responses: {
+            /** @description Org shared env var updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrgEnvVar"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deleteOrgEnvVar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    linkOrgEnvVar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    vault_id: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Linked */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    unlinkOrgEnvVar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                vault_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Unlinked */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

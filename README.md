@@ -115,9 +115,41 @@ await client.auth.verifyEmailChange({ code: "123456" });
 | `client.automations` | `create`, `list`, `get`, `update`, `delete`, `trigger`, `listRuns`                                                 |
 | `client.runtimes`  | `create`, `list`, `get`, `update`, `delete`, `start`, `stop`, `logs`, `checkSlug`                                    |
 | `client.discovery` | `getAgentCard`, `directory`, `updateDiscovery`, `marketplace`                                                        |
+| `client.envVars`   | `list`, `create`, `get`, `update`, `delete`, `resolve`                                                              |
 | `client.x402`      | `getPaymentRequirement`, `pay`, `verifyReceipt`, `withPayment`                                                      |
 
 **Platform bootstrap response:** `bootstrapUser()` returns a `summary` object containing `agent_api_key` (one-time, not retrievable later) and `signing_keys[]` (with chain, address, and public_key for each provisioned key).
+
+### Environment Variables
+
+Manage per-vault environment variables with environment scoping (production, preview, development) and precedence-based resolution:
+
+```typescript
+// List env vars for a vault
+const { env_vars } = await client.envVars.list(vaultId);
+
+// Create an env var
+const envVar = await client.envVars.create(vaultId, {
+  key: "DATABASE_URL",
+  value: "postgres://...",
+  environments: ["production", "preview"],
+  sensitive: true,
+});
+
+// Get a specific env var
+const dbUrl = await client.envVars.get(vaultId, "DATABASE_URL");
+
+// Update an env var
+await client.envVars.update(vaultId, "DATABASE_URL", {
+  value: "postgres://new-host/...",
+});
+
+// Resolve env vars (the final KEY=VALUE set with precedence)
+const { vars, sources } = await client.envVars.resolve(vaultId, "production");
+
+// Delete an env var
+await client.envVars.delete(vaultId, "DATABASE_URL");
+```
 
 **Agent create response:** `agents.create()` returns `{ agent: AgentResponse, api_key?: string }`. The `api_key` is only present for `auth_method: "api_key"` and is shown once — use `data.agent.id` and `data.api_key` from the response.
 

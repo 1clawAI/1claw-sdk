@@ -40,6 +40,7 @@ import { SubOrgsResource } from "../resources/sub-orgs";
 import { PortfolioResource } from "../resources/portfolio";
 import { ContractAbisResource } from "../resources/contract-abis";
 import { PendingApprovalsResource } from "../resources/pending-approvals";
+import { EnvVarsResource } from "../resources/env-vars";
 
 /**
  * The main 1Claw SDK client. All API resources are exposed as
@@ -145,6 +146,8 @@ export class OneclawClient {
     readonly contractAbis: ContractAbisResource;
     /** Pending approvals — consensus-based approval workflows for policy-gated actions. */
     readonly pendingApprovals: PendingApprovalsResource;
+    /** Environment variables — per-vault env var CRUD with environment scoping and resolve. */
+    readonly envVars: EnvVarsResource;
 
     constructor(config: OneclawClientConfig) {
         this.http = new HttpClient(config);
@@ -197,6 +200,7 @@ export class OneclawClient {
         this.portfolio = new PortfolioResource(this.http);
         this.contractAbis = new ContractAbisResource(this.http);
         this.pendingApprovals = new PendingApprovalsResource(this.http);
+        this.envVars = new EnvVarsResource(this.http);
     }
 
     private autoAuthenticateUserKey(config: OneclawClientConfig): void {
