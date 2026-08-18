@@ -391,7 +391,11 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Complete passkey registration */
+        /**
+         * Complete passkey registration
+         * @description When the account already has a password, passkey, or TOTP,
+         *     `X-Auth-Confirm` is required (purpose `security.passkey.register`).
+         */
         post: operations["passkeyRegisterComplete"];
         delete?: never;
         options?: never;
@@ -460,7 +464,14 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Delete a passkey */
+        /**
+         * Delete a passkey
+         * @description Removes a registered passkey. Requires recent re-authentication
+         *     (`X-Auth-Confirm` with a `rat_` token from `POST /v1/auth/reauth`
+         *     using purpose `security.passkey.delete`). Passkey or TOTP is
+         *     required when either is enrolled. Deleting the last passkey is
+         *     refused while vault passkey unlock is enabled.
+         */
         delete: operations["deletePasskey"];
         options?: never;
         head?: never;
@@ -504,6 +515,29 @@ export interface paths {
         head?: never;
         /** Update user profile */
         patch: operations["updateMe"];
+        trace?: never;
+    };
+    "/v1/auth/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get user security settings */
+        get: operations["getSecuritySettings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update user security settings
+         * @description Disabling `require_passkey_for_vaults` requires `X-Auth-Confirm`
+         *     (purpose `security.vault_passkey.disable`) with a passkey or TOTP
+         *     when either is enrolled.
+         */
+        patch: operations["updateSecuritySettings"];
         trace?: never;
     };
     "/v1/auth/mfa/status": {
@@ -584,7 +618,12 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Disable MFA */
+        /**
+         * Disable MFA
+         * @description Requires a valid TOTP or recovery code in the body, or a passkey
+         *     re-auth token in `X-Auth-Confirm` (purpose `security.mfa.disable`).
+         *     Account password alone is not accepted while TOTP is enabled.
+         */
         delete: operations["mfaDisable"];
         options?: never;
         head?: never;
@@ -725,7 +764,8 @@ export interface paths {
          * @description Returns a full export of the authenticated user's data including
          *     profile, vaults, agents, secrets metadata, and policies. Intended
          *     for GDPR data-portability requests. Only available to human users
-         *     (not agents).
+         *     (not agents). Requires `X-Auth-Confirm` (purpose `account.export`);
+         *     passkey or TOTP when either is enrolled.
          */
         post: operations["exportUserData"];
         delete?: never;
@@ -6631,7 +6671,12 @@ export interface components {
             mfa_token: string;
         };
         MfaDisableRequest: {
+            /** @description TOTP or recovery code */
             code?: string;
+            /**
+             * @deprecated
+             * @description Deprecated. Password is no longer sufficient to disable MFA.
+             */
             password?: string;
         };
         DeviceCodeRequest: {
@@ -10468,8 +10513,18 @@ export interface components {
             function_name_in?: string[];
             function_selector_in?: string[];
             erc20_amount_above?: string;
-            /** @description Native value threshold in gwei */
+            /** @description Native value threshold in wei (arbitrary-precision string) */
             value_above?: string;
+            /** @description Match EIP-712 typed_data primaryType (case-sensitive) */
+            eip712_primary_type_in?: string[];
+            /** @description Match EIP-712 domain.verifyingContract (case-insensitive) */
+            eip712_verifying_contract_in?: string[];
+            /** @description Match EIP-712 domain.name */
+            eip712_domain_name_in?: string[];
+            /** @description Match EIP-712 domain.chainId */
+            eip712_domain_chain_id_in?: number[];
+            /** @description Match EIP-7702 authorization_list delegate addresses (case-insensitive) */
+            eip7702_authorized_addresses_in?: string[];
             to_address_in?: string[];
             chain_in?: string[];
             intent_type_in?: string[];
@@ -10547,8 +10602,14 @@ export interface components {
         ConsensusCondition: {
             /** @enum {string} */
             type: "value_above";
-            /** Format: int64 */
-            threshold_gwei: number;
+            /** @description Value threshold in wei (arbitrary-precision string). Preferred over threshold_gwei. */
+            threshold_wei?: string;
+            /**
+             * Format: int64
+             * @deprecated
+             * @description Deprecated — use threshold_wei for arbitrary precision
+             */
+            threshold_gwei?: number;
         } | {
             /** @enum {string} */
             type: "chain_in";
@@ -10572,6 +10633,14 @@ export interface components {
         } | {
             /** @enum {string} */
             type: "always";
+        } | {
+            /** @enum {string} */
+            type: "action_in";
+            /**
+             * @description Control-plane actions to match, e.g. policy.create, policy.update,
+             *     policy.delete, signing_key.export, member.role_change, member.remove
+             */
+            actions: string[];
         };
         ApprovalRequirement: {
             min_approvals: number;
@@ -10579,6 +10648,8 @@ export interface components {
             per_role_minimums?: {
                 [key: string]: number;
             };
+            /** @description At least one approval must use one of these credential types */
+            require_credential_types?: ("password" | "passkey" | "totp" | "biometric" | "api_key")[];
         };
         SubmitPendingApprovalRequest: {
             /** Format: uuid */
@@ -10601,6 +10672,11 @@ export interface components {
             decision: "approve" | "reject";
             payload_hash: string;
             reason?: string;
+            /**
+             * @description Authentication method used for this approval vote
+             * @enum {string}
+             */
+            credential_type?: "password" | "passkey" | "totp" | "biometric" | "api_key";
         };
         PendingApprovalResponse: {
             /** Format: uuid */
@@ -11313,7 +11389,10 @@ export interface operations {
     passkeyRegisterComplete: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Re-auth token (`rat_`) or account password */
+                "X-Auth-Confirm"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -11442,7 +11521,10 @@ export interface operations {
     deletePasskey: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Re-auth token (`rat_`) or account password */
+                "X-Auth-Confirm": string;
+            };
             path: {
                 passkey_id: string;
             };
@@ -11457,6 +11539,7 @@ export interface operations {
                 };
                 content?: never;
             };
+            403: components["responses"]["Forbidden"];
         };
     };
     requestApproval: {
@@ -11518,7 +11601,10 @@ export interface operations {
     deleteMe: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Re-auth token (`rat_`, purpose `account.delete`) or password */
+                "X-Auth-Confirm": string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -11564,6 +11650,56 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+        };
+    };
+    getSecuritySettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Security settings */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        require_passkey_for_vaults?: boolean;
+                        passkey_count?: number;
+                    };
+                };
+            };
+        };
+    };
+    updateSecuritySettings: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Auth-Confirm"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    require_passkey_for_vaults?: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Updated settings */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            403: components["responses"]["Forbidden"];
         };
     };
     mfaStatus: {
@@ -11659,7 +11795,10 @@ export interface operations {
     mfaDisable: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Passkey or TOTP re-auth token (`rat_`) */
+                "X-Auth-Confirm"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -11861,7 +12000,9 @@ export interface operations {
     exportUserData: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                "X-Auth-Confirm": string;
+            };
             path?: never;
             cookie?: never;
         };

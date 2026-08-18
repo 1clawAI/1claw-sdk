@@ -825,8 +825,18 @@ await client.access.createPolicy(vaultId, {
     principal_id: agentId,
     permissions: ["read"],
     consensus_trigger: {
-        conditions: [{ type: "always" }],
-        approval: { min_approvals: 2 },
+        conditions: [{ type: "value_above", threshold_wei: "1000000000000000000" }],
+        approval: {
+            min_approvals: 2,
+            required_roles: ["owner", "admin"],
+            per_role_minimums: { owner: 1 },
+            require_credential_types: ["passkey"],
+        },
+    },
+    tx_conditions: {
+        eip712_primary_type_in: ["Permit", "Permit2"],
+        eip712_verifying_contract_in: ["0x000000000022D473030F116dDEE9F6B43aC78BA3"],
+        eip7702_authorized_addresses_in: ["0xKnownSafeDelegate"],
     },
 });
 ```

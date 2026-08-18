@@ -2819,6 +2819,7 @@ export interface ApprovePendingApprovalRequest {
     decision: "approve" | "reject";
     payload_hash: string;
     reason?: string;
+    credential_type?: "password" | "passkey" | "totp" | "biometric" | "api_key";
 }
 
 // ---------------------------------------------------------------------------
@@ -2856,6 +2857,11 @@ export interface TxConditions {
     intent_type_in?: string[];
     decode_failed?: boolean;
     program_id_in?: string[];
+    eip712_primary_type_in?: string[];
+    eip712_verifying_contract_in?: string[];
+    eip712_domain_name_in?: string[];
+    eip712_domain_chain_id_in?: number[];
+    eip7702_authorized_addresses_in?: string[];
     deep_inspect?: boolean;
 }
 
