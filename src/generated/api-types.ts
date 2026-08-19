@@ -6653,7 +6653,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/wallets/access-policies": {
+    "/v1/treasury/wallets/access-policies": {
         parameters: {
             query?: never;
             header?: never;
@@ -6665,8 +6665,9 @@ export interface paths {
         put?: never;
         /**
          * Create a wallet access policy
-         * @description Create a role-based wallet access policy granting an agent or user
-         *     specific permissions (send, swap, receive) on a treasury wallet chain.
+         * @description Create a role-based wallet access policy granting an agent, user, role,
+         *     or platform app specific permissions on treasury wallets within a scope
+         *     (org-wide, platform app, or single wallet). Requires Pro+ tier.
          */
         post: operations["createWalletAccessPolicy"];
         delete?: never;
@@ -6675,7 +6676,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/wallets/access-policies/{id}": {
+    "/v1/treasury/wallets/access-policies/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -9011,12 +9012,25 @@ export interface components {
             };
         };
         ShroudAttestationResponse: {
-            /** @description Whether TEE attestation was successfully fetched */
+            /**
+             * @description Whether at least an identity token was obtained (true for identity,
+             *     confidential, or sev_snp levels). Backward-compatible boolean; prefer
+             *     attestation_level for granularity.
+             */
             attested: boolean;
+            /**
+             * @description Granularity of TEE attestation achieved. `none` = dev/non-GCE;
+             *     `identity` = GCE metadata JWT only; `confidential` = CC claims present;
+             *     `sev_snp` = full SEV-SNP measurement verified against image digest.
+             * @enum {string}
+             */
+            attestation_level: "none" | "identity" | "confidential" | "sev_snp";
             /** @description Confidential VM image hash (compare against published Docker digest) */
             image_hash: string;
             /** @description GCE metadata identity JWT (verify against Google public keys) */
             identity_token: string;
+            /** @description Confidential Computing claims extracted from the identity JWT */
+            confidential_claims?: components["schemas"]["ConfidentialClaims"];
             verification: {
                 steps?: string[];
                 /** Format: uri */
@@ -9024,6 +9038,16 @@ export interface components {
                 expected_audience?: string;
             };
         };
+        ConfidentialClaims: {
+            /** @description Whether secure boot was enabled */
+            secboot?: boolean;
+            /** @description Hardware model string (e.g. GCP_AMD_SEV) */
+            hwmodel?: string;
+            /** @description Instance confidentiality level from google.compute_engine */
+            instance_confidentiality?: string;
+            /** @description Software name claim (swname or sw_name) */
+            sw_name?: string;
+        } | null;
         AuditEvent: {
             /** Format: uuid */
             id?: string;
@@ -11537,27 +11561,41 @@ export interface components {
             comment?: string;
         };
         CreateWalletAccessPolicyRequest: {
-            /** @description Chain for which the policy applies (e.g. ethereum, solana) */
-            wallet_chain: string;
+            /**
+             * @description Policy scope — org-wide, platform app, or single wallet
+             * @enum {string}
+             */
+            scope_type: "wallet" | "platform_app" | "org";
             /**
              * Format: uuid
-             * @description Agent granted access (mutually exclusive with target_user_id)
+             * @description Wallet or platform app UUID when scope_type is not org
              */
-            target_agent_id?: string;
+            scope_id?: string | null;
             /**
-             * Format: uuid
-             * @description User granted access (mutually exclusive with target_agent_id)
+             * @description Who receives the grant
+             * @enum {string}
              */
-            target_user_id?: string;
-            permissions: ("send" | "swap" | "receive")[];
-            conditions?: {
-                /** @description Max value per transaction in ETH */
-                max_value_per_tx_eth?: string;
-                /** @description Daily spend limit in ETH */
-                daily_limit_eth?: string;
-                allowed_chains?: string[];
-                allowed_tokens?: string[];
-            };
+            principal_type: "user" | "agent" | "role" | "platform_app";
+            /** @description User/agent UUID, role name, or platform app UUID */
+            principal_id: string;
+            /** @default false */
+            can_sign: boolean;
+            /** @default true */
+            can_view_balance: boolean;
+            /** @default false */
+            can_export: boolean;
+            /** @default false */
+            can_send: boolean;
+            /** @default false */
+            can_swap: boolean;
+            /** @description Chains this policy applies to (empty = all) */
+            allowed_chains?: string[];
+            /** @description Max value per transaction in ETH */
+            max_value_per_tx_eth?: string;
+            /** @description Daily spend limit in ETH */
+            daily_limit_eth?: string;
+            /** @description Additional JSON conditions (reserved for future enforcement) */
+            conditions?: Record<string, never>;
             /** Format: date-time */
             expires_at?: string;
         };
@@ -11566,22 +11604,29 @@ export interface components {
             id?: string;
             /** Format: uuid */
             org_id?: string;
-            wallet_chain?: string;
+            scope_type?: string;
             /** Format: uuid */
-            target_agent_id?: string | null;
-            /** Format: uuid */
-            target_user_id?: string | null;
-            permissions?: ("send" | "swap" | "receive")[];
-            conditions?: {
-                max_value_per_tx_eth?: string | null;
-                daily_limit_eth?: string | null;
-                allowed_chains?: string[] | null;
-                allowed_tokens?: string[] | null;
-            } | null;
+            scope_id?: string | null;
+            principal_type?: string;
+            principal_id?: string;
+            can_sign?: boolean;
+            can_view_balance?: boolean;
+            can_export?: boolean;
+            can_send?: boolean;
+            can_swap?: boolean;
+            allowed_chains?: string[];
+            max_value_per_tx_eth?: string | null;
+            daily_limit_eth?: string | null;
+            conditions?: Record<string, never>;
+            is_active?: boolean;
             /** Format: date-time */
             expires_at?: string | null;
+            /** Format: uuid */
+            created_by?: string;
             /** Format: date-time */
             created_at?: string;
+            /** Format: date-time */
+            updated_at?: string;
         };
         WalletAccessPolicyListResponse: {
             policies?: components["schemas"]["WalletAccessPolicyResponse"][];
@@ -21177,10 +21222,10 @@ export interface operations {
     listWalletAccessPolicies: {
         parameters: {
             query?: {
-                /** @description Filter by chain (e.g. ethereum, solana) */
-                wallet_chain?: string;
-                /** @description Filter by target agent */
-                target_agent_id?: string;
+                /** @description Filter by scope type */
+                scope_type?: "wallet" | "platform_app" | "org";
+                /** @description Filter by scope ID (wallet or platform app UUID) */
+                scope_id?: string;
             };
             header?: never;
             path?: never;

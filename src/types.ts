@@ -1459,13 +1459,23 @@ export interface AuditVerifyResponse {
 
 export interface ShroudAttestationResponse {
     attested: boolean;
+    /** Granularity: none | identity | confidential | sev_snp */
+    attestation_level: "none" | "identity" | "confidential" | "sev_snp";
     image_hash: string;
     identity_token: string;
+    confidential_claims?: ConfidentialClaims | null;
     verification: {
         steps?: string[];
         google_certs_url?: string;
         expected_audience?: string;
     };
+}
+
+export interface ConfidentialClaims {
+    secboot?: boolean;
+    hwmodel?: string;
+    instance_confidentiality?: string;
+    sw_name?: string;
 }
 
 // ---------------------------------------------------------------------------
