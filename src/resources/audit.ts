@@ -1,5 +1,11 @@
 import type { HttpClient } from "../core/http";
-import type { AuditQuery, AuditEventsResponse, OneclawResponse } from "../types";
+import type {
+    AuditQuery,
+    AuditEventsResponse,
+    AuditVerifyQuery,
+    AuditVerifyResponse,
+    OneclawResponse,
+} from "../types";
 
 /**
  * Audit resource — query the immutable audit log of all vault operations.
@@ -37,6 +43,30 @@ export class AuditResource {
             {
                 query,
             },
+        );
+    }
+
+    /**
+     * Verify audit hash chain integrity for the calling organization.
+     *
+     * @example
+     * ```ts
+     * const { data } = await client.audit.verify({ limit: 1000 });
+     * console.log(data?.chain_valid);
+     * ```
+     */
+    async verify(
+        filters: AuditVerifyQuery = {},
+    ): Promise<OneclawResponse<AuditVerifyResponse>> {
+        const query: Record<string, string | number | undefined> = {};
+        if (filters.from) query.from = filters.from;
+        if (filters.to) query.to = filters.to;
+        if (filters.limit !== undefined) query.limit = filters.limit;
+
+        return this.http.request<AuditVerifyResponse>(
+            "GET",
+            "/v1/audit/verify",
+            { query },
         );
     }
 }

@@ -1186,6 +1186,9 @@ export interface paths {
         /**
          * Resolve environment variables
          * @description Resolve the final KEY=VALUE set for an environment with full precedence (shared < vault < branch override).
+         *     When the caller is an agent with `env_auto_resolve: true`, the `environment` query parameter may be omitted —
+         *     the server uses the agent's tagged environment from the JWT. Org setting `env.enforce_agent_environment_scope`
+         *     blocks agents from resolving vars outside their tagged environment.
          */
         get: operations["resolveEnvVars"];
         put?: never;
@@ -2491,6 +2494,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/audit/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Verify audit hash chain integrity
+         * @description Verifies the HMAC-SHA256 integrity hash chain for audit events in the
+         *     calling organization. Returns whether the chain is valid, how many
+         *     events were verified, and the point of first break (if any).
+         */
+        get: operations["verifyAuditChain"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/security/ip-rules": {
         parameters: {
             query?: never;
@@ -3177,6 +3202,29 @@ export interface paths {
         };
         /** HSM connectivity check */
         get: operations["healthHsm"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/shroud/attestation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * TEE attestation proof (public)
+         * @description Public endpoint returning the TEE attestation proof for Shroud.
+         *     Returns the GCE Confidential VM identity token and image hash so
+         *     customers can verify Shroud is running inside a Confidential VM
+         *     before signing contracts. Served from shroud.1claw.xyz.
+         */
+        get: operations["getShroudAttestation"];
         put?: never;
         post?: never;
         delete?: never;
@@ -7105,6 +7153,17 @@ export interface components {
             };
             consensus_trigger?: components["schemas"]["ConsensusTrigger"];
             tx_conditions?: components["schemas"]["TxConditions"];
+            /**
+             * Format: uuid
+             * @description Optional completed approval ID for control-plane consensus bypass. When control-plane consensus policies match, resubmit with this field after the approval has been executed.
+             */
+            approval_id?: string;
+            /**
+             * @description Policy schema version. Version 1 = legacy field-matching only.
+             *     Version 2 = expression engine support in tx_conditions.
+             * @default 2
+             */
+            policy_schema_version: number;
         };
         UpdatePolicyRequest: {
             permissions?: string[];
@@ -7125,6 +7184,11 @@ export interface components {
             };
             consensus_trigger?: components["schemas"]["ConsensusTrigger"];
             tx_conditions?: components["schemas"]["TxConditions"];
+            /**
+             * Format: uuid
+             * @description Optional completed approval ID for control-plane consensus bypass.
+             */
+            approval_id?: string;
         };
         PolicyResponse: {
             /** Format: uuid */
@@ -7156,6 +7220,8 @@ export interface components {
             };
             consensus_trigger?: components["schemas"]["ConsensusTrigger"];
             tx_conditions?: components["schemas"]["TxConditions"];
+            /** @description Policy schema version (1 = legacy, 2 = expression engine) */
+            policy_schema_version?: number;
         };
         PolicyListResponse: {
             policies?: components["schemas"]["PolicyResponse"][];
@@ -7310,6 +7376,11 @@ export interface components {
              * @default false
              */
             env_auto_resolve: boolean;
+            /**
+             * Format: uuid
+             * @description Optional completed approval ID for control-plane consensus bypass when creating an agent under a control-plane governance policy.
+             */
+            approval_id?: string;
         };
         UpdateAgentRequest: {
             name?: string;
@@ -8641,6 +8712,45 @@ export interface components {
         AuditEventsResponse: {
             events?: components["schemas"]["AuditEvent"][];
             count?: number;
+        };
+        AuditVerifyResponse: {
+            /** @description Whether the integrity hash chain is unbroken */
+            chain_valid: boolean;
+            /**
+             * Format: int64
+             * @description Number of events with valid integrity hashes
+             */
+            events_verified: number;
+            /** @description Total events examined */
+            events_checked: number;
+            /**
+             * Format: uuid
+             * @description First event where chain integrity broke (null if valid)
+             */
+            broken_at_event_id?: string | null;
+            scheme: {
+                /** @example HMAC-SHA256 */
+                algorithm?: string;
+                chain_structure?: string;
+                hash_field?: string;
+                link_field?: string;
+                /** Format: uri */
+                documentation?: string;
+            };
+        };
+        ShroudAttestationResponse: {
+            /** @description Whether TEE attestation was successfully fetched */
+            attested: boolean;
+            /** @description Confidential VM image hash (compare against published Docker digest) */
+            image_hash: string;
+            /** @description GCE metadata identity JWT (verify against Google public keys) */
+            identity_token: string;
+            verification: {
+                steps?: string[];
+                /** Format: uri */
+                google_certs_url?: string;
+                expected_audience?: string;
+            };
         };
         AuditEvent: {
             /** Format: uuid */
@@ -10756,6 +10866,13 @@ export interface components {
              * @default false
              */
             deep_inspect: boolean;
+            /**
+             * @description Mini expression DSL for policy conditions (schema version 2+).
+             *     References transaction context fields (chain, value_wei, to_address,
+             *     function_selector, etc.) with boolean operators. Fail-closed on parse
+             *     or evaluation errors. Example: `chain == 'ethereum' && value_wei > 1000000000000000000`
+             */
+            expression?: string;
         } & {
             [key: string]: unknown;
         };
@@ -10803,6 +10920,10 @@ export interface components {
             intent_type_in?: string[];
             /** @description When true, this entry always matches regardless of other fields */
             always?: boolean;
+            /** @description Control-plane actions to match (e.g. policy.create, signing_key.export) */
+            action_in?: string[];
+            /** @description Version-agnostic action kind groups (e.g. signing_key.*, policy.*, member.*) */
+            action_kind_in?: string[];
         };
         /**
          * @description Time window condition for policy evaluation. Used inside the policy
@@ -10860,6 +10981,11 @@ export interface components {
              *     policy.delete, signing_key.export, member.role_change, member.remove
              */
             actions: string[];
+        } | {
+            /** @enum {string} */
+            type: "action_kind_in";
+            /** @description Version-agnostic action kind groups, e.g. signing_key.*, policy.*, member.* */
+            action_kinds: string[];
         };
         ApprovalRequirement: {
             min_approvals: number;
@@ -13146,8 +13272,10 @@ export interface operations {
     };
     resolveEnvVars: {
         parameters: {
-            query: {
-                environment: string;
+            query?: {
+                /** @description Target environment (production, preview, development, or custom). Required for human callers; optional for agents with env_auto_resolve when the agent has an environment tag. */
+                environment?: string;
+                /** @description Optional git branch for preview branch overrides */
                 git_branch?: string;
             };
             header?: never;
@@ -15393,6 +15521,30 @@ export interface operations {
             402: components["responses"]["PaymentRequired"];
         };
     };
+    verifyAuditChain: {
+        parameters: {
+            query?: {
+                from?: string;
+                to?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Chain verification result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditVerifyResponse"];
+                };
+            };
+        };
+    };
     listIpRules: {
         parameters: {
             query?: never;
@@ -16606,6 +16758,26 @@ export interface operations {
                         /** @enum {string} */
                         status?: "ok" | "degraded" | "unavailable";
                     };
+                };
+            };
+        };
+    };
+    getShroudAttestation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Attestation proof */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShroudAttestationResponse"];
                 };
             };
         };

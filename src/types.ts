@@ -282,6 +282,7 @@ export interface PolicyResponse {
     attribute_conditions?: Record<string, unknown>;
     consensus_trigger?: ConsensusTrigger;
     tx_conditions?: TxConditions;
+    policy_schema_version?: number;
 }
 
 export interface PolicyListResponse {
@@ -1422,6 +1423,37 @@ export interface AuditEvent {
 export interface AuditEventsResponse {
     events: AuditEvent[];
     count: number;
+}
+
+export interface AuditVerifyQuery {
+    from?: string;
+    to?: string;
+    limit?: number;
+}
+
+export interface AuditVerifyResponse {
+    chain_valid: boolean;
+    events_verified: number;
+    events_checked: number;
+    broken_at_event_id?: string | null;
+    scheme: {
+        algorithm?: string;
+        chain_structure?: string;
+        hash_field?: string;
+        link_field?: string;
+        documentation?: string;
+    };
+}
+
+export interface ShroudAttestationResponse {
+    attested: boolean;
+    image_hash: string;
+    identity_token: string;
+    verification: {
+        steps?: string[];
+        google_certs_url?: string;
+        expected_audience?: string;
+    };
 }
 
 // ---------------------------------------------------------------------------
