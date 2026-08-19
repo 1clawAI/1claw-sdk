@@ -1061,6 +1061,10 @@ export interface SubmitTransactionRequest {
     xrpl_tx_json?: Record<string, unknown>;
     /** Pending approval ID — resubmit with this after consensus approval is executed. */
     approval_id?: string;
+    /** Pre-built raw transaction as a base64-encoded byte string for deep-inspect before signing. */
+    raw_transaction?: string;
+    /** Pre-built Tron transaction JSON object for full Tron transaction type coverage. */
+    tron_transaction?: Record<string, unknown>;
 }
 
 /**
@@ -1097,6 +1101,10 @@ export interface SignTransactionRequest {
     ttl?: number;
     /** Raw XRPL transaction JSON for full transaction type coverage. */
     xrpl_tx_json?: Record<string, unknown>;
+    /** Pre-built raw transaction as a base64-encoded byte string for deep-inspect before signing. */
+    raw_transaction?: string;
+    /** Pre-built Tron transaction JSON object for full Tron transaction type coverage. */
+    tron_transaction?: Record<string, unknown>;
 }
 
 export interface SignTransactionResponse {
@@ -1275,6 +1283,10 @@ export interface SignIntentRequest {
     xrpl_tx_json?: Record<string, unknown>;
     /** Pending approval ID — resubmit with this after consensus approval is executed. */
     approval_id?: string;
+    /** Pre-built raw transaction as a base64-encoded byte string for deep-inspect before signing. */
+    raw_transaction?: string;
+    /** Pre-built Tron transaction JSON object for full Tron transaction type coverage. */
+    tron_transaction?: Record<string, unknown>;
 }
 
 export interface SignIntentResponse {
@@ -2904,4 +2916,91 @@ export interface TimeWindow {
     days_of_week?: number[];
     timezone?: string;
     cron_expr?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Wallet Access Policies (v0.53.1)
+// ---------------------------------------------------------------------------
+
+export interface WalletAccessPolicy {
+    id: string;
+    org_id: string;
+    wallet_chain: string;
+    target_agent_id?: string;
+    target_user_id?: string;
+    permissions: string[];
+    conditions?: WalletAccessConditions;
+    expires_at?: string;
+    created_at: string;
+}
+
+export interface WalletAccessConditions {
+    max_value_per_tx_eth?: string;
+    daily_limit_eth?: string;
+    allowed_chains?: string[];
+    allowed_tokens?: string[];
+}
+
+export interface CreateWalletAccessPolicyRequest {
+    wallet_chain: string;
+    target_agent_id?: string;
+    target_user_id?: string;
+    permissions: string[];
+    conditions?: WalletAccessConditions;
+    expires_at?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Credential Recovery (v0.53.1)
+// ---------------------------------------------------------------------------
+
+export interface CredentialRecoveryRequest {
+    request_id: string;
+    status: string;
+    recovery_type: string;
+    reason?: string;
+    approved_at?: string;
+    executable_after?: string;
+    created_at: string;
+}
+
+export interface CreateRecoveryRequest {
+    recovery_type: "mfa_reset" | "passkey_reset" | "password_reset";
+    reason?: string;
+}
+
+export interface RecoveryPolicy {
+    enabled: boolean;
+    require_admin_approval: boolean;
+    delay_hours: number;
+    allowed_types: string[];
+}
+
+// ---------------------------------------------------------------------------
+// Shamir KEK (v0.53.1)
+// ---------------------------------------------------------------------------
+
+export interface ShamirKekStatus {
+    configured: boolean;
+    kek_id?: string;
+    threshold?: number;
+    total_shares?: number;
+    custody_mode?: string;
+    custodians?: { email: string; share_provided: boolean }[];
+    created_at?: string;
+}
+
+export interface SetupShamirRequest {
+    threshold: number;
+    total_shares: number;
+    custodian_emails: string[];
+}
+
+export interface ShamirSetupResponse {
+    kek_id: string;
+    threshold: number;
+    total_shares: number;
+    shares: { index: number; custodian_email: string; share_b64: string }[];
+    custody_mode: string;
+    created_at: string;
 }

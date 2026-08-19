@@ -6653,6 +6653,266 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/wallets/access-policies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List wallet access policies for the org */
+        get: operations["listWalletAccessPolicies"];
+        put?: never;
+        /**
+         * Create a wallet access policy
+         * @description Create a role-based wallet access policy granting an agent or user
+         *     specific permissions (send, swap, receive) on a treasury wallet chain.
+         */
+        post: operations["createWalletAccessPolicy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/wallets/access-policies/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a wallet access policy */
+        delete: operations["deleteWalletAccessPolicy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/credential-recovery/request": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Initiate credential recovery
+         * @description Start a credential recovery request for MFA reset, passkey reset,
+         *     or password reset. Requires admin approval per org policy.
+         */
+        post: operations["requestCredentialRecovery"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/credential-recovery/requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List recovery requests for the org
+         * @description Admin/owner only. Returns pending, approved, and rejected recovery requests.
+         */
+        get: operations["listCredentialRecoveryRequests"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/credential-recovery/requests/{id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Approve a recovery request
+         * @description Admin/owner approves a pending recovery request. May return a one-time recovery code.
+         */
+        post: operations["approveCredentialRecovery"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/credential-recovery/requests/{id}/execute": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Execute an approved credential recovery request
+         * @description Execute an approved credential recovery request after the delay window has elapsed. Only org owners or admins can execute.
+         */
+        post: operations["executeCredentialRecovery"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/credential-recovery/requests/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Cancel or reject a recovery request */
+        delete: operations["cancelCredentialRecovery"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/org/credential-recovery-policy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get org credential recovery policy */
+        get: operations["getCredentialRecoveryPolicy"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update org credential recovery policy */
+        patch: operations["updateCredentialRecoveryPolicy"];
+        trace?: never;
+    };
+    "/v1/org/shamir-kek/setup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Set up Shamir KEK for the org
+         * @description Initialize a Shamir secret-sharing KEK for the org. Splits the master
+         *     key into shares distributed to custodians. Shares are returned one-time
+         *     only and must be stored securely by each custodian.
+         */
+        post: operations["setupShamirKek"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/org/shamir-kek": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Shamir KEK status
+         * @description Returns the current Shamir KEK configuration status for the org.
+         */
+        get: operations["getShamirKekStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/org/shamir-kek/reconstruct": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reconstruct KEK from shares
+         * @description Submit Shamir shares to reconstruct the org KEK. Requires at least
+         *     `threshold` valid shares. Used during disaster recovery.
+         */
+        post: operations["reconstructShamirKek"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/org/shamir-kek/recovery-codes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Shamir recovery codes (one-time)
+         * @description Returns the one-time recovery codes for the Shamir KEK. These codes
+         *     can be used as an emergency fallback if custodian shares are lost.
+         *     Codes are only returned once — subsequent calls return 410.
+         */
+        get: operations["getShamirKekRecoveryCodes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/org/shamir-kek/verify-recovery-code": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Verify a Shamir recovery code
+         * @description Check whether a recovery code is valid without consuming it.
+         */
+        post: operations["verifyShamirKekRecoveryCode"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -8095,6 +8355,12 @@ export interface components {
              * @description Optional pending approval ID. When consensus policies match, clients resubmit with this field set to bypass the 202 gate after the approval has been executed.
              */
             approval_id?: string;
+            /** @description Pre-built raw transaction as a base64-encoded byte string. When provided, the handler decodes and deep-inspects the transaction for policy evaluation before signing. Supported for non-EVM chains where the client constructs the transaction payload. */
+            raw_transaction?: string;
+            /** @description Pre-built Tron transaction JSON object. When provided, the handler signs the transaction as-is using the Tron protobuf format. Enables full Tron transaction type coverage beyond simple TRX/TRC-20 transfers. */
+            tron_transaction?: {
+                [key: string]: unknown;
+            };
         };
         SignTransactionRequest: {
             /** @description Destination address (0x-prefixed) */
@@ -8351,6 +8617,12 @@ export interface components {
              * @description Optional pending approval ID. When consensus policies match, clients resubmit with this field set to bypass the 202 gate after the approval has been executed.
              */
             approval_id?: string;
+            /** @description Pre-built raw transaction as a base64-encoded byte string. When provided, the handler decodes and deep-inspects the transaction for policy evaluation before signing. Supported for non-EVM chains where the client constructs the transaction payload. */
+            raw_transaction?: string;
+            /** @description Pre-built Tron transaction JSON object. When provided, the handler signs the transaction as-is using the Tron protobuf format. Enables full Tron transaction type coverage beyond simple TRX/TRC-20 transfers. */
+            tron_transaction?: {
+                [key: string]: unknown;
+            };
         };
         SignIntentResponse: {
             intent_type?: string;
@@ -11263,6 +11535,170 @@ export interface components {
             value?: string;
             environments?: string[];
             comment?: string;
+        };
+        CreateWalletAccessPolicyRequest: {
+            /** @description Chain for which the policy applies (e.g. ethereum, solana) */
+            wallet_chain: string;
+            /**
+             * Format: uuid
+             * @description Agent granted access (mutually exclusive with target_user_id)
+             */
+            target_agent_id?: string;
+            /**
+             * Format: uuid
+             * @description User granted access (mutually exclusive with target_agent_id)
+             */
+            target_user_id?: string;
+            permissions: ("send" | "swap" | "receive")[];
+            conditions?: {
+                /** @description Max value per transaction in ETH */
+                max_value_per_tx_eth?: string;
+                /** @description Daily spend limit in ETH */
+                daily_limit_eth?: string;
+                allowed_chains?: string[];
+                allowed_tokens?: string[];
+            };
+            /** Format: date-time */
+            expires_at?: string;
+        };
+        WalletAccessPolicyResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            org_id?: string;
+            wallet_chain?: string;
+            /** Format: uuid */
+            target_agent_id?: string | null;
+            /** Format: uuid */
+            target_user_id?: string | null;
+            permissions?: ("send" | "swap" | "receive")[];
+            conditions?: {
+                max_value_per_tx_eth?: string | null;
+                daily_limit_eth?: string | null;
+                allowed_chains?: string[] | null;
+                allowed_tokens?: string[] | null;
+            } | null;
+            /** Format: date-time */
+            expires_at?: string | null;
+            /** Format: date-time */
+            created_at?: string;
+        };
+        WalletAccessPolicyListResponse: {
+            policies?: components["schemas"]["WalletAccessPolicyResponse"][];
+        };
+        CredentialRecoveryRequest: {
+            /** @enum {string} */
+            recovery_type: "mfa_reset" | "passkey_reset" | "password_reset";
+            /** @description Optional justification for the recovery request */
+            reason?: string;
+        };
+        CredentialRecoveryResponse: {
+            /** Format: uuid */
+            request_id?: string;
+            /** @enum {string} */
+            status?: "pending_approval" | "approved" | "rejected" | "expired";
+            /** @enum {string} */
+            recovery_type?: "mfa_reset" | "passkey_reset" | "password_reset";
+            /** Format: date-time */
+            created_at?: string;
+        };
+        CredentialRecoveryListResponse: {
+            requests?: components["schemas"]["CredentialRecoveryResponse"][];
+        };
+        CredentialRecoveryApproveResponse: {
+            /** Format: uuid */
+            request_id?: string;
+            /** @enum {string} */
+            status?: "approved";
+            /** @description One-time recovery code (only present for certain recovery types) */
+            recovery_code?: string | null;
+        };
+        CredentialRecoveryExecuteResponse: {
+            /** Format: uuid */
+            request_id?: string;
+            /** @enum {string} */
+            status?: "executed";
+            recovery_type?: string;
+            /** Format: date-time */
+            executed_at?: string;
+        };
+        CredentialRecoveryPolicyResponse: {
+            enabled?: boolean;
+            require_admin_approval?: boolean;
+            /** @description Waiting period before recovery takes effect */
+            delay_hours?: number;
+            allowed_types?: ("mfa_reset" | "passkey_reset" | "password_reset")[];
+        };
+        CredentialRecoveryPolicyRequest: {
+            enabled?: boolean;
+            require_admin_approval?: boolean;
+            delay_hours?: number;
+            allowed_types?: ("mfa_reset" | "passkey_reset" | "password_reset")[];
+        };
+        ShamirKekSetupRequest: {
+            /**
+             * @description Minimum shares required to reconstruct the KEK
+             * @enum {integer}
+             */
+            threshold: 2 | 3;
+            /**
+             * @description Total number of shares to generate
+             * @enum {integer}
+             */
+            total_shares: 3 | 5;
+            /** @description Email addresses of share custodians */
+            custodian_emails: string[];
+        };
+        ShamirKekSetupResponse: {
+            kek_id?: string;
+            threshold?: number;
+            total_shares?: number;
+            /** @description One-time share distribution (never returned again) */
+            shares?: {
+                index?: number;
+                /** Format: email */
+                custodian_email?: string;
+                /** @description Base64-encoded share */
+                share_b64?: string;
+            }[];
+            custody_mode?: string;
+            /** Format: date-time */
+            created_at?: string;
+        };
+        ShamirKekStatusResponse: {
+            configured?: boolean;
+            kek_id?: string | null;
+            threshold?: number | null;
+            total_shares?: number | null;
+            custody_mode?: string | null;
+            custodians?: {
+                /** Format: email */
+                email?: string;
+                share_provided?: boolean;
+            }[] | null;
+            /** Format: date-time */
+            created_at?: string | null;
+        };
+        ShamirKekReconstructRequest: {
+            shares: {
+                index: number;
+                /** @description Base64-encoded share */
+                share_b64: string;
+            }[];
+        };
+        ShamirKekReconstructResponse: {
+            /** @enum {string} */
+            status?: "accepted" | "reconstructed";
+            message?: string;
+        };
+        ShamirKekRecoveryCodesResponse: {
+            codes?: string[];
+        };
+        ShamirKekVerifyCodeRequest: {
+            code: string;
+        };
+        ShamirKekVerifyCodeResponse: {
+            valid?: boolean;
         };
     };
     responses: {
@@ -20736,6 +21172,384 @@ export interface operations {
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+        };
+    };
+    listWalletAccessPolicies: {
+        parameters: {
+            query?: {
+                /** @description Filter by chain (e.g. ethereum, solana) */
+                wallet_chain?: string;
+                /** @description Filter by target agent */
+                target_agent_id?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Policy list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WalletAccessPolicyListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    createWalletAccessPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateWalletAccessPolicyRequest"];
+            };
+        };
+        responses: {
+            /** @description Policy created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WalletAccessPolicyResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    deleteWalletAccessPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Policy deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    requestCredentialRecovery: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CredentialRecoveryRequest"];
+            };
+        };
+        responses: {
+            /** @description Recovery request created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CredentialRecoveryResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    listCredentialRecoveryRequests: {
+        parameters: {
+            query?: {
+                /** @description Filter by status */
+                status?: "pending_approval" | "approved" | "rejected" | "expired";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Recovery request list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CredentialRecoveryListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    approveCredentialRecovery: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request approved */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CredentialRecoveryApproveResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    executeCredentialRecovery: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Recovery executed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CredentialRecoveryExecuteResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    cancelCredentialRecovery: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request cancelled */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getCredentialRecoveryPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Recovery policy */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CredentialRecoveryPolicyResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    updateCredentialRecoveryPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CredentialRecoveryPolicyRequest"];
+            };
+        };
+        responses: {
+            /** @description Policy updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CredentialRecoveryPolicyResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    setupShamirKek: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShamirKekSetupRequest"];
+            };
+        };
+        responses: {
+            /** @description Shamir KEK configured (shares returned one-time) */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShamirKekSetupResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    getShamirKekStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Shamir KEK status */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShamirKekStatusResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    reconstructShamirKek: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShamirKekReconstructRequest"];
+            };
+        };
+        responses: {
+            /** @description Reconstruction result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShamirKekReconstructResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    getShamirKekRecoveryCodes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Recovery codes (one-time) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShamirKekRecoveryCodesResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description Codes already retrieved */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    verifyShamirKekRecoveryCode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShamirKekVerifyCodeRequest"];
+            };
+        };
+        responses: {
+            /** @description Verification result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShamirKekVerifyCodeResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
         };
     };
 }
