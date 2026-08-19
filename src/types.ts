@@ -2007,14 +2007,23 @@ export interface MemorySearchResponse {
 // Automations — scheduled / event-driven / webhook-triggered agent workflows
 // ---------------------------------------------------------------------------
 
+/** Single workflow step (backend accepts flexible JSON per step type). */
+export type WorkflowStep = Record<string, unknown>;
+
+/**
+ * Workflow definition: bare step array or `{ steps: [...] }` (dashboard/preset shape).
+ * Matches OpenAPI CreateAutomationRequest.workflow_spec.
+ */
+export type WorkflowSpec = WorkflowStep[] | { steps: WorkflowStep[] };
+
 export interface CreateAutomationRequest {
     name: string;
     agent_id: string;
-    trigger_type: "cron" | "event" | "webhook" | "manual";
+    trigger_type: "cron" | "event" | "webhook" | "manual" | "schedule";
     cron_expr?: string;
     timezone?: string;
     event_filter?: Record<string, unknown>;
-    workflow_spec: Record<string, unknown>;
+    workflow_spec: WorkflowSpec;
 }
 
 export interface UpdateAutomationRequest {
@@ -2022,7 +2031,7 @@ export interface UpdateAutomationRequest {
     cron_expr?: string | null;
     timezone?: string;
     event_filter?: Record<string, unknown> | null;
-    workflow_spec?: Record<string, unknown>;
+    workflow_spec?: WorkflowSpec;
     is_active?: boolean;
 }
 
@@ -2034,7 +2043,7 @@ export interface AutomationResponse {
     cron_expr?: string;
     timezone: string;
     event_filter?: Record<string, unknown>;
-    workflow_spec: Record<string, unknown>;
+    workflow_spec: WorkflowSpec;
     is_active: boolean;
     last_run_at?: string;
     next_run_at?: string;
@@ -2084,7 +2093,7 @@ export interface AutomationPreset {
     description?: string;
     trigger_type: string;
     cron_expr?: string | null;
-    workflow_spec: Record<string, unknown>;
+    workflow_spec: WorkflowSpec;
 }
 
 export interface AutomationPresetsResponse {
