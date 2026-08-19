@@ -25,6 +25,8 @@ export interface GrantOptions {
     consensus_trigger?: ConsensusTrigger;
     /** Signing-time AND conditions (all tiers). Ignored on secret reads. */
     tx_conditions?: Record<string, unknown>;
+    /** Policy schema version (1 = legacy, 2 = expression). Default 1. */
+    policySchemaVersion?: number;
 }
 
 /**
@@ -48,6 +50,7 @@ export class AccessResource {
             secret_path_pattern: options.secretPathPattern ?? "**",
             principal_type: "user",
             principal_id: userId,
+            policy_schema_version: options.policySchemaVersion ?? 1,
             permissions,
             conditions: options.conditions,
             expires_at: options.expires_at,
@@ -82,6 +85,7 @@ export class AccessResource {
             secret_path_pattern: options.secretPathPattern ?? "**",
             principal_type: "agent",
             principal_id: agentId,
+            policy_schema_version: options.policySchemaVersion ?? 1,
             permissions,
             conditions: options.conditions,
             expires_at: options.expires_at,
