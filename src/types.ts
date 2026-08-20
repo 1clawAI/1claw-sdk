@@ -1399,10 +1399,17 @@ export interface LlmCancelDuplicatesResponse {
     cancelled_count: number;
     cancelled_subscription_ids: string[];
     remaining_subscription_ids: string[];
+    failed_subscription_ids?: string[];
+    warning?: string;
 }
 
 export interface LlmDisableResponse {
     enabled: boolean;
+    subscriptions_found: number;
+    subscriptions_cancelled: number;
+    cancelled_subscription_ids?: string[];
+    failed_subscription_ids?: string[];
+    warning?: string;
 }
 
 // ---------------------------------------------------------------------------
