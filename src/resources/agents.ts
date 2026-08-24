@@ -487,9 +487,54 @@ export class AgentsResource {
     /** Provision an agent account record (human-only). */
     async provisionAccount(
         agentId: string,
-        body: { chain: string; account_type?: string; address?: string },
+        body: {
+            chain: string;
+            account_type?: string;
+            address?: string;
+            cosign_enabled?: boolean;
+        },
     ): Promise<OneclawResponse<AgentAccount>> {
         return this.http.request("POST", `/v1/agents/${agentId}/accounts`, { body });
+    }
+
+    /** EOA → Safe migration wizard (returns sweep plan; onchain sync stubbed). */
+    async migrateToSafe(
+        agentId: string,
+        body: { chain: string; deprecate_eoa?: boolean },
+    ): Promise<OneclawResponse<MigrationPlan>> {
+        return this.http.request("POST", `/v1/agents/${agentId}/accounts/migrate`, { body });
+    }
+
+    async deprecateEoaAccount(
+        agentId: string,
+        chain: string,
+    ): Promise<OneclawResponse<AgentAccount>> {
+        return this.http.request("POST", `/v1/agents/${agentId}/accounts/${chain}/deprecate-eoa`);
+    }
+
+    /** Org admin: compile allowance targets for all Safe agents (reconciliation stub). */
+    async syncOrgSafeAllowances(): Promise<OneclawResponse<AllowanceReconcileReport>> {
+        return this.http.request("POST", `/v1/org/safe/sync-allowances`);
+    }
+
+    /** Phase 5.2 stub — Vault co-signer provisioning (501). */
+    async enableSafeCosign(agentId: string): Promise<OneclawResponse<SafeStubResponse>> {
+        return this.http.request("POST", `/v1/agents/${agentId}/safe/cosign`);
+    }
+
+    /** Phase 5.5 stub — Passkey Safe owner enrollment (501). */
+    async enrollSafePasskeyOwner(agentId: string): Promise<OneclawResponse<SafeStubResponse>> {
+        return this.http.request("POST", `/v1/agents/${agentId}/safe/passkey-enroll`);
+    }
+
+    /** Phase 5.6 stub — Zodiac timelock configuration (501). */
+    async configureSafeTimelock(agentId: string): Promise<OneclawResponse<SafeStubResponse>> {
+        return this.http.request("POST", `/v1/agents/${agentId}/safe/timelock`);
+    }
+
+    /** Phase 5.8 stub — ERC-4337 Safe lane (501). */
+    async enableSafeErc4337(agentId: string): Promise<OneclawResponse<SafeStubResponse>> {
+        return this.http.request("POST", `/v1/agents/${agentId}/safe/erc4337`);
     }
 
     /** Dry-run draft guardrails against recent transactions. */
@@ -511,8 +556,42 @@ export interface AgentAccount {
     agent_id: string;
     chain: string;
     account_type: string;
-    address: string;
+    address?: string | null;
+    safe_version?: string | null;
+    modules_enabled?: string[];
+    deploy_status?: string;
+    cosign_enabled?: boolean;
+    metadata?: Record<string, unknown>;
     created_at: string;
+    updated_at?: string;
+}
+
+export interface MigrationPlan {
+    agent_id: string;
+    chain: string;
+    safe_address: string;
+    safe_version: string;
+    modules: string[];
+    eoa_address?: string | null;
+    sweep_instructions: Array<{ asset: string; action: string; note: string }>;
+    roles_config_hash: string;
+    allowance_config_hash: string;
+    warnings: string[];
+    deploy_status: string;
+}
+
+export interface AllowanceReconcileReport {
+    org_id: string;
+    agents_checked: number;
+    compiled: Array<Record<string, unknown>>;
+    drift_detected: Array<Record<string, unknown>>;
+    onchain_sync: string;
+}
+
+export interface SafeStubResponse {
+    error: string;
+    phase: string;
+    message: string;
 }
 
 export interface GuardrailReplayResponse {
