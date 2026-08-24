@@ -7642,6 +7642,20 @@ export interface components {
              * @default true
              */
             card_require_approval: boolean;
+            /** @description Graduated transaction approval policy (HITL thresholds). Separate from hard guardrails. */
+            tx_approval_policy?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * @description EIP-712 escalation when typed_data matches no allowlist — deny (403) or route to HITL (approve).
+             * @enum {string}
+             */
+            typed_data_policy?: "deny" | "approve";
+            /**
+             * @description Simulation failure escalation — deny (422) or route to HITL (approve).
+             * @enum {string}
+             */
+            simulation_failure_policy?: "deny" | "approve";
             /**
              * Format: date-time
              * @description Optional expiration time for the agent's API key.
@@ -7723,6 +7737,22 @@ export interface components {
             card_reveal_enabled?: boolean;
             /** @description When true, card orders route through the human approval queue before x402 payment. */
             card_require_approval?: boolean;
+            /** @description Graduated transaction approval policy (HITL thresholds). */
+            tx_approval_policy?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * @description EIP-712 escalation policy.
+             * @enum {string|null}
+             */
+            typed_data_policy?: "deny" | "approve" | null;
+            /**
+             * @description Simulation failure escalation policy.
+             * @enum {string|null}
+             */
+            simulation_failure_policy?: "deny" | "approve" | null;
+            /** @description When true, clears circuit-breaker auto-suspension (human owner/admin only). */
+            clear_auto_suspended?: boolean;
             /**
              * @description Enable OIDC federation (RFC 8693 token-exchange) for this agent.
              *     When true, the agent may call POST /v1/auth/federated-token to mint
@@ -7852,6 +7882,16 @@ export interface components {
             card_reveal_enabled?: boolean;
             /** @description When true, card orders route through the human approval queue before x402 payment. */
             card_require_approval?: boolean;
+            /** @description Graduated transaction approval policy (HITL thresholds). */
+            tx_approval_policy?: {
+                [key: string]: unknown;
+            } | null;
+            /** @enum {string|null} */
+            typed_data_policy?: "deny" | "approve" | null;
+            /** @enum {string|null} */
+            simulation_failure_policy?: "deny" | "approve" | null;
+            /** @description True when circuit breaker auto-suspended the agent after repeated guardrail denials. */
+            auto_suspended?: boolean;
             /** @description Today's transaction count (UTC calendar day). Present when intents_api_enabled. */
             tx_count_today?: number;
             /** @description Today's overhead spend by chain in native units. */
@@ -10325,6 +10365,36 @@ export interface components {
             params: {
                 [key: string]: unknown;
             };
+            /**
+             * @description When true, validate guardrails and approval policy without executing or persisting side effects.
+             * @default false
+             */
+            dry_run: boolean;
+            /**
+             * Format: uuid
+             * @description Internal — resume execution after human approval (server-injected).
+             */
+            resume_after_approval_id?: string;
+        };
+        ExecutionApprovalRequired: {
+            /** @enum {string} */
+            error: "approval_required";
+            /** Format: uuid */
+            approval_id: string;
+            /** @enum {string} */
+            status: "pending";
+            /** Format: date-time */
+            expires_at?: string | null;
+        };
+        TxAwaitingApproval: {
+            /** @enum {string} */
+            status: "awaiting_approval";
+            /** Format: uuid */
+            approval_id: string;
+            /** Format: uuid */
+            tx_id?: string | null;
+            /** Format: date-time */
+            expires_at?: string | null;
         };
         ExecuteResponse: {
             /** Format: uuid */
@@ -14311,6 +14381,15 @@ export interface operations {
                     "application/json": components["schemas"]["TransactionResponse"];
                 };
             };
+            /** @description Transaction held for human approval (graduated tx_approval_policy) */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TxAwaitingApproval"];
+                };
+            };
             402: components["responses"]["PaymentRequired"];
             403: components["responses"]["Forbidden"];
             /** @description Idempotency-Key in use by another in-flight request; retry later. */
@@ -15107,6 +15186,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ExecuteResponse"];
+                };
+            };
+            /** @description Execution requires human approval before running */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExecutionApprovalRequired"];
                 };
             };
             400: components["responses"]["BadRequest"];
