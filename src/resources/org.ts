@@ -85,9 +85,33 @@ export class OrgResource {
         return this.http.request<PolicyBackendSettings>("PATCH", "/v1/org/settings/policy-backend", { body });
     }
 
-    /** Get the policy shadow mode divergence report. */
-    async getShadowReport(): Promise<OneclawResponse<ShadowReportResponse>> {
+    /** Get the Cedar/OPA policy shadow mode divergence report. */
+    async getPolicyShadowReport(): Promise<OneclawResponse<ShadowReportResponse>> {
         return this.http.request<ShadowReportResponse>("GET", "/v1/org/policy-shadow-report");
+    }
+
+    /** @deprecated Use {@link getPolicyShadowReport} */
+    async getShadowReport(): Promise<OneclawResponse<ShadowReportResponse>> {
+        return this.getPolicyShadowReport();
+    }
+
+    /** Get Convention 6 guardrail shadow violations (execution guardrails in log mode). */
+    async getGuardrailShadowReport(params?: { since?: string; until?: string }): Promise<
+        OneclawResponse<GuardrailShadowReportResponse>
+    > {
+        const query = new URLSearchParams();
+        if (params?.since) query.set("since", params.since);
+        if (params?.until) query.set("until", params.until);
+        const qs = query.toString();
+        return this.http.request<GuardrailShadowReportResponse>(
+            "GET",
+            `/v1/org/guardrail-shadow-report${qs ? `?${qs}` : ""}`,
+        );
+    }
+
+    /** List guardrail revision history for agent/binding changes. */
+    async listGuardrailRevisions(): Promise<OneclawResponse<GuardrailRevisionListResponse>> {
+        return this.http.request<GuardrailRevisionListResponse>("GET", "/v1/org/guardrail-revisions");
     }
 }
 
@@ -102,4 +126,27 @@ export interface OrgBankrConfigResponse {
 export interface UpsertOrgBankrConfigRequest {
     partner_key: string;
     default_wallet_id?: string;
+}
+
+export interface GuardrailShadowReportResponse {
+    org_id: string;
+    since: string;
+    until: string;
+    total_would_deny: number;
+    by_reason: Array<{ reason_code: string; would_deny_count: number; enforced_count: number }>;
+}
+
+export interface GuardrailRevisionListResponse {
+    revisions: Array<{
+        id: string;
+        org_id: string;
+        resource_type: string;
+        resource_id: string;
+        actor_id: string;
+        before_json: Record<string, unknown>;
+        after_json: Record<string, unknown>;
+        change_kind: string;
+        approval_id?: string | null;
+        created_at: string;
+    }>;
 }

@@ -478,4 +478,48 @@ export class AgentsResource {
             { body },
         );
     }
+
+    /** List on-chain account records for an agent (EOA/Safe stubs). */
+    async listAccounts(agentId: string): Promise<OneclawResponse<{ accounts: AgentAccount[] }>> {
+        return this.http.request("GET", `/v1/agents/${agentId}/accounts`);
+    }
+
+    /** Provision an agent account record (human-only). */
+    async provisionAccount(
+        agentId: string,
+        body: { chain: string; account_type?: string; address?: string },
+    ): Promise<OneclawResponse<AgentAccount>> {
+        return this.http.request("POST", `/v1/agents/${agentId}/accounts`, { body });
+    }
+
+    /** Dry-run draft guardrails against recent transactions. */
+    async replayGuardrails(
+        agentId: string,
+        body?: {
+            days?: number;
+            draft_guardrails?: Record<string, unknown>;
+            draft_approval_policy?: Record<string, unknown>;
+        },
+    ): Promise<OneclawResponse<GuardrailReplayResponse>> {
+        return this.http.request("POST", `/v1/agents/${agentId}/guardrails/replay`, { body });
+    }
+}
+
+export interface AgentAccount {
+    id: string;
+    org_id: string;
+    agent_id: string;
+    chain: string;
+    account_type: string;
+    address: string;
+    created_at: string;
+}
+
+export interface GuardrailReplayResponse {
+    agent_id: string;
+    window_days: number;
+    allowed: number;
+    denied: number;
+    would_require_approval: number;
+    samples: Array<Record<string, unknown>>;
 }
