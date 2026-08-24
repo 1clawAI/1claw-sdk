@@ -1,5 +1,6 @@
 import type { HttpClient } from "../core/http";
 import type {
+    ApprovalListResponse,
     CreatePlatformAppRequest,
     UpdatePlatformAppRequest,
     PlatformAppResponse,
@@ -181,6 +182,29 @@ export interface RotateWebhookSecretResponse {
     webhook_secret: string;
 }
 
+export interface PlatformAppDeleteResponse {
+    deleted: boolean;
+    soft_delete: boolean;
+    slug_released: boolean;
+    former_slug: string;
+}
+
+export interface TransferPlatformAppOwnershipRequest {
+    target_org_id?: string;
+    target_user_email?: string;
+}
+
+export interface TransferPlatformAppOwnershipResponse {
+    app_id: string;
+    former_org_id: string;
+    new_org_id: string;
+    message: string;
+}
+
+export interface ConnectionSpendPolicyResponse {
+    policy: SpendPolicyResponse | null;
+}
+
 /**
  * Platform API — build multi-tenant apps on top of 1Claw.
  * Manage platform apps, templates, user provisioning, and bootstrapping.
@@ -229,11 +253,31 @@ export class PlatformResource {
         );
     }
 
-    /** Delete a platform app permanently. */
-    async deleteApp(appId: string): Promise<OneclawResponse<void>> {
-        return this.http.request<void>(
+    /** Soft-delete a platform app and release its slug. */
+    async deleteApp(
+        appId: string,
+    ): Promise<OneclawResponse<PlatformAppDeleteResponse>> {
+        return this.http.request<PlatformAppDeleteResponse>(
             "DELETE",
             `/v1/platform/apps/${appId}`,
+        );
+    }
+
+    /** Transfer app ownership to another organization (step-up auth required). */
+    async transferAppOwnership(
+        appId: string,
+        body: TransferPlatformAppOwnershipRequest,
+        options?: { confirmToken?: string },
+    ): Promise<OneclawResponse<TransferPlatformAppOwnershipResponse>> {
+        return this.http.request<TransferPlatformAppOwnershipResponse>(
+            "POST",
+            `/v1/platform/apps/${appId}/transfer-ownership`,
+            {
+                body,
+                headers: options?.confirmToken
+                    ? { "X-Auth-Confirm": options.confirmToken }
+                    : undefined,
+            },
         );
     }
 
@@ -410,15 +454,92 @@ export class PlatformResource {
         );
     }
 
+    /** Get a single spend policy by ID (platform org human JWT). */
+    async getSpendPolicy(
+        appId: string,
+        policyId: string,
+    ): Promise<OneclawResponse<SpendPolicyResponse>> {
+        return this.http.request<SpendPolicyResponse>(
+            "GET",
+            `/v1/platform/apps/${appId}/spend-policies/${policyId}`,
+        );
+    }
+
+    /** Effective spend policy for a connection (`plt_` auth). */
+    async getConnectionSpendPolicy(
+        connectionId: string,
+    ): Promise<OneclawResponse<ConnectionSpendPolicyResponse>> {
+        return this.http.request<ConnectionSpendPolicyResponse>(
+            "GET",
+            `/v1/platform/connections/${connectionId}/spend-policy`,
+        );
+    }
+
+    /** Approvals for a connected user (`plt_` auth). */
+    async listConnectionApprovals(
+        connectionId: string,
+        params?: {
+            status?: "pending" | "approved" | "denied";
+            risk_tier?: number;
+            limit?: number;
+            offset?: number;
+        },
+    ): Promise<OneclawResponse<ApprovalListResponse>> {
+        return this.http.request<ApprovalListResponse>(
+            "GET",
+            `/v1/platform/connections/${connectionId}/approvals`,
+            { query: params as Record<string, string | number | undefined> },
+        );
+    }
+
+    /** Single approval for a connection (`plt_` auth). */
+    async getConnectionApproval(
+        connectionId: string,
+        approvalId: string,
+    ): Promise<OneclawResponse<ApprovalListResponse["approvals"][number]>> {
+        return this.http.request(
+            "GET",
+            `/v1/platform/connections/${connectionId}/approvals/${approvalId}`,
+        );
+    }
+
+    /** Pending consensus approvals for a connection (`plt_` auth). */
+    async listConnectionPendingApprovals(
+        connectionId: string,
+        params?: { status?: string; limit?: number; offset?: number },
+    ): Promise<
+        OneclawResponse<{
+            pending_approvals: Array<{
+                id: string;
+                action_payload: Record<string, unknown>;
+                payload_hash: string;
+                status: string;
+            }>;
+            total: number;
+        }>
+    > {
+        return this.http.request(
+            "GET",
+            `/v1/platform/connections/${connectionId}/pending-approvals`,
+            { query: params as Record<string, string | number | undefined> },
+        );
+    }
+
     /** Set a spend policy on a user connection. */
     async setUserSpendPolicy(
         connectionId: string,
         body: CreateSpendPolicyRequest,
+        options?: { idempotencyKey?: string },
     ): Promise<OneclawResponse<SpendPolicyResponse>> {
         return this.http.request<SpendPolicyResponse>(
             "PUT",
             `/v1/platform/connections/${connectionId}/spend-policy`,
-            { body },
+            {
+                body,
+                headers: options?.idempotencyKey
+                    ? { "Idempotency-Key": options.idempotencyKey }
+                    : undefined,
+            },
         );
     }
 

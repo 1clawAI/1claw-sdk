@@ -3898,12 +3898,14 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description Deleted */
-                204: {
+                /** @description Soft-deleted; slug released for reuse within the org */
+                200: {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "application/json": components["schemas"]["PlatformAppDeleteResponse"];
+                    };
                 };
                 /** @description Only human users can delete platform apps */
                 403: {
@@ -3943,6 +3945,29 @@ export interface paths {
                 };
             };
         };
+        trace?: never;
+    };
+    "/v1/platform/apps/{appId}/transfer-ownership": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Transfer platform app to another organization
+         * @description Moves the platform app record to another organization. Requires org
+         *     owner/admin in the source org and step-up auth (`X-Auth-Confirm`,
+         *     purpose `platform.app.transfer`). End-user connections and provisioned
+         *     resources remain in their original organizations.
+         */
+        post: operations["transferPlatformAppOwnership"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/v1/platform/apps/{appId}/rotate-key": {
@@ -5070,7 +5095,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** Get a spend policy by ID */
+        get: operations["getSpendPolicy"];
         put?: never;
         post?: never;
         /** Delete a spend policy */
@@ -5087,7 +5113,12 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * Get effective spend policy for a connection
+         * @description Returns the effective spend policy for the connected user, resolving
+         *     per-user overrides before app-level defaults. Requires plt_ platform auth.
+         */
+        get: operations["getConnectionSpendPolicy"];
         /**
          * Set per-user spend policy override
          * @description Override the app-wide spend policy for a specific connected user. This
@@ -5095,6 +5126,66 @@ export interface paths {
          *     connection-level policy.
          */
         put: operations["setUserSpendPolicy"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/connections/{connectionId}/approvals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List approvals for a platform connection
+         * @description Returns approvals assigned to the connection's user, filtered to agents
+         *     provisioned on the connection. Requires plt_ platform auth.
+         */
+        get: operations["listConnectionApprovals"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/connections/{connectionId}/approvals/{approvalId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a connection-scoped approval */
+        get: operations["getConnectionApproval"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/connections/{connectionId}/pending-approvals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List pending consensus approvals for a connection
+         * @description Returns pending approvals for agents provisioned on the connection,
+         *     including `action_payload` and `payload_hash` for consensus UX.
+         *     Requires plt_ platform auth.
+         */
+        get: operations["listConnectionPendingApprovals"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -6264,7 +6355,7 @@ export interface paths {
         /**
          * Chat with a running runtime agent
          * @description Human-only. Proxies to the runtime container's OpenAI-compatible
-         *     `POST /v1/chat/completions` (hermes / openclaw / openclaude chat bridge).
+         *     `POST /v1/chat/completions` (hermes / openclaw / openclaude / opencode chat bridge).
          *     Starts the runtime if stopped. Streams SSE when `Accept: text/event-stream`
          *     or `stream: true`. Conversation history is ephemeral (pass `messages`).
          *     Requires a public URL (shell access, Shroud sidecar, or HTTP hosting).
@@ -10470,6 +10561,28 @@ export interface components {
              */
             api_key_expires_at?: string | null;
         };
+        PlatformAppDeleteResponse: {
+            deleted: boolean;
+            soft_delete: boolean;
+            slug_released: boolean;
+            former_slug: string;
+        };
+        /** @description Provide `target_org_id` or `target_user_email` (owner/admin in destination org). */
+        TransferPlatformAppOwnershipRequest: {
+            /** Format: uuid */
+            target_org_id?: string;
+            /** Format: email */
+            target_user_email?: string;
+        };
+        TransferPlatformAppOwnershipResponse: {
+            /** Format: uuid */
+            app_id: string;
+            /** Format: uuid */
+            former_org_id: string;
+            /** Format: uuid */
+            new_org_id: string;
+            message: string;
+        };
         PlatformAppResponse: {
             /** Format: uuid */
             id?: string;
@@ -10863,6 +10976,10 @@ export interface components {
             expires_at?: string | null;
             /** Format: date-time */
             created_at: string;
+        };
+        ApprovalListResponse: {
+            approvals: components["schemas"]["ApprovalResponse"][];
+            total: number;
         };
         ApprovalStatusResponse: {
             /** @enum {string} */
@@ -19202,6 +19319,37 @@ export interface operations {
             };
         };
     };
+    transferPlatformAppOwnership: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Auth-Confirm": string;
+            };
+            path: {
+                appId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransferPlatformAppOwnershipRequest"];
+            };
+        };
+        responses: {
+            /** @description Ownership transferred */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransferPlatformAppOwnershipResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
     getPlatformAppStats: {
         parameters: {
             query?: never;
@@ -19441,6 +19589,30 @@ export interface operations {
             403: components["responses"]["Forbidden"];
         };
     };
+    getSpendPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appId: string;
+                policyId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Spend policy */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpendPolicyResponse"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
     deleteSpendPolicy: {
         parameters: {
             query?: never;
@@ -19463,10 +19635,38 @@ export interface operations {
             404: components["responses"]["NotFound"];
         };
     };
-    setUserSpendPolicy: {
+    getConnectionSpendPolicy: {
         parameters: {
             query?: never;
             header?: never;
+            path: {
+                connectionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Effective spend policy (or null) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        policy?: components["schemas"]["SpendPolicyResponse"] | null;
+                    };
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    setUserSpendPolicy: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional replay protection; same key + body returns cached response (409 on body mismatch). */
+                "Idempotency-Key"?: string;
+            };
             path: {
                 connectionId: string;
             };
@@ -19478,8 +19678,17 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Spend policy set */
+            /** @description Spend policy set (or idempotent replay) */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpendPolicyResponse"];
+                };
+            };
+            /** @description Spend policy created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -19489,6 +19698,93 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            /** @description Idempotency-Key reused with different body */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    listConnectionApprovals: {
+        parameters: {
+            query?: {
+                status?: string;
+                risk_tier?: number;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                connectionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Connection-scoped approvals */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApprovalListResponse"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getConnectionApproval: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connectionId: string;
+                approvalId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Approval detail */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApprovalResponse"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listConnectionPendingApprovals: {
+        parameters: {
+            query?: {
+                status?: string;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                connectionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Pending approvals list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PendingApprovalListResponse"];
+                };
+            };
+            404: components["responses"]["NotFound"];
         };
     };
     listApprovals: {
