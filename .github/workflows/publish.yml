@@ -13,6 +13,7 @@ permissions:
 jobs:
     publish:
         runs-on: ubuntu-latest
+        environment: npm
         steps:
             - uses: actions/checkout@v4
               with:
@@ -26,7 +27,6 @@ jobs:
             - uses: actions/setup-node@v4
               with:
                   node-version: 22
-                  registry-url: https://registry.npmjs.org
 
             - working-directory: sdk
               run: npm install
@@ -34,6 +34,10 @@ jobs:
             - working-directory: sdk
               run: npm run build
 
-            # Trusted Publishing (OIDC): npmjs.com → @1claw/sdk → Trusted Publisher (1clawAI/1claw-sdk).
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 22
+                  registry-url: https://registry.npmjs.org
+
             - working-directory: sdk
               run: npm publish --provenance --access public
