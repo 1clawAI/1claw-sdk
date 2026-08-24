@@ -1000,6 +1000,23 @@ const begin = await client.auth.beginPasskeyTxAssert({ tx_digest: "abc123...", a
 // ... complete ceremony, then send with X-Passkey-Token header
 ```
 
+## v0.57 — Platform API expansion
+
+SIWE wallet login, parameterized bootstrap, connection polling, entitlements, and inference budgets:
+
+```typescript
+// SIWE challenge + upsert (plt_ auth)
+const challenge = await client.platform.siweChallenge();
+// ... sign SIWE message, upsert with subject_token_type urn:1claw:params:oauth:token-type:siwe
+
+await client.platform.getConnection(connectionId);
+await client.platform.getConnectionUsage(connectionId);
+await client.platform.listEntitlements(connectionId);
+await client.platform.previewTemplate(appId, templateId, { parameters: { agent_name: "demo" } });
+
+await client.treasuryWallets.getInferenceBudget();
+```
+
 ## OpenAPI Types
 
 The SDK's request types are generated from the **OpenAPI 3.1** spec, published as [@1claw/openapi-spec](https://www.npmjs.com/package/@1claw/openapi-spec). Advanced users can access the raw generated types:
