@@ -3334,6 +3334,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/treasury/wallets/inference-budget": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get inference budget for current user
+         * @description Returns the user's remaining LLM inference allowance when connected via a platform app.
+         *     Includes allowance, spent, remaining USD, per-request cap, and billing period end.
+         */
+        get: operations["getUserInferenceBudget"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/webhooks": {
         parameters: {
             query?: never;
@@ -4116,6 +4137,54 @@ export interface paths {
         patch: operations["updatePlatformTemplate"];
         trace?: never;
     };
+    "/v1/platform/apps/{appId}/templates/{template_id}/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Preview resolved template spec
+         * @description Resolves `{{params.*}}` and `{{subject.*}}` placeholders in a template spec
+         *     without provisioning resources. Useful for validating parameterized bootstrap templates.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    appId: string;
+                    template_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["TemplatePreviewRequest"];
+                };
+            };
+            responses: {
+                /** @description Resolved template spec */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TemplatePreviewResponse"];
+                    };
+                };
+                404: components["responses"]["NotFound"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/platform/users/upsert": {
         parameters: {
             query?: never;
@@ -4168,6 +4237,57 @@ export interface paths {
                     content: {
                         "application/json": components["schemas"]["PlatformUserLinkRequiredResponse"];
                     };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/siwe/challenge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Issue SIWE nonce
+         * @description Creates a one-time nonce for Sign-In With Ethereum user provisioning.
+         *     Requires platform (`plt_`) authentication. The nonce expires in 5 minutes.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["SiweChallengeRequest"];
+                };
+            };
+            responses: {
+                /** @description Nonce issued */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SiweChallengeResponse"];
+                    };
+                };
+                /** @description SIWE domain not configured */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
                 };
             };
         };
@@ -4324,6 +4444,173 @@ export interface paths {
                     };
                     content?: never;
                 };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/connections/{connectionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get connection details
+         * @description Returns connection status, claim state, wallet address, and provisioned resource IDs.
+         *     Use for polling the claim loop after bootstrap.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    connectionId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Connection details */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ConnectionDetailResponse"];
+                    };
+                };
+                404: components["responses"]["NotFound"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/connections/{connectionId}/usage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get per-connection usage
+         * @description Returns inference spend for the current UTC month for this connection.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    connectionId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Usage summary */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ConnectionUsageResponse"];
+                    };
+                };
+                404: components["responses"]["NotFound"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/connections/{connectionId}/entitlements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List entitlement evaluations
+         * @description Returns on-chain entitlement watch status for the connection.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    connectionId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Entitlement watches */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["EntitlementsListResponse"];
+                    };
+                };
+                404: components["responses"]["NotFound"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/connections/{connectionId}/entitlements/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh entitlement evaluations
+         * @description Triggers an immediate entitlement monitor cycle for this connection's org.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    connectionId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Refresh accepted */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                404: components["responses"]["NotFound"];
             };
         };
         delete?: never;
@@ -10253,7 +10540,11 @@ export interface components {
         UpsertPlatformUserRequest: {
             /** @description OIDC JWT from the platform's IdP (verified against JWKS) */
             subject_token?: string;
-            /** @default urn:ietf:params:oauth:token-type:jwt */
+            /**
+             * @description Token type for subject_token. Use `urn:1claw:params:oauth:token-type:siwe`
+             *     with `siwe_message` and `siwe_signature` for wallet-based provisioning.
+             * @default urn:ietf:params:oauth:token-type:jwt
+             */
             subject_token_type: string;
             /**
              * Format: email
@@ -10261,6 +10552,20 @@ export interface components {
              */
             email?: string;
             display_name?: string;
+            /** @description EIP-4361 Sign-In With Ethereum message (required for SIWE upsert) */
+            siwe_message?: string;
+            /** @description Hex-encoded SIWE signature (required for SIWE upsert) */
+            siwe_signature?: string;
+            /**
+             * Format: uri
+             * @description Redirect URL after cross-org link consent
+             */
+            return_to?: string;
+            /**
+             * @description When true, creates a sub-org under the platform app's org
+             * @default false
+             */
+            create_sub_org: boolean;
         };
         PlatformUserResponse: {
             /** Format: uuid */
@@ -10314,6 +10619,13 @@ export interface components {
              * @description URL to redirect the user to after claiming resources.
              */
             return_to?: string;
+            /**
+             * @description Template parameters substituted as `{{params.*}}` during bootstrap.
+             *     Combined with `Idempotency-Key` header for params-aware idempotent replay.
+             */
+            parameters?: {
+                [key: string]: unknown;
+            };
         };
         BootstrapResponse: {
             /** Format: uri */
@@ -10644,6 +10956,25 @@ export interface components {
             allowed_tokens?: string[];
             /** @description Maximum number of transactions per 24h window */
             max_transactions_per_day?: number;
+            /** @description Monthly LLM inference allowance in USD (decimal string) */
+            inference_allowance_usd?: string;
+            /**
+             * @description Percent of allowance held in reserve (not spendable)
+             * @default 25
+             */
+            inference_reserved_pct: number;
+            /**
+             * @description When true, block inference when allowance is exhausted
+             * @default true
+             */
+            inference_hard_stop: boolean;
+            /**
+             * @default policy
+             * @enum {string}
+             */
+            inference_allowance_mode: "policy" | "credits";
+            /** @description Maximum estimated cost per LLM request in USD */
+            max_request_cost_usd?: string;
             /**
              * @description Human factor auth requirements for send/swap/export.
              *     Fields: send, swap, export (password_or_passkey | passkey_only | passkey_required | password_only | reauth_token_only),
@@ -10652,6 +10983,88 @@ export interface components {
             human_factor_auth?: {
                 [key: string]: unknown;
             };
+        };
+        SiweChallengeRequest: {
+            /** @description Optional SIWE domain override (defaults to platform app's siwe_domain) */
+            domain?: string;
+        };
+        SiweChallengeResponse: {
+            nonce: string;
+            /** @description Seconds until nonce expiry */
+            expires_in: number;
+            domain: string;
+        };
+        ConnectionDetailResponse: {
+            /** Format: uuid */
+            connection_id: string;
+            /** Format: uuid */
+            user_id: string;
+            status: string;
+            entitlement_status: string;
+            wallet_address?: string | null;
+            vault_ids: string[];
+            agent_ids: string[];
+            /** Format: date-time */
+            claimed_at?: string | null;
+            claim: components["schemas"]["ClaimStatusResponse"];
+        };
+        ClaimStatusResponse: {
+            /** @enum {string} */
+            status: "pending" | "active" | "claimed";
+            /** Format: date-time */
+            redeemed_at?: string | null;
+        };
+        ConnectionUsageResponse: {
+            /** Format: uuid */
+            connection_id: string;
+            /** @description UTC month (YYYY-MM) */
+            period: string;
+            inference_spent_usd: string;
+        };
+        EntitlementsListResponse: {
+            evaluations: components["schemas"]["EntitlementEvaluationResponse"][];
+        };
+        EntitlementEvaluationResponse: {
+            id: string;
+            status: string;
+            watch_kind: string;
+            chain: string;
+            holder_address: string;
+            last_value_raw?: string | null;
+            /** Format: date-time */
+            last_checked_at?: string | null;
+        };
+        TemplatePreviewRequest: {
+            parameters?: {
+                [key: string]: unknown;
+            };
+            subject?: {
+                user_id?: string;
+                external_subject?: string;
+                wallet_address?: string;
+                email?: string;
+            };
+        };
+        TemplatePreviewResponse: {
+            resolved_spec: {
+                [key: string]: unknown;
+            };
+        };
+        InferenceBudgetResponse: {
+            allowance_usd: string;
+            spent_usd: string;
+            remaining_usd: string;
+            reserved_pct: number;
+            max_request_cost_usd: string;
+            /** Format: date-time */
+            period_end: string;
+            /** Format: uuid */
+            connection_id?: string | null;
+        };
+        InferenceBudgetUnconfiguredResponse: {
+            allowance_usd?: string | null;
+            remaining_usd?: unknown;
+            message?: string;
         };
         SpendPolicyResponse: {
             /** Format: uuid */
@@ -10667,6 +11080,11 @@ export interface components {
             allowed_chains?: string[];
             allowed_tokens?: string[];
             max_transactions_per_day?: number | null;
+            inference_allowance_usd?: string | null;
+            inference_reserved_pct?: number | null;
+            inference_hard_stop?: boolean | null;
+            inference_allowance_mode?: string | null;
+            max_request_cost_usd?: string | null;
             human_factor_auth?: {
                 [key: string]: unknown;
             } | null;
@@ -18304,6 +18722,27 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+        };
+    };
+    getUserInferenceBudget: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Inference budget (or unconfigured message) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InferenceBudgetResponse"] | components["schemas"]["InferenceBudgetUnconfiguredResponse"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
         };
     };
     listWebhooks: {

@@ -228,6 +228,16 @@ export class TreasuryWalletsResource {
         return this.http.request("GET", "/v1/treasury/wallets/auth-policy");
     }
 
+    /** Get remaining LLM inference allowance for platform-connected users. */
+    async getInferenceBudget(): Promise<
+        OneclawResponse<Record<string, unknown>>
+    > {
+        return this.http.request(
+            "GET",
+            "/v1/treasury/wallets/inference-budget",
+        );
+    }
+
     /** Import an existing private key as a treasury wallet. Requires re-authentication via password. */
     async importWallet(
         chain: string,

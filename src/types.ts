@@ -1730,6 +1730,10 @@ export interface UpsertPlatformUserRequest {
     subject_token_type?: string;
     email?: string;
     display_name?: string;
+    siwe_message?: string;
+    siwe_signature?: string;
+    return_to?: string;
+    create_sub_org?: boolean;
 }
 
 export interface LinkRequiredInfo {
@@ -1765,6 +1769,7 @@ export interface PlatformConnectedUserListResponse {
 export interface BootstrapRequest {
     template_id?: string;
     return_to?: string;
+    parameters?: Record<string, unknown>;
 }
 
 export interface BootstrapSigningKey {

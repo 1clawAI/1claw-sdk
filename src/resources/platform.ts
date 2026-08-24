@@ -37,6 +37,11 @@ export interface CreateSpendPolicyRequest {
     allowed_chains?: string[];
     allowed_tokens?: string[];
     max_transactions_per_day?: number;
+    inference_allowance_usd?: string;
+    inference_reserved_pct?: number;
+    inference_hard_stop?: boolean;
+    inference_allowance_mode?: string;
+    max_request_cost_usd?: string;
 }
 
 export interface SpendPolicyResponse {
@@ -50,8 +55,84 @@ export interface SpendPolicyResponse {
     allowed_chains?: string[];
     allowed_tokens?: string[];
     max_transactions_per_day?: number;
+    inference_allowance_usd?: string;
+    inference_reserved_pct?: number;
+    inference_hard_stop?: boolean;
+    inference_allowance_mode?: string;
+    max_request_cost_usd?: string;
     created_at: string;
     updated_at: string;
+}
+
+export interface SiweChallengeRequest {
+    domain?: string;
+}
+
+export interface SiweChallengeResponse {
+    nonce: string;
+    expires_in: number;
+    domain: string;
+}
+
+export interface ClaimStatusResponse {
+    status: string;
+    redeemed_at?: string;
+}
+
+export interface ConnectionDetailResponse {
+    connection_id: string;
+    user_id: string;
+    status: string;
+    entitlement_status: string;
+    wallet_address?: string;
+    vault_ids: string[];
+    agent_ids: string[];
+    claimed_at?: string;
+    claim: ClaimStatusResponse;
+}
+
+export interface ConnectionUsageResponse {
+    connection_id: string;
+    period: string;
+    inference_spent_usd: string;
+}
+
+export interface EntitlementEvaluationResponse {
+    id: string;
+    status: string;
+    watch_kind: string;
+    chain: string;
+    holder_address: string;
+    last_value_raw?: string;
+    last_checked_at?: string;
+}
+
+export interface EntitlementsListResponse {
+    evaluations: EntitlementEvaluationResponse[];
+}
+
+export interface TemplatePreviewRequest {
+    parameters?: Record<string, unknown>;
+    subject?: {
+        user_id?: string;
+        external_subject?: string;
+        wallet_address?: string;
+        email?: string;
+    };
+}
+
+export interface TemplatePreviewResponse {
+    resolved_spec: Record<string, unknown>;
+}
+
+export interface InferenceBudgetResponse {
+    allowance_usd: string;
+    spent_usd: string;
+    remaining_usd: string;
+    reserved_pct: number;
+    max_request_cost_usd: string;
+    period_end: string;
+    connection_id?: string;
 }
 
 export interface SpendPolicyListResponse {
@@ -476,6 +557,71 @@ export class PlatformResource {
         return this.http.request<PlatformAutomationsResponse>(
             "GET",
             `/v1/platform/apps/${appId}/automations`,
+        );
+    }
+
+    /** SIWE challenge for wallet-native user provisioning. */
+    async siweChallenge(
+        data?: SiweChallengeRequest,
+    ): Promise<OneclawResponse<SiweChallengeResponse>> {
+        return this.http.request(
+            "POST",
+            "/v1/platform/siwe/challenge",
+            { body: data ?? {} },
+        );
+    }
+
+    /** Get connection details including claim and entitlement status. */
+    async getConnection(
+        connectionId: string,
+    ): Promise<OneclawResponse<ConnectionDetailResponse>> {
+        return this.http.request(
+            "GET",
+            `/v1/platform/connections/${connectionId}`,
+        );
+    }
+
+    /** Per-connection inference usage for the current billing period. */
+    async getConnectionUsage(
+        connectionId: string,
+    ): Promise<OneclawResponse<ConnectionUsageResponse>> {
+        return this.http.request(
+            "GET",
+            `/v1/platform/connections/${connectionId}/usage`,
+        );
+    }
+
+    /** List on-chain entitlement evaluations for a connection. */
+    async listEntitlements(
+        connectionId: string,
+    ): Promise<OneclawResponse<EntitlementsListResponse>> {
+        return this.http.request(
+            "GET",
+            `/v1/platform/connections/${connectionId}/entitlements`,
+        );
+    }
+
+    /** Trigger an immediate entitlement monitor refresh for the connection's org. */
+    async refreshEntitlements(
+        connectionId: string,
+    ): Promise<OneclawResponse<void>> {
+        return this.http.request(
+            "POST",
+            `/v1/platform/connections/${connectionId}/entitlements/refresh`,
+            { acceptStatuses: [202] },
+        );
+    }
+
+    /** Dry-run template parameter substitution. */
+    async previewTemplate(
+        appId: string,
+        templateId: string,
+        data: TemplatePreviewRequest,
+    ): Promise<OneclawResponse<TemplatePreviewResponse>> {
+        return this.http.request(
+            "POST",
+            `/v1/platform/apps/${appId}/templates/${templateId}/preview`,
+            { body: data },
         );
     }
 
