@@ -1718,6 +1718,171 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/agents/{agent_id}/accounts/migrate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * EOA to Safe migration wizard
+         * @description Human-only. Provisions counterfactual Safe and returns sweep plan. Onchain module broadcast stubbed pre-audit.
+         */
+        post: operations["migrateAgentToSafe"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/accounts/{chain}/deprecate-eoa": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark agent EOA account deprecated */
+        post: operations["deprecateAgentEoa"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/accounts/{chain}/deploy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Lazy-deploy counterfactual Safe (stub)
+         * @description Human-only. Broadcasts Safe deployment when Guard audit completes. Returns 501 pre-audit.
+         */
+        post: operations["deployAgentSafeAccount"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/org/safe/sync-allowances": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reconcile Safe allowance targets (org admin)
+         * @description Compiles tx_daily_limit targets for Safe agents. Onchain read/write stubbed pre-audit.
+         */
+        post: operations["syncOrgSafeAllowances"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/treasury/{treasury_id}/safe/roles-sync": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Sync treasury Safe Roles module (stub)
+         * @description Human-only. Reconciles on-chain Roles config with agent guardrails. Returns 501 pre-audit.
+         */
+        post: operations["treasurySafeRolesSync"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/safe/cosign": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Enable Vault co-signer (stub) */
+        post: operations["enableSafeCosign"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/safe/passkey-enroll": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Enroll passkey Safe owner (stub) */
+        post: operations["enrollSafePasskeyOwner"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/safe/timelock": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Configure Zodiac timelock (stub) */
+        post: operations["configureSafeTimelock"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/safe/erc4337": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Enable ERC-4337 Safe lane (stub) */
+        post: operations["enableSafeErc4337"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/agents/{agent_id}/guardrails/replay": {
         parameters: {
             query?: never;
@@ -7819,7 +7984,9 @@ export interface components {
             xrpl_allowed_tx_types?: string[];
             /**
              * @description Per-chain guardrail overrides. Keys are signing chains (ethereum, bitcoin, solana, xrp, cardano, tron).
-             *     Each value may include max_value, daily_limit, to_allowlist, token_allowlist, max_per_day, overhead_budget, max_ata_creates_per_day.
+             *     Each value may include max_value, daily_limit, to_allowlist, token_allowlist, max_per_day,
+             *     overhead_budget, max_ata_creates_per_day, max_fee_per_gas_gwei, max_gas_limit,
+             *     gas_daily_budget_native (UTC-day cumulative EVM gas estimate in native units).
              *     Strictest of global and per-chain limits wins. Daily limits apply per chain family spend, not cross-chain totals.
              */
             per_chain_guardrails?: {
@@ -8048,7 +8215,8 @@ export interface components {
             xrpl_allowed_tx_types?: string[];
             /**
              * @description Per-chain guardrail overrides. Keys are signing chains (ethereum, bitcoin, solana, xrp, cardano, tron).
-             *     Each value may include max_value, daily_limit, to_allowlist, token_allowlist (legacy *_eth keys accepted).
+             *     Each value may include max_value, daily_limit, to_allowlist, token_allowlist (legacy *_eth keys accepted),
+             *     max_fee_per_gas_gwei, max_gas_limit, gas_daily_budget_native (UTC-day cumulative EVM gas in native units).
              *     Strictest of global and per-chain limits wins. Daily limits apply per chain family spend, not cross-chain totals.
              */
             per_chain_guardrails?: {
@@ -11687,8 +11855,33 @@ export interface components {
             chain?: string;
             account_type?: string;
             address?: string;
+            safe_version?: string;
+            modules_enabled?: string[];
+            deploy_status?: string;
+            cosign_enabled?: boolean;
+            metadata?: Record<string, never>;
             /** Format: date-time */
             created_at?: string;
+            /** Format: date-time */
+            updated_at?: string;
+        };
+        MigrationPlanResponse: {
+            /** Format: uuid */
+            agent_id?: string;
+            chain?: string;
+            safe_address?: string;
+            safe_version?: string;
+            modules?: string[];
+            eoa_address?: string;
+            sweep_instructions?: {
+                asset?: string;
+                action?: string;
+                note?: string;
+            }[];
+            roles_config_hash?: string;
+            allowance_config_hash?: string;
+            warnings?: string[];
+            deploy_status?: string;
         };
         ProvisionAgentAccountRequest: {
             chain: string;
@@ -11704,6 +11897,24 @@ export interface components {
             name?: string;
             address?: string;
             version?: string;
+        };
+        AllowanceReconcileReport: {
+            /** Format: uuid */
+            org_id?: string;
+            agents_checked?: number;
+            compiled?: {
+                [key: string]: unknown;
+            }[];
+            drift_detected?: {
+                [key: string]: unknown;
+            }[];
+            /** @description counterfactual when on-chain broadcast is stubbed pre-audit */
+            onchain_sync?: string;
+        };
+        NotImplementedResponse: {
+            error: string;
+            phase: string;
+            message: string;
         };
         CreateContractAbiRequest: {
             chain: string;
@@ -15377,6 +15588,217 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+        };
+    };
+    migrateAgentToSafe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    chain: string;
+                    deprecate_eoa?: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Migration plan */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MigrationPlanResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deprecateAgentEoa: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+                chain: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Updated account */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentAccountResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deployAgentSafeAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+                chain: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            /** @description Not implemented (Phase 5.1) */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotImplementedResponse"];
+                };
+            };
+        };
+    };
+    syncOrgSafeAllowances: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Reconciliation report */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AllowanceReconcileReport"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    treasurySafeRolesSync: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                treasury_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            /** @description Not implemented (Phase 5.9) */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotImplementedResponse"];
+                };
+            };
+        };
+    };
+    enableSafeCosign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Not implemented (Phase 5.2) */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    enrollSafePasskeyOwner: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Not implemented (Phase 5.5) */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    configureSafeTimelock: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Not implemented (Phase 5.6) */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    enableSafeErc4337: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Not implemented (Phase 5.8) */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     replayAgentGuardrails: {

@@ -548,6 +548,15 @@ export class AgentsResource {
     ): Promise<OneclawResponse<GuardrailReplayResponse>> {
         return this.http.request("POST", `/v1/agents/${agentId}/guardrails/replay`, { body });
     }
+
+    /** Public Safe module registry for a chain (Guard, Zodiac modules). */
+    async getSafeModuleRegistry(
+        chain: string,
+    ): Promise<OneclawResponse<{ chain: string; modules: SafeModuleInfo[] }>> {
+        return this.http.request("GET", `/v1/safe/module-registry/${encodeURIComponent(chain)}`, {
+            skipAuth: true,
+        });
+    }
 }
 
 export interface AgentAccount {
@@ -592,6 +601,12 @@ export interface SafeStubResponse {
     error: string;
     phase: string;
     message: string;
+}
+
+export interface SafeModuleInfo {
+    name: string;
+    address: string;
+    version?: string;
 }
 
 export interface GuardrailReplayResponse {

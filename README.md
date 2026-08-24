@@ -961,6 +961,44 @@ await client.signingKeys.import(agentId, "ethereum", {
 }, { authConfirm: "your-password" });
 ```
 
+## v0.56 — Safe accounts, guardrail governance, HFA
+
+Phase 5 Safe foundation and v0.56 guardrail governance APIs:
+
+```typescript
+// Agent on-chain accounts (EOA + counterfactual Safe)
+const { data: accounts } = await client.agents.listAccounts(agentId);
+await client.agents.migrateToSafe(agentId, { chain: "ethereum", deprecate_eoa: true });
+await client.agents.deprecateEoaAccount(agentId, "ethereum");
+await client.agents.syncOrgSafeAllowances(); // owner/admin
+
+// Public Safe module registry (Guard + Zodiac addresses per chain)
+const registry = await client.agents.getSafeModuleRegistry("ethereum");
+
+// Guardrail widening returns 202 — resubmit PATCH with approval_id after decide
+await client.agents.update(agentId, {
+    tx_to_allowlist: ["0xNewRecipient..."],
+    approval_id: "uuid-from-202-response",
+});
+
+// Guardrail governance (owner/admin)
+await client.org.getGuardrailShadowReport({ since: "2026-01-01T00:00:00Z" });
+await client.org.listGuardrailRevisions();
+await client.agents.replayGuardrails(agentId, {
+    days: 7,
+    draft_guardrails: { tx_max_value_eth: "0.1" },
+});
+
+// Human Factor Auth — treasury send/swap step-up policies
+await client.auth.getHumanFactorAuth();
+await client.auth.setHumanFactorAuth({ require_passkey: true, require_totp: false });
+const embedded = await client.treasuryWallets.getAuthPolicy(); // wallet-react / embedded clients
+
+// Passkey tx-assert for treasury send/swap (alternative to X-Auth-Confirm password)
+const begin = await client.auth.beginPasskeyTxAssert({ tx_digest: "abc123...", action: "swap" });
+// ... complete ceremony, then send with X-Passkey-Token header
+```
+
 ## OpenAPI Types
 
 The SDK's request types are generated from the **OpenAPI 3.1** spec, published as [@1claw/openapi-spec](https://www.npmjs.com/package/@1claw/openapi-spec). Advanced users can access the raw generated types:
