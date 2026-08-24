@@ -4,6 +4,7 @@ on:
     push:
         tags:
             - "v*"
+    workflow_dispatch:
 
 permissions:
     contents: read
@@ -31,6 +32,8 @@ jobs:
               run: npm install
 
             - working-directory: sdk
+              run: npm run build
+
+            # Trusted Publishing (OIDC): npmjs.com → @1claw/sdk → Trusted Publisher (1clawAI/1claw-sdk).
+            - working-directory: sdk
               run: npm publish --provenance --access public
-              env:
-                  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
