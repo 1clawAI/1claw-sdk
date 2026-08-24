@@ -514,4 +514,18 @@ export class AuthResource {
             "/v1/oauth/userinfo",
         );
     }
+
+    /** Get effective human factor auth policy for treasury wallet actions. */
+    async getHumanFactorAuth(): Promise<
+        OneclawResponse<{ policy: Record<string, unknown>; source: string }>
+    > {
+        return this.http.request("GET", "/v1/auth/human-factor-auth");
+    }
+
+    /** Set user-level human factor auth policy. */
+    async setHumanFactorAuth(
+        policy: Record<string, unknown>,
+    ): Promise<OneclawResponse<{ policy: Record<string, unknown>; source: string }>> {
+        return this.http.request("PUT", "/v1/auth/human-factor-auth", { body: { policy } });
+    }
 }

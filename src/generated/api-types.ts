@@ -540,6 +540,28 @@ export interface paths {
         patch: operations["updateSecuritySettings"];
         trace?: never;
     };
+    "/v1/auth/human-factor-auth": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get effective human factor auth policy
+         * @description Returns the resolved HFA policy for treasury wallet send, swap, and export.
+         *     Precedence: user override → spend policy → platform defaults.
+         */
+        get: operations["getHumanFactorAuth"];
+        /** Set user human factor auth policy */
+        put: operations["upsertHumanFactorAuth"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/auth/mfa/status": {
         parameters: {
             query?: never;
@@ -1675,6 +1697,64 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/agents/{agent_id}/accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List agent on-chain accounts */
+        get: operations["listAgentAccounts"];
+        put?: never;
+        /**
+         * Provision an agent account record
+         * @description Human-only. Creates a DB record for an EOA or Safe account (Safe onchain sync is stubbed).
+         */
+        post: operations["provisionAgentAccount"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/guardrails/replay": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Dry-run guardrail changes against recent transactions
+         * @description Human-only. Compares draft guardrails against recent agent transactions.
+         */
+        post: operations["replayAgentGuardrails"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/safe/module-registry/{chain}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Safe module registry entries for a chain */
+        get: operations["getSafeModuleRegistry"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/agents/{agent_id}/delegations": {
         parameters: {
             query?: never;
@@ -2070,6 +2150,26 @@ export interface paths {
          * @description Returns the vault id for the caller's org agent-keys vault (used for revealing agent identity keys). Users only; 404 if the vault does not exist.
          */
         get: operations["getAgentKeysVault"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/org/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Organization operational status
+         * @description Returns whether the org is emergency-frozen (blocks agent tx/execution).
+         */
+        get: operations["getOrgStatus"];
         put?: never;
         post?: never;
         delete?: never;
@@ -6407,6 +6507,47 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/org/guardrail-shadow-report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get guardrail shadow divergence report
+         * @description Returns Convention 6 shadow-mode violations (`guardrail_shadow.would_deny` audit events)
+         *     grouped by reason code. Owner/admin only.
+         */
+        get: operations["getGuardrailShadowReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/org/guardrail-revisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List guardrail revision history
+         * @description Audit trail of agent and binding guardrail changes. Owner/admin only.
+         */
+        get: operations["listGuardrailRevisions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/org/contract-abis": {
         parameters: {
             query?: never;
@@ -7903,6 +8044,10 @@ export interface components {
             per_environment_guardrails?: {
                 [key: string]: unknown;
             };
+            /** @description Recipient address screening policy. `mode` may be `off`, `deny`, or `approve`. */
+            address_screening_policy?: {
+                [key: string]: unknown;
+            };
         };
         AgentResponse: {
             /** Format: uuid */
@@ -8071,6 +8216,10 @@ export interface components {
             env_auto_resolve?: boolean;
             /** @description Per-environment guardrail overrides keyed by environment slug. */
             per_environment_guardrails?: {
+                [key: string]: unknown;
+            };
+            /** @description Recipient address screening policy. `mode` may be `off`, `deny`, or `approve`. */
+            address_screening_policy?: {
                 [key: string]: unknown;
             };
         };
@@ -10237,6 +10386,14 @@ export interface components {
             allowed_tokens?: string[];
             /** @description Maximum number of transactions per 24h window */
             max_transactions_per_day?: number;
+            /**
+             * @description Human factor auth requirements for send/swap/export.
+             *     Fields: send, swap, export (password_or_passkey | passkey_only | passkey_required | password_only | reauth_token_only),
+             *     conditional.require_passkey_above_usd, conditional.require_passkey_for_new_recipient.
+             */
+            human_factor_auth?: {
+                [key: string]: unknown;
+            };
         };
         SpendPolicyResponse: {
             /** Format: uuid */
@@ -10252,8 +10409,31 @@ export interface components {
             allowed_chains?: string[];
             allowed_tokens?: string[];
             max_transactions_per_day?: number | null;
+            human_factor_auth?: {
+                [key: string]: unknown;
+            } | null;
             /** Format: date-time */
             created_at: string;
+        };
+        HumanFactorAuthPolicy: {
+            /** @enum {string} */
+            send?: "password_or_passkey" | "passkey_only" | "passkey_required" | "password_only" | "reauth_token_only";
+            /** @enum {string} */
+            swap?: "password_or_passkey" | "passkey_only" | "passkey_required" | "password_only" | "reauth_token_only";
+            /** @enum {string} */
+            export?: "password_or_passkey" | "passkey_only" | "passkey_required" | "password_only" | "reauth_token_only";
+            conditional?: {
+                require_passkey_above_usd?: string | null;
+                require_passkey_for_new_recipient?: boolean;
+            };
+        };
+        UpsertHumanFactorAuthRequest: {
+            policy: components["schemas"]["HumanFactorAuthPolicy"];
+        };
+        HumanFactorAuthResponse: {
+            policy: components["schemas"]["HumanFactorAuthPolicy"];
+            /** @description user | spend_policy | default */
+            source: string;
         };
         RiskEvent: {
             /** Format: uuid */
@@ -11339,6 +11519,106 @@ export interface components {
             resource_path?: string;
             /** Format: date-time */
             created_at?: string;
+        };
+        GuardrailShadowReportResponse: {
+            /** Format: uuid */
+            org_id?: string;
+            /** Format: date-time */
+            since?: string;
+            /** Format: date-time */
+            until?: string;
+            /** Format: int64 */
+            total_would_deny?: number;
+            by_reason?: components["schemas"]["GuardrailShadowReasonRow"][];
+        };
+        GuardrailShadowReasonRow: {
+            reason_code?: string;
+            /** Format: int64 */
+            would_deny_count?: number;
+            /** Format: int64 */
+            enforced_count?: number;
+        };
+        GuardrailRevisionListResponse: {
+            revisions?: components["schemas"]["GuardrailRevisionRow"][];
+        };
+        GuardrailRevisionRow: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            org_id?: string;
+            /** @enum {string} */
+            resource_type?: "agent" | "binding";
+            /** Format: uuid */
+            resource_id?: string;
+            /** Format: uuid */
+            actor_id?: string;
+            before_json?: {
+                [key: string]: unknown;
+            };
+            after_json?: {
+                [key: string]: unknown;
+            };
+            /** @enum {string} */
+            change_kind?: "narrowing" | "widening" | "neutral";
+            /** Format: uuid */
+            approval_id?: string | null;
+            /** Format: date-time */
+            created_at?: string;
+        };
+        GuardrailReplayRequest: {
+            days?: number;
+            draft_guardrails?: {
+                [key: string]: unknown;
+            };
+            draft_approval_policy?: {
+                [key: string]: unknown;
+            };
+        };
+        GuardrailReplayResponse: {
+            /** Format: uuid */
+            agent_id?: string;
+            /** Format: int64 */
+            window_days?: number;
+            /** Format: int64 */
+            allowed?: number;
+            /** Format: int64 */
+            denied?: number;
+            /** Format: int64 */
+            would_require_approval?: number;
+            samples?: {
+                [key: string]: unknown;
+            }[];
+        };
+        AgentAccountListResponse: {
+            accounts?: components["schemas"]["AgentAccountResponse"][];
+        };
+        AgentAccountResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            org_id?: string;
+            /** Format: uuid */
+            agent_id?: string;
+            chain?: string;
+            account_type?: string;
+            address?: string;
+            /** Format: date-time */
+            created_at?: string;
+        };
+        ProvisionAgentAccountRequest: {
+            chain: string;
+            /** @default eoa */
+            account_type: string;
+            address?: string;
+        };
+        SafeModuleRegistryResponse: {
+            chain?: string;
+            modules?: components["schemas"]["SafeModuleInfo"][];
+        };
+        SafeModuleInfo: {
+            name?: string;
+            address?: string;
+            version?: string;
         };
         CreateContractAbiRequest: {
             chain: string;
@@ -12891,6 +13171,52 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    getHumanFactorAuth: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Effective HFA policy */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HumanFactorAuthResponse"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    upsertHumanFactorAuth: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpsertHumanFactorAuthRequest"];
+            };
+        };
+        responses: {
+            /** @description Updated policy */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HumanFactorAuthResponse"];
+                };
             };
             403: components["responses"]["Forbidden"];
         };
@@ -14900,6 +15226,111 @@ export interface operations {
             404: components["responses"]["NotFound"];
         };
     };
+    listAgentAccounts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Agent accounts */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentAccountListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    provisionAgentAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProvisionAgentAccountRequest"];
+            };
+        };
+        responses: {
+            /** @description Account provisioned */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentAccountResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    replayAgentGuardrails: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["GuardrailReplayRequest"];
+            };
+        };
+        responses: {
+            /** @description Replay report */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GuardrailReplayResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getSafeModuleRegistry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                chain: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Module registry */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SafeModuleRegistryResponse"];
+                };
+            };
+        };
+    };
     listDelegations: {
         parameters: {
             query?: never;
@@ -15695,6 +16126,40 @@ export interface operations {
             };
             /** @description Agent-keys vault not found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getOrgStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current org status */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        org_id: string;
+                        /** @enum {string} */
+                        status: "active" | "frozen";
+                        /** Format: date-time */
+                        frozen_at?: string | null;
+                    };
+                };
+            };
+            /** @description Forbidden */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -21062,6 +21527,53 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PolicyShadowReportResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    getGuardrailShadowReport: {
+        parameters: {
+            query?: {
+                since?: string;
+                until?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Guardrail shadow report */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GuardrailShadowReportResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    listGuardrailRevisions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Guardrail revisions */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GuardrailRevisionListResponse"];
                 };
             };
             401: components["responses"]["Unauthorized"];
