@@ -536,6 +536,10 @@ export interface paths {
          * @description Disabling `require_passkey_for_vaults` requires `X-Auth-Confirm`
          *     (purpose `security.vault_passkey.disable`) with a passkey or TOTP
          *     when either is enrolled.
+         *
+         *     Disabling `require_passkey_for_mfa` requires `X-Auth-Confirm`
+         *     (purpose `security.mfa_passkey.disable`) with a passkey or TOTP
+         *     when either is enrolled.
          */
         patch: operations["updateSecuritySettings"];
         trace?: never;
@@ -624,6 +628,40 @@ export interface paths {
         put?: never;
         /** Verify MFA code during login */
         post: operations["mfaVerify"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/mfa/passkey/begin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Begin passkey MFA verification during login */
+        post: operations["mfaPasskeyBegin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/mfa/passkey/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Complete passkey MFA verification during login */
+        post: operations["mfaPasskeyComplete"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7443,12 +7481,21 @@ export interface components {
             refresh_token?: string;
             mfa_required?: boolean;
             mfa_token?: string;
+            /**
+             * @description When MFA is required, which second factor to collect
+             * @enum {string}
+             */
+            mfa_method?: "totp" | "passkey";
         };
         TokenResponse: {
             access_token: string;
             token_type: string;
             expires_in?: number;
             refresh_token?: string;
+            mfa_required?: boolean;
+            mfa_token?: string;
+            /** @enum {string} */
+            mfa_method?: "totp" | "passkey";
         };
         AgentTokenRequest: {
             /**
@@ -7538,6 +7585,9 @@ export interface components {
         };
         MfaStatusResponse: {
             enabled?: boolean;
+            eligible?: boolean;
+            totp_enabled?: boolean;
+            passkey_mfa_enabled?: boolean;
         };
         MfaSetupResponse: {
             otpauth_uri?: string;
@@ -10673,6 +10723,13 @@ export interface components {
             type: "public-key";
             transports?: string[];
         };
+        MfaPasskeyCompleteRequest: {
+            mfa_token: string;
+            credential_id: string;
+            authenticator_data: string;
+            client_data_json: string;
+            signature: string;
+        };
         GuardrailWideningQueuedResponse: {
             /** @enum {string} */
             status: "awaiting_approval";
@@ -13438,6 +13495,7 @@ export interface operations {
                 content: {
                     "application/json": {
                         require_passkey_for_vaults?: boolean;
+                        require_passkey_for_mfa?: boolean;
                         passkey_count?: number;
                     };
                 };
@@ -13457,6 +13515,7 @@ export interface operations {
             content: {
                 "application/json": {
                     require_passkey_for_vaults?: boolean;
+                    require_passkey_for_mfa?: boolean;
                 };
             };
         };
@@ -13592,6 +13651,58 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["MfaVerifyRequest"];
+            };
+        };
+        responses: {
+            /** @description MFA verified, JWT issued */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TokenResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    mfaPasskeyBegin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    mfa_token: string;
+                };
+            };
+        };
+        responses: {
+            /** @description WebAuthn challenge */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PasskeyAssertBeginResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+        };
+    };
+    mfaPasskeyComplete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MfaPasskeyCompleteRequest"];
             };
         };
         responses: {
