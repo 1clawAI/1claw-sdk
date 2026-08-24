@@ -10310,11 +10310,19 @@ export interface components {
             /** Format: date-time */
             expires_at?: string | null;
         };
+        /**
+         * @description Stable snake_case reason codes for guardrail violations (Convention 1).
+         *     Shadow-mode `"log"` emits the same codes in `guardrail_shadow.would_deny`
+         *     audit events with `enforced: false`. 202 HITL responses use
+         *     `approval_available: true` instead of a deny reason_code.
+         * @enum {string}
+         */
+        GuardrailReasonCode: "binding_rpm_exceeded" | "agent_rpm_exceeded" | "graphql_mutation_blocked" | "graphql_depth_exceeded" | "graphql_parse_failed" | "graphql_introspection_blocked" | "response_too_large" | "request_too_large" | "method_not_allowed" | "header_not_allowed" | "dns_private_ip_blocked" | "agent_suspended" | "outside_time_window" | "secret_in_request" | "concurrency_exceeded" | "org_frozen" | "price_unavailable" | "gas_fee_exceeded" | "unlimited_approval_blocked" | "tx_per_recipient_limit_exceeded" | "tx_max_value_exceeded" | "tx_daily_limit_exceeded" | "delegation_signing_blocked" | "recipient_screening_failed" | "screening_provider_unavailable" | "human_factor_auth_required" | "register_passkey_required";
+        /** @description Convention 1 machine-readable guardrail denial JSON body. */
         GuardrailViolation: {
             /** @enum {string} */
             error: "guardrail_violation";
-            /** @enum {string} */
-            reason_code: "binding_rpm_exceeded" | "agent_rpm_exceeded" | "graphql_mutation_blocked" | "graphql_depth_exceeded" | "graphql_parse_failed" | "graphql_introspection_blocked" | "response_too_large" | "request_too_large" | "method_not_allowed" | "header_not_allowed" | "dns_private_ip_blocked" | "agent_suspended" | "outside_time_window" | "secret_in_request" | "concurrency_exceeded" | "org_frozen";
+            reason_code: components["schemas"]["GuardrailReasonCode"];
             limit?: string | null;
             current?: string | null;
             attempted?: string | null;
@@ -10323,6 +10331,8 @@ export interface components {
             retry_after_seconds?: number | null;
             detail?: string | null;
         };
+        /** @description Alias of GuardrailViolation (Convention 1 JSON shape). */
+        GuardrailDenial: components["schemas"]["GuardrailViolation"];
         EmailOtpVerifyResponse: {
             /** @description JWT access token */
             token: string;
