@@ -217,6 +217,17 @@ export class TreasuryWalletsResource {
         );
     }
 
+    /** Get effective human factor auth policy for embedded wallet clients. */
+    async getAuthPolicy(): Promise<
+        OneclawResponse<{
+            policy: Record<string, unknown>;
+            source: string;
+            registered_passkeys: number;
+        }>
+    > {
+        return this.http.request("GET", "/v1/treasury/wallets/auth-policy");
+    }
+
     /** Import an existing private key as a treasury wallet. Requires re-authentication via password. */
     async importWallet(
         chain: string,

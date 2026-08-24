@@ -3085,6 +3085,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/treasury/wallets/auth-policy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get effective human factor auth policy for embedded clients
+         * @description Returns the resolved human factor auth (HFA) policy governing treasury
+         *     wallet send, swap, and export, plus the number of passkeys registered
+         *     for the calling user. Intended for embedded wallet clients; equivalent
+         *     to GET /v1/auth/human-factor-auth with an additional passkey count.
+         *     Precedence: user override → platform app → spend policy → defaults.
+         */
+        get: operations["getTreasuryAuthPolicy"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/treasury/wallets/spend-policy": {
         parameters: {
             query?: never;
@@ -4868,9 +4892,10 @@ export interface paths {
         put?: never;
         /**
          * Begin passkey transaction authorization
-         * @description Requires `tx_digest` — SHA-256 hex of canonical `chain|to|value_wei|data`
-         *     for the treasury send being authorized. The server recomputes this digest
-         *     on send and rejects passkey tokens that do not match.
+         * @description Requires `tx_digest` — SHA-256 hex of the canonical digest for the
+         *     treasury action being authorized (`send` or `swap`). The server
+         *     recomputes this digest on send/swap and rejects passkey tokens that
+         *     do not match.
          */
         post: operations["passkeyTxAssertBegin"];
         delete?: never;
@@ -8048,6 +8073,11 @@ export interface components {
             address_screening_policy?: {
                 [key: string]: unknown;
             };
+            /**
+             * Format: uuid
+             * @description Approved policy_change id when applying a queued guardrail widening. Resubmit PATCH with this field after the approval has been approved via POST /v1/approvals/{approval_id}/decide.
+             */
+            approval_id?: string;
         };
         AgentResponse: {
             /** Format: uuid */
@@ -10442,8 +10472,48 @@ export interface components {
         };
         HumanFactorAuthResponse: {
             policy: components["schemas"]["HumanFactorAuthPolicy"];
-            /** @description user | spend_policy | default */
+            /** @description user | platform_app | spend_policy | default */
             source: string;
+        };
+        TreasuryAuthPolicyResponse: {
+            policy: components["schemas"]["HumanFactorAuthPolicy"];
+            /** @description user | platform_app | spend_policy | default */
+            source: string;
+            /** @description Number of WebAuthn passkeys registered for the calling user. */
+            registered_passkeys: number;
+        };
+        PasskeyTxAssertBeginRequest: {
+            /** @description 64-char hex SHA-256 of canonical send or swap params */
+            tx_digest: string;
+            /**
+             * @description Treasury action being authorized. Defaults to `send`.
+             * @default send
+             * @enum {string}
+             */
+            action: "send" | "swap";
+        };
+        PasskeyAssertBeginResponse: {
+            challenge: string;
+            rp_id: string;
+            timeout: number;
+            user_verification: string;
+            allow_credentials: components["schemas"]["AllowCredential"][];
+        };
+        AllowCredential: {
+            id: string;
+            /** @enum {string} */
+            type: "public-key";
+            transports?: string[];
+        };
+        GuardrailWideningQueuedResponse: {
+            /** @enum {string} */
+            status: "awaiting_approval";
+            /** Format: uuid */
+            approval_id: string;
+            /** Format: uuid */
+            revision_id: string;
+            /** @description Human-readable explanation of the queued change. */
+            message: string;
         };
         RiskEvent: {
             /** Format: uuid */
@@ -10574,6 +10644,11 @@ export interface components {
                 [key: string]: unknown;
             };
             credential_source?: components["schemas"]["CredentialSource"];
+            /**
+             * Format: uuid
+             * @description Approved policy_change id when applying a queued binding guardrail widening. Resubmit PATCH with this field after approval via POST /v1/approvals/{approval_id}/decide.
+             */
+            approval_id?: string;
         };
         /** @description Per-binding execution guardrails enforced at execute time. */
         BindingGuardrails: {
@@ -14691,6 +14766,20 @@ export interface operations {
                     "application/json": components["schemas"]["AgentResponse"];
                 };
             };
+            /**
+             * @description Guardrail widening queued for human approval. The change is not
+             *     applied until approved via POST /v1/approvals/{approval_id}/decide.
+             *     Resubmit this PATCH with `approval_id` set to the returned value
+             *     after approval to apply the widening.
+             */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GuardrailWideningQueuedResponse"];
+                };
+            };
             404: components["responses"]["NotFound"];
         };
     };
@@ -15650,6 +15739,19 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BindingResponse"];
+                };
+            };
+            /**
+             * @description Binding guardrail widening queued for human approval. Resubmit
+             *     PATCH with `approval_id` after approval via
+             *     POST /v1/approvals/{approval_id}/decide.
+             */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GuardrailWideningQueuedResponse"];
                 };
             };
             400: components["responses"]["BadRequest"];
@@ -17627,6 +17729,27 @@ export interface operations {
             403: components["responses"]["Forbidden"];
         };
     };
+    getTreasuryAuthPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Effective HFA policy with passkey registration count */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TreasuryAuthPolicyResponse"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+        };
+    };
     getEffectiveSpendPolicy: {
         parameters: {
             query?: never;
@@ -18825,10 +18948,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": {
-                    /** @description 64-char hex SHA-256 of canonical send params */
-                    tx_digest: string;
-                };
+                "application/json": components["schemas"]["PasskeyTxAssertBeginRequest"];
             };
         };
         responses: {
@@ -18837,10 +18957,20 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
+                content: {
+                    "application/json": components["schemas"]["PasskeyAssertBeginResponse"];
+                };
+            };
+            /** @description Missing or invalid tx_digest, or invalid action */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
                 content?: never;
             };
-            /** @description Missing or invalid tx_digest */
-            400: {
+            403: components["responses"]["Forbidden"];
+            /** @description No passkeys registered for the user */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

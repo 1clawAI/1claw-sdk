@@ -562,6 +562,8 @@ export interface UpdateAgentRequest {
     card_reveal_enabled?: boolean;
     /** When true, card orders route through the approval queue before payment. */
     card_require_approval?: boolean;
+    /** Approved policy_change id when resuming a queued guardrail widening. */
+    approval_id?: string;
 }
 
 export interface AgentResponse {
@@ -787,6 +789,8 @@ export interface UpdateBindingRequest {
     credential?: Record<string, unknown>;
     /** Structured credential source (takes precedence over `credential`). */
     credential_source?: CredentialSource;
+    /** Approved policy_change id when resuming a queued guardrail widening. */
+    approval_id?: string;
 }
 
 /** Rotate (overwrite) a binding's stored credential without touching config. */
