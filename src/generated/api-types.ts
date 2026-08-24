@@ -4489,6 +4489,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/approvals/{approval_id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Poll approval status (agent-only)
+         * @description Lightweight status poll for agents waiting on human approval.
+         *     Returns `status` and `expires_at` only. Agents may only poll
+         *     approvals they created (`agent_id` must match the caller).
+         */
+        get: operations["getApprovalStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/approvals/{approval_id}/decide": {
         parameters: {
             query?: never;
@@ -9979,6 +10001,25 @@ export interface components {
             /** Format: date-time */
             created_at: string;
         };
+        ApprovalStatusResponse: {
+            /** @enum {string} */
+            status: "pending" | "approved" | "rejected" | "expired";
+            /** Format: date-time */
+            expires_at?: string | null;
+        };
+        GuardrailViolation: {
+            /** @enum {string} */
+            error: "guardrail_violation";
+            /** @enum {string} */
+            reason_code: "binding_rpm_exceeded" | "agent_rpm_exceeded" | "graphql_mutation_blocked" | "graphql_depth_exceeded" | "graphql_parse_failed" | "graphql_introspection_blocked" | "response_too_large" | "request_too_large" | "method_not_allowed" | "header_not_allowed" | "dns_private_ip_blocked" | "agent_suspended" | "outside_time_window" | "secret_in_request" | "concurrency_exceeded" | "org_frozen";
+            limit?: string | null;
+            current?: string | null;
+            attempted?: string | null;
+            /** @default false */
+            approval_available: boolean;
+            retry_after_seconds?: number | null;
+            detail?: string | null;
+        };
         EmailOtpVerifyResponse: {
             /** @description JWT access token */
             token: string;
@@ -10171,9 +10212,7 @@ export interface components {
             config?: {
                 [key: string]: unknown;
             };
-            guardrails?: {
-                [key: string]: unknown;
-            };
+            guardrails?: components["schemas"]["BindingGuardrails"];
             /** @description Legacy: inline credential value. Use credential_source for new integrations. */
             credential?: {
                 [key: string]: unknown;
@@ -10184,15 +10223,55 @@ export interface components {
             config?: {
                 [key: string]: unknown;
             };
-            guardrails?: {
-                [key: string]: unknown;
-            };
+            guardrails?: components["schemas"]["BindingGuardrails"];
             is_active?: boolean;
             /** @description Legacy: inline credential value. */
             credential?: {
                 [key: string]: unknown;
             };
             credential_source?: components["schemas"]["CredentialSource"];
+        };
+        /** @description Per-binding execution guardrails enforced at execute time. */
+        BindingGuardrails: {
+            /** @description Host allowlist (trailing * wildcard supported). Empty = unrestricted at binding level. */
+            allowed_hosts?: string[];
+            /** @description Path allowlist for HTTP/GraphQL bindings. */
+            allowed_paths?: string[];
+            /** @description Per-binding RPM; strictest of binding and agent limits wins. Denied executions do not count. */
+            max_requests_per_minute?: number;
+            /** @description Upstream timeout cap for this binding. */
+            max_duration_ms?: number;
+            /**
+             * @description Max serialized execute `params` size in bytes (default 256 KiB).
+             * @default 262144
+             */
+            max_request_bytes: number;
+            /** @description Max upstream response body bytes (default 1 MiB, hard cap 4 MiB). */
+            max_response_bytes?: number;
+            /** @description Agent-supplied headers permitted in execute params. Defaults to content-type, accept, user-agent, idempotency-key. */
+            allowed_request_headers?: string[];
+            /**
+             * @description GraphQL only — when false, mutation operations return 403 guardrail_violation.
+             * @default true
+             */
+            allow_mutations: boolean;
+            /**
+             * @description GraphQL only — when false, __schema/__type introspection is blocked.
+             * @default false
+             */
+            allow_introspection: boolean;
+            /**
+             * @description GraphQL max selection depth.
+             * @default 10
+             */
+            max_query_depth: number;
+            /**
+             * @description GraphQL max alias count.
+             * @default 30
+             */
+            max_aliases: number;
+            /** @description GraphQL operation kinds allowed (query, mutation, subscription). */
+            allowed_operations?: string[];
         };
         BindingResponse: {
             /** Format: uuid */
@@ -10205,9 +10284,7 @@ export interface components {
             config?: {
                 [key: string]: unknown;
             };
-            guardrails?: {
-                [key: string]: unknown;
-            };
+            guardrails?: components["schemas"]["BindingGuardrails"];
             is_active: boolean;
             /** @description Whether a credential is stored for this binding. The value itself is never returned. */
             credential_set?: boolean;
@@ -15033,7 +15110,33 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
-            403: components["responses"]["Forbidden"];
+            /** @description Guardrail violation or permission denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GuardrailViolation"] | components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Request params exceed binding max_request_bytes */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GuardrailViolation"];
+                };
+            };
+            /** @description Binding or agent execution rate limit exceeded */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GuardrailViolation"];
+                };
+            };
         };
     };
     listExecutions: {
@@ -17599,6 +17702,30 @@ export interface operations {
                     "application/json": components["schemas"]["ApprovalResponse"];
                 };
             };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getApprovalStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                approval_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Approval status */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApprovalStatusResponse"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
         };
     };

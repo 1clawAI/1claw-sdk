@@ -11,10 +11,6 @@ import type {
  *
  * Agents can request human approval before accessing sensitive secrets.
  * Humans review, approve, or deny requests through the dashboard or API.
- *
- * **Status**: These endpoints are planned for an upcoming API release.
- * The SDK methods are provided for forward compatibility and will work
- * once the backend endpoints are deployed.
  */
 export class ApprovalsResource {
     constructor(private readonly http: HttpClient) {}
@@ -98,8 +94,18 @@ export class ApprovalsResource {
     }
 
     /**
-     * Poll for the status of a specific approval request.
-     * Returns the current state — useful for agents waiting on approval.
+     * Poll lightweight approval status (agent-only).
+     * Returns `{ status, expires_at }` for approvals the agent created.
+     */
+    async getStatus(
+        requestId: string,
+    ): Promise<OneclawResponse<{ status: string; expires_at?: string | null }>> {
+        return this.http.request("GET", `/v1/approvals/${requestId}/status`);
+    }
+
+    /**
+     * Poll for the status of a specific approval request (full details, human or agent).
+     * Prefer {@link getStatus} for agent polling — it uses the lightweight status endpoint.
      */
     async check(requestId: string): Promise<OneclawResponse<ApprovalRequest>> {
         return this.http.request<ApprovalRequest>(
