@@ -2078,6 +2078,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/org/freeze": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Emergency org-wide freeze
+         * @description Sets organizations.frozen_at — blocks agent tx/execution until unfreeze. Owner/admin only.
+         */
+        post: operations["freezeOrg"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/org/unfreeze": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Clear org-wide freeze
+         * @description Clears organizations.frozen_at. Owner/admin only.
+         */
+        post: operations["unfreezeOrg"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/org/bankr-config": {
         parameters: {
             query?: never;
@@ -7657,6 +7697,41 @@ export interface components {
              */
             simulation_failure_policy?: "deny" | "approve";
             /**
+             * @description Block unlimited ERC-20 approvals (max uint256 / setApprovalForAll).
+             * @default false
+             */
+            tx_block_unlimited_approvals: boolean;
+            /** @description Max transactions to the same recipient address per UTC day. */
+            tx_per_recipient_max_per_day?: number | null;
+            /** @description Max native-unit spend to the same recipient per UTC day. */
+            tx_per_recipient_daily_limit?: string | null;
+            /** @description Cap on first-time recipient spend in native units. */
+            new_recipient_cap_native?: string | null;
+            /** @description Per-transaction USD cap (requires price oracle). */
+            tx_max_value_usd?: string | null;
+            /** @description Rolling 24h USD spend cap (requires price oracle). */
+            tx_daily_limit_usd?: string | null;
+            /**
+             * @description Raw digest signing policy — allow, deny, or route to HITL (approve).
+             * @default allow
+             * @enum {string}
+             */
+            raw_signing_policy: "allow" | "deny" | "approve";
+            /** @description personal_sign guardrails (message allowlist, max bytes, etc.). */
+            personal_sign_policy?: {
+                [key: string]: unknown;
+            };
+            /**
+             * @description Allow ERC-4337 gasless UserOperations.
+             * @default false
+             */
+            allow_erc4337: boolean;
+            /**
+             * @description Allow EIP-7702 (tx type 4) set-code transactions.
+             * @default false
+             */
+            allow_eip7702: boolean;
+            /**
              * Format: date-time
              * @description Optional expiration time for the agent's API key.
              */
@@ -7751,6 +7826,31 @@ export interface components {
              * @enum {string|null}
              */
             simulation_failure_policy?: "deny" | "approve" | null;
+            /** @description Block unlimited ERC-20 approvals (max uint256 / setApprovalForAll). */
+            tx_block_unlimited_approvals?: boolean;
+            /** @description Max transactions to the same recipient per UTC day. Null clears. */
+            tx_per_recipient_max_per_day?: number | null;
+            /** @description Max native spend to same recipient per UTC day. Null clears. */
+            tx_per_recipient_daily_limit?: string | null;
+            /** @description First-time recipient native cap. Null clears. */
+            new_recipient_cap_native?: string | null;
+            /** @description Per-tx USD cap. Null clears. */
+            tx_max_value_usd?: string | null;
+            /** @description Rolling 24h USD spend cap. Null clears. */
+            tx_daily_limit_usd?: string | null;
+            /**
+             * @description Raw digest signing policy.
+             * @enum {string}
+             */
+            raw_signing_policy?: "allow" | "deny" | "approve";
+            /** @description personal_sign guardrails JSON. */
+            personal_sign_policy?: {
+                [key: string]: unknown;
+            };
+            /** @description Allow ERC-4337 gasless UserOperations. */
+            allow_erc4337?: boolean;
+            /** @description Allow EIP-7702 (tx type 4). */
+            allow_eip7702?: boolean;
             /** @description When true, clears circuit-breaker auto-suspension (human owner/admin only). */
             clear_auto_suspended?: boolean;
             /**
@@ -7890,6 +7990,20 @@ export interface components {
             typed_data_policy?: "deny" | "approve" | null;
             /** @enum {string|null} */
             simulation_failure_policy?: "deny" | "approve" | null;
+            /** @description Block unlimited ERC-20 approvals. */
+            tx_block_unlimited_approvals?: boolean;
+            tx_per_recipient_max_per_day?: number | null;
+            tx_per_recipient_daily_limit?: string | null;
+            new_recipient_cap_native?: string | null;
+            tx_max_value_usd?: string | null;
+            tx_daily_limit_usd?: string | null;
+            /** @enum {string} */
+            raw_signing_policy?: "allow" | "deny" | "approve";
+            personal_sign_policy?: {
+                [key: string]: unknown;
+            } | null;
+            allow_erc4337?: boolean;
+            allow_eip7702?: boolean;
             /** @description True when circuit breaker auto-suspended the agent after repeated guardrail denials. */
             auto_suspended?: boolean;
             /** @description Today's transaction count (UTC calendar day). Present when intents_api_enabled. */
@@ -15581,6 +15695,70 @@ export interface operations {
             };
             /** @description Agent-keys vault not found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    freezeOrg: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Organization frozen */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        status?: "frozen";
+                        /** Format: uuid */
+                        org_id?: string;
+                    };
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    unfreezeOrg: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Organization unfrozen */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        status?: "unfrozen";
+                        /** Format: uuid */
+                        org_id?: string;
+                    };
+                };
+            };
+            /** @description Forbidden */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
