@@ -306,6 +306,31 @@ console.log(signRes.data?.from);      // derived sender address
 
 All agent guardrails (allowlists, value caps, daily limits) are enforced exactly as for submit. The transaction is recorded for audit and daily-limit tracking with `status: "sign_only"`.
 
+### Graduated HITL & v0.55 guardrails
+
+Configure graduated human-in-the-loop thresholds on agents with Intents API enabled:
+
+```typescript
+await client.agents.update(agentId, {
+  tx_approval_policy: {
+    require_above_native: { ethereum: "0.1", base: "0.05" },
+    require_for_new_recipients: true,
+    require_for_unlimited_approvals: true,
+  },
+  typed_data_policy: "approve",           // EIP-712 → 202 awaiting_approval
+  simulation_failure_policy: "approve",   // Tenderly revert → HITL
+  raw_signing_policy: "approve",          // allow | deny | approve
+  tx_block_unlimited_approvals: true,
+  tx_max_value_usd: "1000",
+  tx_daily_limit_usd: "5000",
+  allow_erc4337: true,
+  allow_eip7702: false,
+  clear_auto_suspended: true,             // owner/admin — clear circuit breaker
+});
+```
+
+Org emergency freeze (owner/admin): `POST /v1/org/freeze` and `POST /v1/org/unfreeze`.
+
 ### Non-EVM transactions (Bitcoin, Solana, XRP, Cardano, Tron)
 
 The same `submitTransaction` / `signTransaction` methods accept chain-specific fields. Values are in the chain's native unit (BTC, SOL, XRP, ADA, TRX):
