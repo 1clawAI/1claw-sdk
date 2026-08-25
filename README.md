@@ -1,4 +1,4 @@
-# @1claw/sdk
+# @1claw/sdk (v0.58.0)
 
 TypeScript/JavaScript client for the 1Claw Vault API.
 
@@ -106,8 +106,19 @@ await client.auth.verifyEmailChange({ code: "123456" });
 | `client.fiat` | `createOnrampSession`, `initiateOfframp` |
 | `client.signingKeys` | `create`, `list`, `rotate`, `deactivate`, `export`                                                               |
 | `client.agents` (Bankr) | `leaseBankrKey`, `listBankrKeys`, `revokeBankrKey` — privileged; `api_key` omitted for agent JWTs (use Shroud) |
-| `client.platform`  | `createApp`, `listApps`, `getApp`, `updateApp`, `deleteApp`, `rotateKey`, `rotateWebhookSecret`, `getAppStats`, `marketplace`, `createTemplate`, `listTemplates`, `upsertUser`, `listUsers`, `bootstrapUser`, `reissueClaim`, `claimPreview`, `claimRedeem`, `listConnectedApps`, `disconnectApp`, `grantAccess`, `listGrants`, `revokeGrant`, `createSpendPolicy`, `listSpendPolicies`, `setUserSpendPolicy`, `deleteSpendPolicy`, `updateConnectionDelegation`, **`siweChallenge`**, **`getConnection`**, **`getConnectionUsage`**, **`listEntitlements`**, **`refreshEntitlements`**, **`previewTemplate`** |
+| `client.platform`  | `createApp`, `listApps`, `getApp`, `updateApp`, `deleteApp`, `rotateKey`, `rotateWebhookSecret`, `getAppStats`, `marketplace`, `createTemplate`, `listTemplates`, `upsertUser`, `listUsers`, `bootstrapUser`, `reissueClaim`, `claimPreview`, `claimRedeem`, `listConnectedApps`, `disconnectApp`, `grantAccess`, `listGrants`, `revokeGrant`, `createSpendPolicy`, `listSpendPolicies`, `setUserSpendPolicy`, `deleteSpendPolicy`, `updateConnectionDelegation`, **`siweChallenge`**, **`getConnection`**, **`getConnectionUsage`**, **`listEntitlements`**, **`refreshEntitlements`**, **`previewTemplate`**, **`transferAppOwnership`**, **`getSpendPolicy`**, **`getConnectionSpendPolicy`**, **`listConnectionApprovals`**, **`getConnectionApproval`**, **`listConnectionPendingApprovals`** |
 | `client.treasuryWallets` | … **`getInferenceBudget`** (platform-connected users) |
+| `client.bindings`  | `create`, `list`, `get`, `update`, `delete`, `test`, `execute`, `rotateCredential`, `listExecutions` |
+| `client.chat`      | `sendMessage`, `sendMessageStream`, `listConversations`, `getConversation`, `deleteConversation` |
+| `client.channels`  | `create`, `list`, `update`, `delete`, `send`, `test`, `refreshWebhook`, `listMessages` |
+| `client.oauthConnect` | `listProviders`, `listConnections`, `connect`, `disconnect`, `saveAppCredentials`, `listAppCredentials`, `deleteAppCredentials` |
+| `client.cedarPolicies` | `create`, `list`, `get`, `delete`, `test` |
+| `client.opaPolicies` | `create`, `list`, `get`, `delete`, `test` |
+| `client.contractAbis` | `upload`, `list`, `delete` |
+| `client.pendingApprovals` | `list`, `get`, `approve`, `execute`, `cancel` |
+| `client.subOrgs`   | `create`, `list`, `get`, `delete`, `grantPermission`, `revokePermission`, `addUser`, `generateWallets` |
+| `client.portfolio` | `get` |
+| `client.cards`     | `order`, `orderGiftCard`, `searchGiftCards`, `list`, `get`, `reveal`, `update`, `void`, `refresh`, `import` |
 | `client.devices`   | `register`, `list`, `delete`, `challenge`, `attest`, `setPushToken`                                                 |
 | `client.passkeys`  | `list`, `registerBegin`, `registerComplete`, `assertBegin`, `assertComplete`, `delete`                               |
 | `client.risk`      | `listEvents`, `getVerdict`, `listVerdicts`, `createHoneytoken`, `listHoneytokens`, `deleteHoneytoken`                |
@@ -1015,6 +1026,22 @@ await client.platform.listEntitlements(connectionId);
 await client.platform.previewTemplate(appId, templateId, { parameters: { agent_name: "demo" } });
 
 await client.treasuryWallets.getInferenceBudget();
+```
+
+## v0.58 — Platform API control plane
+
+App-scoped reads, spend-policy idempotency, and ownership transfer (plt_ auth unless noted):
+
+```typescript
+await client.platform.transferAppOwnership(appId, {
+    target_org_id: "org-uuid",
+});
+await client.platform.getSpendPolicy(appId, policyId);
+await client.platform.getConnectionSpendPolicy(connectionId);
+await client.platform.listConnectionApprovals(connectionId);
+await client.platform.getConnectionApproval(connectionId, approvalId);
+await client.platform.listConnectionPendingApprovals(connectionId);
+// setUserSpendPolicy(connectionId, data, { idempotencyKey: "..." }) — 24h replay protection
 ```
 
 ## OpenAPI Types
