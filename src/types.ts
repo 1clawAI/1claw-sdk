@@ -2052,6 +2052,14 @@ export interface CreateAutomationRequest {
     workflow_spec: WorkflowSpec;
 }
 
+/** Agent-scoped create (POST /v1/agents/{agent_id}/automations) — chat/runtime tools. */
+export interface AgentCreateAutomationRequest {
+    name: string;
+    trigger_type?: "manual" | "webhook";
+    workflow_spec: WorkflowSpec;
+    auto_trigger?: boolean;
+}
+
 export interface UpdateAutomationRequest {
     name?: string;
     cron_expr?: string | null;
@@ -2087,6 +2095,8 @@ export interface AutomationResponse {
     success_rate?: number | null;
     /** Agent display name (enriched list). */
     agent_name?: string | null;
+    /** Whether created by a human or agent (chat-native create). */
+    created_by_type?: "user" | "agent" | string;
 }
 
 export interface AutomationListResponse {

@@ -34,6 +34,8 @@ import type {
     DelegationResponse,
     DelegationListResponse,
     ImportSmartAccountRequest,
+    AgentCreateAutomationRequest,
+    AutomationResponse,
     OneclawResponse,
 } from "../types";
 
@@ -556,6 +558,21 @@ export class AgentsResource {
         return this.http.request("GET", `/v1/safe/module-registry/${encodeURIComponent(chain)}`, {
             skipAuth: true,
         });
+    }
+
+    /**
+     * Create a simple automation for this agent (agent token only).
+     * Manual/webhook triggers; log, notify, memory, wait steps only.
+     */
+    async createAutomation(
+        agentId: string,
+        data: AgentCreateAutomationRequest,
+    ): Promise<OneclawResponse<AutomationResponse>> {
+        return this.http.request<AutomationResponse>(
+            "POST",
+            `/v1/agents/${agentId}/automations`,
+            { body: data },
+        );
     }
 }
 
