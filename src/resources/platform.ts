@@ -88,8 +88,54 @@ export interface ConnectionDetailResponse {
     wallet_address?: string;
     vault_ids: string[];
     agent_ids: string[];
+    runtime_ids?: string[];
+    automation_ids?: string[];
     claimed_at?: string;
     claim: ClaimStatusResponse;
+}
+
+export interface CreateConnectionRuntimeRequest {
+    name: string;
+    agent_id?: string;
+    template?: string;
+    preset?: string;
+    env_public?: Record<string, unknown>;
+    idle_timeout_secs?: number;
+    expose_http?: boolean;
+    slug?: string;
+    inbound_auth?: string;
+    startup_command?: string;
+}
+
+export interface ConnectionRuntimeResponse {
+    id: string;
+    agent_id: string;
+    name: string;
+    template?: string;
+    preset: string;
+    provider: string;
+    status: string;
+}
+
+export interface ConnectionAgentChatRequest {
+    message: string;
+    conversation_id?: string;
+    mode?: string;
+    model?: string;
+    provider?: string;
+    system_prompt?: string;
+}
+
+export interface DecideConnectionPendingApprovalRequest {
+    decision: "approve" | "reject" | "approved" | "rejected";
+    payload_hash: string;
+    reason?: string;
+    credential_type?: string;
+}
+
+export interface DecideConnectionApprovalRequest {
+    decision: "approved" | "rejected" | "approve" | "reject";
+    reason?: string;
 }
 
 export interface ConnectionUsageResponse {
@@ -346,6 +392,17 @@ export class PlatformResource {
         );
     }
 
+    /** Get a single bootstrap template by ID. */
+    async getTemplate(
+        appId: string,
+        templateId: string,
+    ): Promise<OneclawResponse<TemplateResponse>> {
+        return this.http.request<TemplateResponse>(
+            "GET",
+            `/v1/platform/apps/${appId}/templates/${templateId}`,
+        );
+    }
+
     /**
      * Upsert (create or match) a platform user via token exchange or email.
      *
@@ -522,6 +579,82 @@ export class PlatformResource {
             "GET",
             `/v1/platform/connections/${connectionId}/pending-approvals`,
             { query: params as Record<string, string | number | undefined> },
+        );
+    }
+
+    /** Single pending consensus approval for a connection (`plt_` auth). */
+    async getConnectionPendingApproval(
+        connectionId: string,
+        approvalId: string,
+    ): Promise<OneclawResponse<Record<string, unknown>>> {
+        return this.http.request(
+            "GET",
+            `/v1/platform/connections/${connectionId}/pending-approvals/${approvalId}`,
+        );
+    }
+
+    /** Vote on a pending consensus approval (`plt_` auth). */
+    async decideConnectionPendingApproval(
+        connectionId: string,
+        approvalId: string,
+        body: DecideConnectionPendingApprovalRequest,
+    ): Promise<OneclawResponse<Record<string, unknown>>> {
+        return this.http.request(
+            "POST",
+            `/v1/platform/connections/${connectionId}/pending-approvals/${approvalId}/decide`,
+            { body },
+        );
+    }
+
+    /** Decide a mobile approval for a connection (`plt_` auth). */
+    async decideConnectionApproval(
+        connectionId: string,
+        approvalId: string,
+        body: DecideConnectionApprovalRequest,
+    ): Promise<OneclawResponse<Record<string, unknown>>> {
+        return this.http.request(
+            "POST",
+            `/v1/platform/connections/${connectionId}/approvals/${approvalId}/decide`,
+            { body },
+        );
+    }
+
+    /** Create a Cloud Runtime for an agent on a connection (`plt_` auth). */
+    async createConnectionRuntime(
+        connectionId: string,
+        body: CreateConnectionRuntimeRequest,
+    ): Promise<OneclawResponse<ConnectionRuntimeResponse>> {
+        return this.http.request<ConnectionRuntimeResponse>(
+            "POST",
+            `/v1/platform/connections/${connectionId}/runtimes`,
+            { body, acceptStatuses: [201] },
+        );
+    }
+
+    /** Chat with an agent provisioned on a connection (`plt_` auth). */
+    async connectionAgentChat(
+        connectionId: string,
+        agentId: string,
+        body: ConnectionAgentChatRequest,
+    ): Promise<OneclawResponse<Record<string, unknown>>> {
+        return this.http.request(
+            "POST",
+            `/v1/platform/connections/${connectionId}/agents/${agentId}/chat`,
+            { body },
+        );
+    }
+
+    /** Deactivate a signing key for a connection agent (`plt_` auth). */
+    async deactivateConnectionSigningKey(
+        connectionId: string,
+        chain: string,
+        agentId?: string,
+    ): Promise<OneclawResponse<void>> {
+        const query = agentId ? { agent_id: agentId } : undefined;
+        return this.http.request<void>(
+            "DELETE",
+            `/v1/platform/connections/${connectionId}/signing-keys/${encodeURIComponent(chain)}`,
+            { query: query as Record<string, string | undefined> },
         );
     }
 

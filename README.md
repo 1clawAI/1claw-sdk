@@ -1,4 +1,4 @@
-# @1claw/sdk (v0.58.0)
+# @1claw/sdk (v0.58.2)
 
 TypeScript/JavaScript client for the 1Claw Vault API.
 
@@ -1041,6 +1041,25 @@ await client.platform.getConnectionSpendPolicy(connectionId);
 await client.platform.listConnectionApprovals(connectionId);
 await client.platform.getConnectionApproval(connectionId, approvalId);
 await client.platform.listConnectionPendingApprovals(connectionId);
+await client.platform.getTemplate(appId, templateId);
+await client.platform.createConnectionRuntime(connectionId, {
+    name: "my-runtime",
+    agent_id: "agent-uuid",
+    preset: "small",
+    template: "openclaw",
+});
+await client.platform.connectionAgentChat(connectionId, agentId, {
+    message: "Hello",
+});
+await client.platform.decideConnectionPendingApproval(connectionId, approvalId, {
+    decision: "approve",
+    payload_hash: "...",
+    credential_type: "wallet_mandate",
+});
+await client.platform.decideConnectionApproval(connectionId, approvalId, {
+    decision: "approved",
+});
+await client.platform.deactivateConnectionSigningKey(connectionId, "ethereum", agentId);
 // setUserSpendPolicy(connectionId, data, { idempotencyKey: "..." }) — 24h replay protection
 ```
 

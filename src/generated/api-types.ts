@@ -4148,7 +4148,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * Get a bootstrap template
+         * @description Returns the full template spec for a platform app. plt_ or user JWT.
+         */
+        get: operations["getPlatformTemplate"];
         put?: never;
         post?: never;
         /** Delete a bootstrap template */
@@ -5121,9 +5125,10 @@ export interface paths {
         get: operations["getConnectionSpendPolicy"];
         /**
          * Set per-user spend policy override
-         * @description Override the app-wide spend policy for a specific connected user. This
-         *     policy takes precedence over the app default. Remove by deleting the
-         *     connection-level policy.
+         * @description Replace the per-user spend policy for a connected user (deactivates the
+         *     previous active row, then inserts). Requires plt_ platform auth.
+         *     Optional `Idempotency-Key` header must cover the full request body — reusing
+         *     the same key with different parameters returns 409.
          */
         put: operations["setUserSpendPolicy"];
         post?: never;
@@ -5187,6 +5192,132 @@ export interface paths {
         get: operations["listConnectionPendingApprovals"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/connections/{connectionId}/pending-approvals/{approvalId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a connection-scoped pending approval (with payload_hash) */
+        get: operations["getConnectionPendingApproval"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/connections/{connectionId}/pending-approvals/{approvalId}/decide": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Decide a pending approval for a connection user
+         * @description Platform apps vote on behalf of the connected user after verifying intent
+         *     out-of-band (e.g. wallet mandate). Requires `payload_hash` matching the
+         *     pending row. Accepts `decision`: `approve` or `reject` (aliases `approved` /
+         *     `rejected`). plt_ auth only; scoped to agents on the connection.
+         */
+        post: operations["decideConnectionPendingApproval"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/connections/{connectionId}/approvals/{approvalId}/decide": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Decide a mobile/agent approval for a connection user
+         * @description Platform apps decide agent approval requests on behalf of the connected user.
+         *     Accepts `decision`: `approved` or `rejected` (aliases `approve` / `reject`).
+         *     plt_ auth only.
+         */
+        post: operations["decideConnectionApproval"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/connections/{connectionId}/signing-keys/{chain}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Deactivate a signing key for a connection agent
+         * @description Deactivates the signing key for an agent provisioned on the connection.
+         *     When multiple agents exist, pass `agent_id` query param. plt_ auth only.
+         */
+        delete: operations["deactivateConnectionSigningKey"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/connections/{connectionId}/runtimes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create a runtime for a connection agent
+         * @description Creates a Cloud Runtime in the end-user's org for an agent on this connection.
+         *     Use instead of `POST /v1/runtimes` with a plt_ key (which resolves to the platform org).
+         *     App must verify user intent out-of-band (e.g. wallet mandate) before calling.
+         */
+        post: operations["createConnectionRuntime"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/connections/{connectionId}/agents/{agentId}/chat": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Chat with a connection agent (plt_ scoped)
+         * @description Send a chat message to an agent provisioned on this connection, acting as the
+         *     connected end-user. Use instead of `POST /v1/agents/{id}/chat` with a plt_ key.
+         */
+        post: operations["connectionAgentChat"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6185,6 +6316,29 @@ export interface paths {
         get: operations["listAutomationPresets"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/automations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create agent automation (agent-only)
+         * @description Agent-scoped create for simple manual or webhook automations from chat/runtime tools.
+         *     Allowed step types: log, notify, memory_get, memory_put, wait (max 10).
+         *     Cron, swap, http, and transaction steps require human dashboard setup.
+         *     Requires agent JWT; agent_id in path must match the caller.
+         */
+        post: operations["createAgentAutomation"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11121,6 +11275,8 @@ export interface components {
             wallet_address?: string | null;
             vault_ids: string[];
             agent_ids: string[];
+            runtime_ids?: string[];
+            automation_ids?: string[];
             /** Format: date-time */
             claimed_at?: string | null;
             claim: components["schemas"]["ClaimStatusResponse"];
@@ -11616,6 +11772,28 @@ export interface components {
                 [key: string]: unknown;
             };
         };
+        /**
+         * @description Agent-scoped automation create. Defaults to manual trigger.
+         *     workflow_spec must use only agent-allowed step types (log, notify, memory_get, memory_put, wait).
+         */
+        AgentCreateAutomationRequest: {
+            name: string;
+            /**
+             * @default manual
+             * @enum {string}
+             */
+            trigger_type: "manual" | "webhook";
+            workflow_spec: {
+                [key: string]: unknown;
+            }[] | {
+                [key: string]: unknown;
+            };
+            /**
+             * @description When true (manual trigger only), start a run immediately after creation
+             * @default false
+             */
+            auto_trigger: boolean;
+        };
         UpdateAutomationRequest: {
             name?: string;
             cron_expr?: string | null;
@@ -11661,6 +11839,11 @@ export interface components {
             success_rate?: number | null;
             /** @description Resolved agent display name (enriched list field) */
             agent_name?: string | null;
+            /**
+             * @description Whether the automation was created by a human or agent (chat-native create)
+             * @enum {string}
+             */
+            created_by_type?: "user" | "agent";
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
@@ -11731,6 +11914,25 @@ export interface components {
                     [key: string]: unknown;
                 };
             }[];
+        };
+        CreateConnectionRuntimeRequest: {
+            name: string;
+            /**
+             * Format: uuid
+             * @description Required when multiple agents on the connection; defaults to sole agent
+             */
+            agent_id?: string;
+            template?: string;
+            /** @default medium */
+            preset: string;
+            env_public?: {
+                [key: string]: unknown;
+            };
+            idle_timeout_secs?: number;
+            expose_http?: boolean;
+            slug?: string;
+            inbound_auth?: string;
+            startup_command?: string;
         };
         CreateRuntimeRequest: {
             name: string;
@@ -12739,7 +12941,7 @@ export interface components {
         };
         ApprovePendingApprovalRequest: {
             /** @enum {string} */
-            decision: "approve" | "reject";
+            decision: "approve" | "reject" | "approved" | "rejected";
             payload_hash: string;
             reason?: string;
             /**
@@ -19408,6 +19610,30 @@ export interface operations {
             404: components["responses"]["NotFound"];
         };
     };
+    getPlatformTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appId: string;
+                template_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Template details */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlatformTemplateResponse"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
     deletePlatformTemplate: {
         parameters: {
             query?: never;
@@ -19784,6 +20010,193 @@ export interface operations {
                     "application/json": components["schemas"]["PendingApprovalListResponse"];
                 };
             };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getConnectionPendingApproval: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connectionId: string;
+                approvalId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Pending approval detail including action_payload and payload_hash */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PendingApprovalResponse"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    decideConnectionPendingApproval: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connectionId: string;
+                approvalId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApprovePendingApprovalRequest"];
+            };
+        };
+        responses: {
+            /** @description Updated pending approval */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PendingApprovalResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            /** @description Already voted */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    decideConnectionApproval: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connectionId: string;
+                approvalId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    decision: "approved" | "rejected" | "approve" | "reject";
+                    reason?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Decided approval */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApprovalResponse"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            /** @description Already decided */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    deactivateConnectionSigningKey: {
+        parameters: {
+            query?: {
+                agent_id?: string;
+            };
+            header?: never;
+            path: {
+                connectionId: string;
+                chain: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Key deactivated */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Multiple agents — agent_id required */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createConnectionRuntime: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connectionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateConnectionRuntimeRequest"];
+            };
+        };
+        responses: {
+            /** @description Runtime created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RuntimeResponse"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    connectionAgentChat: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connectionId: string;
+                agentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SendChatMessageRequest"];
+            };
+        };
+        responses: {
+            /** @description Message sent (JSON or SSE stream) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
         };
     };
@@ -21427,6 +21840,36 @@ export interface operations {
                     "application/json": components["schemas"]["AutomationPresetsResponse"];
                 };
             };
+        };
+    };
+    createAgentAutomation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AgentCreateAutomationRequest"];
+            };
+        };
+        responses: {
+            /** @description Automation created (includes one-time webhook credentials when trigger_type is webhook) */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AutomationCreatedResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
         };
     };
     listRuntimes: {
