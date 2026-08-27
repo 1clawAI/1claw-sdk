@@ -131,6 +131,45 @@ export interface ConnectionAgentChatRequest {
     messages?: Array<{ role: string; content: string }>;
 }
 
+export interface CreateConnectionPendingApprovalRequest {
+    agent_id?: string;
+    policy_id?: string;
+    action?: string;
+    action_payload: Record<string, unknown>;
+    summary?: string;
+}
+
+export interface CreateConnectionPendingApprovalResponse {
+    pending_approval_id: string;
+    required_approvals: number;
+    current_approvals: number;
+    expires_at: string;
+    status: string;
+    message: string;
+}
+
+export interface InspectContentRequest {
+    content: string;
+    context?: "input" | "output";
+}
+
+export interface InspectContentResponse {
+    safe: boolean;
+    verdict: "clean" | "malicious";
+    threat_count: number;
+    threats: Array<{ type: string; pattern: string; severity: string }>;
+    unicode_normalized?: boolean;
+    normalized_content?: string;
+}
+
+export interface PlatformWebhookInfoResponse {
+    app_id: string;
+    webhook_configured: boolean;
+    webhook_url_host?: string;
+    platform_events: string[];
+    org_webhooks_note: string;
+}
+
 export interface DecideConnectionPendingApprovalRequest {
     decision: "approve" | "reject" | "approved" | "rejected";
     payload_hash: string;
@@ -607,6 +646,18 @@ export class PlatformResource {
         );
     }
 
+    /** Create a pending consensus approval for a connection agent (`plt_` auth). */
+    async createConnectionPendingApproval(
+        connectionId: string,
+        body: CreateConnectionPendingApprovalRequest,
+    ): Promise<OneclawResponse<CreateConnectionPendingApprovalResponse>> {
+        return this.http.request<CreateConnectionPendingApprovalResponse>(
+            "POST",
+            `/v1/platform/connections/${connectionId}/pending-approvals`,
+            { body, acceptStatuses: [202] },
+        );
+    }
+
     /** Single pending consensus approval for a connection (`plt_` auth). */
     async getConnectionPendingApproval(
         connectionId: string,
@@ -641,6 +692,16 @@ export class PlatformResource {
             "POST",
             `/v1/platform/connections/${connectionId}/approvals/${approvalId}/decide`,
             { body },
+        );
+    }
+
+    /** Platform webhook catalog (`plt_` or user JWT). */
+    async getPlatformWebhooks(
+        appId: string,
+    ): Promise<OneclawResponse<PlatformWebhookInfoResponse>> {
+        return this.http.request<PlatformWebhookInfoResponse>(
+            "GET",
+            `/v1/platform/apps/${appId}/webhooks`,
         );
     }
 

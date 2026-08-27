@@ -1,4 +1,4 @@
-import type { OneclawClientConfig } from "../types";
+import type { OneclawClientConfig, OneclawResponse } from "../types";
 import { HttpClient } from "./http";
 import { VaultResource } from "../resources/vault";
 import { SecretsResource } from "../resources/secrets";
@@ -16,7 +16,7 @@ import { X402Resource } from "../resources/x402";
 import { TreasuryResource } from "../resources/treasury";
 import { SigningKeysResource } from "../resources/signing-keys";
 import { TreasuryWalletsResource } from "../resources/treasury-wallets";
-import { PlatformResource } from "../resources/platform";
+import { PlatformResource, type InspectContentRequest, type InspectContentResponse } from "../resources/platform";
 import { DevicesResource } from "../resources/devices";
 import { PasskeysResource } from "../resources/passkeys";
 import { DepositDestinationsResource } from "../resources/deposit-destinations";
@@ -201,6 +201,17 @@ export class OneclawClient {
         this.contractAbis = new ContractAbisResource(this.http);
         this.pendingApprovals = new PendingApprovalsResource(this.http);
         this.envVars = new EnvVarsResource(this.http);
+    }
+
+    /** Standalone threat inspection (plt_, agent, or user JWT). */
+    async inspectContent(
+        body: InspectContentRequest,
+    ): Promise<OneclawResponse<InspectContentResponse>> {
+        return this.http.request<InspectContentResponse>(
+            "POST",
+            "/v1/shroud/inspect-content",
+            { body },
+        );
     }
 
     private autoAuthenticateUserKey(config: OneclawClientConfig): void {
