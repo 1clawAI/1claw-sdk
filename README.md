@@ -1,4 +1,4 @@
-# @1claw/sdk (v0.59.0)
+# @1claw/sdk (v0.59.2)
 
 TypeScript/JavaScript client for the 1Claw Vault API.
 
@@ -96,7 +96,7 @@ await client.auth.verifyEmailChange({ code: "123456" });
 | `client.approvals` | `request`, `list`, `approve`, `deny`, `check`, `subscribe`                                                          |
 | `client.billing`   | `usage`, `history`, `llmTokenBilling`, `subscribeLlmTokenBilling`, `disableLlmTokenBilling` (LLM token billing / Stripe AI Gateway) |
 | `client.audit`     | `query`                                                                                                             |
-| `client.org`       | `listMembers`, `getAgentKeysVault`, `updateMemberRole`, `removeMember`                                              |
+| `client.org`       | `listMembers`, `getAgentKeysVault`, `getOnboardingStatus`, `provisionOnboarding`, `updateMemberRole`, `removeMember` |
 | `client.auth`      | `login`, `signup`, `agentToken`, `apiKeyToken`, `google`, `socialLogin`, `sendEmailOtp`, `verifyEmailOtp`, `exchangeOAuthCode`, `revokeToken`, `revokeConsent`, `getUserInfo`, `changePassword`, `setPassword`, `changeEmail`, `verifyEmailChange`, `forgotPassword`, `resetPassword`, `exportData`, `exchangeFederatedToken`, `logout`, `getMe`, `updateMe`, `deleteMe` |
 | `client.apiKeys`   | `create`, `list`, `revoke`                                                                                          |
 | `client.treasury`  | `create`, `list`, `get`, `update`, `delete`, `addSigner`, `removeSigner`, `requestAccess`, `listAccessRequests`, `approveAccess`, `denyAccess`, `propose`, `listProposals`, `getProposal`, `signProposal`, `executeProposal` |

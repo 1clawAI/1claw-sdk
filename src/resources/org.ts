@@ -54,6 +54,30 @@ export class OrgResource {
         return this.http.request<void>("DELETE", `/v1/org/members/${userId}`);
     }
 
+    /** Get onboarding progress for the current org (welcome bundle + MCP readiness). */
+    async getOnboardingStatus(): Promise<
+        OneclawResponse<ApiSchemas["OnboardingStatus"]>
+    > {
+        return this.http.request<ApiSchemas["OnboardingStatus"]>(
+            "GET",
+            "/v1/org/onboarding/status",
+        );
+    }
+
+    /**
+     * Provision MCP onboarding: welcome vault, sample secret, agent, default ** policy.
+     * Returns one-time agent API key and stdio MCP config. Human-only.
+     */
+    async provisionOnboarding(
+        body?: ApiSchemas["OnboardingProvisionRequest"],
+    ): Promise<OneclawResponse<ApiSchemas["OnboardingProvisionResponse"]>> {
+        return this.http.request<ApiSchemas["OnboardingProvisionResponse"]>(
+            "POST",
+            "/v1/onboarding/provision",
+            { body: body ?? {} },
+        );
+    }
+
     /** Get org Bankr partner configuration (prefix + wallet; never returns the partner key). */
     async getBankrConfig(): Promise<OneclawResponse<OrgBankrConfigResponse>> {
         return this.http.request<OrgBankrConfigResponse>("GET", "/v1/org/bankr-config");

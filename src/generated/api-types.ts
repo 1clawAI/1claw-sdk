@@ -2361,6 +2361,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/org/onboarding/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Onboarding funnel status
+         * @description Returns welcome-bundle and MCP connection progress for the connect wizard.
+         */
+        get: operations["getOnboardingStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/onboarding/provision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Provision MCP onboarding bundle
+         * @description Creates welcome vault + sample secret, MCP agent, and default ** policy. Returns one-time API key and stdio MCP config.
+         */
+        post: operations["provisionOnboarding"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/org/status": {
         parameters: {
             query?: never;
@@ -5262,6 +5302,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/platform/connections/{connectionId}/signing-keys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List signing keys for a connection agent
+         * @description Returns public signing-key metadata (chain, address, public_key, curve) for
+         *     agent(s) provisioned on the connection. Never includes private keys.
+         *     When multiple agents exist, pass `agent_id` query param. plt_ auth only.
+         */
+        get: operations["listConnectionSigningKeys"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/platform/connections/{connectionId}/signing-keys/{chain}": {
         parameters: {
             query?: never;
@@ -5269,7 +5331,12 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * Get a signing key for a connection agent by chain
+         * @description Returns public signing-key metadata for one chain on a connection agent.
+         *     Never includes private keys. plt_ auth only.
+         */
+        get: operations["getConnectionSigningKey"];
         put?: never;
         post?: never;
         /**
@@ -9625,6 +9692,25 @@ export interface components {
         SigningKeyListResponse: {
             keys?: components["schemas"]["SigningKeyResponse"][];
         };
+        ConnectionSigningKeyPublic: {
+            chain?: string;
+            address?: string;
+            public_key?: string;
+            curve?: string;
+        };
+        ConnectionSigningKeyListResponse: {
+            /** Format: uuid */
+            agent_id?: string;
+            keys?: components["schemas"]["ConnectionSigningKeyPublic"][];
+        };
+        ConnectionSigningKeyDetailResponse: {
+            /** Format: uuid */
+            agent_id?: string;
+            chain?: string;
+            address?: string;
+            public_key?: string;
+            curve?: string;
+        };
         LeaseBankrKeyRequest: {
             /** @description Bankr wallet ID (wlt_...). Uses org default if omitted. */
             wallet_id?: string;
@@ -9984,6 +10070,29 @@ export interface components {
         InviteMemberResponse: {
             message?: string;
             email?: string;
+        };
+        OnboardingStatus: {
+            has_vault: boolean;
+            has_agent: boolean;
+            has_policy: boolean;
+            has_sample_secret: boolean;
+            first_secret_read: boolean;
+            welcome_bundle_complete: boolean;
+            /** Format: uuid */
+            default_vault_id?: string | null;
+        };
+        OnboardingProvisionRequest: {
+            agent_name?: string;
+            client?: string;
+        };
+        OnboardingProvisionResponse: {
+            /** Format: uuid */
+            agent_id: string;
+            api_key: string;
+            /** Format: uuid */
+            vault_id: string;
+            mcp_stdio_config: Record<string, never>;
+            verify_prompt: string;
         };
         AgentKeysVaultResponse: {
             /** Format: uuid */
@@ -10781,6 +10890,8 @@ export interface components {
              * @description Optional expiration time for the platform API key. Set to null to clear.
              */
             api_key_expires_at?: string | null;
+            /** @description Hostname allowed in SIWE messages for wallet sign-in (EIP-4361). */
+            siwe_domain?: string | null;
         };
         PlatformAppDeleteResponse: {
             deleted: boolean;
@@ -10833,6 +10944,8 @@ export interface components {
              * @description When the platform API key was last rotated.
              */
             api_key_rotated_at?: string | null;
+            /** @description Hostname allowed in SIWE messages for wallet sign-in (EIP-4361). */
+            siwe_domain?: string | null;
             /** Format: date-time */
             created_at?: string;
             /** Format: date-time */
@@ -10847,12 +10960,21 @@ export interface components {
             description?: string;
             /**
              * @description Template specification defining vault, agents, policies, and signing keys to bootstrap.
-             *     Top-level fields: `vault` (object with name, description), `agents` (array of agent specs
-             *     with name, description, shroud_enabled, intents, shroud_config), `policies` (array with
-             *     vault_ref, principal_ref, paths, permissions, conditions), and `signing_keys` (array of
-             *     `{ chain }` objects — supported chains: ethereum, bitcoin, solana, xrp, cardano, tron).
-             *     When `signing_keys` is present, HSM-backed signing keys are auto-provisioned for the
-             *     bootstrapped agent.
+             *     Top-level fields: `vault` (object with name, description), `agents` (array of agent specs),
+             *     `policies` (array with vault_ref, principal_ref, paths, permissions, conditions), and
+             *     `signing_keys` (array of `{ chain }` objects — supported chains: ethereum, bitcoin, solana,
+             *     xrp, cardano, tron). When `signing_keys` is present, HSM-backed signing keys are
+             *     auto-provisioned for the bootstrapped agent.
+             *
+             *     Each agent entry accepts Intents API and Execution Intents flags under any of these aliases
+             *     (direct API field name, boolean shorthand, or `{ enabled: true }` object):
+             *     - Intents API → `intents_api_enabled`, `intents: true`, or `intents: { enabled: true }`
+             *       (maps to `agents.intents_api_enabled`)
+             *     - Execution Intents → `execution_intents_enabled`, `execution: true`, or
+             *       `execution: { enabled: true }` (maps to `agents.execution_intents_enabled`)
+             *
+             *     Other agent fields: `name`, `description`, `shroud_enabled`, `shroud_config`, `system_prompt`,
+             *     `environment`, `signing_keys`, `provision_eoa`, `memory`, `runtime`, `default_llm_provider`.
              */
             spec: Record<string, never>;
         };
@@ -17624,6 +17746,50 @@ export interface operations {
             };
         };
     };
+    getOnboardingStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Onboarding status */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OnboardingStatus"];
+                };
+            };
+        };
+    };
+    provisionOnboarding: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["OnboardingProvisionRequest"];
+            };
+        };
+        responses: {
+            /** @description Provisioned resources */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OnboardingProvisionResponse"];
+                };
+            };
+        };
+    };
     getOrgStatus: {
         parameters: {
             query?: never;
@@ -20221,6 +20387,71 @@ export interface operations {
                 };
                 content?: never;
             };
+        };
+    };
+    listConnectionSigningKeys: {
+        parameters: {
+            query?: {
+                agent_id?: string;
+            };
+            header?: never;
+            path: {
+                connectionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Signing keys for the connection agent */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConnectionSigningKeyListResponse"];
+                };
+            };
+            /** @description Multiple agents — agent_id required */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getConnectionSigningKey: {
+        parameters: {
+            query?: {
+                agent_id?: string;
+            };
+            header?: never;
+            path: {
+                connectionId: string;
+                chain: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Signing key metadata */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConnectionSigningKeyDetailResponse"];
+                };
+            };
+            /** @description Multiple agents — agent_id required */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: components["responses"]["NotFound"];
         };
     };
     deactivateConnectionSigningKey: {
