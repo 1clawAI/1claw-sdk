@@ -767,6 +767,110 @@ export class PlatformResource {
         );
     }
 
+    /** Portfolio/balances for connection agents (`plt_` auth). */
+    async getConnectionPortfolio(
+        connectionId: string,
+        query?: { chains?: string; include_tokens?: boolean },
+    ): Promise<OneclawResponse<Record<string, unknown>>> {
+        return this.http.request(
+            "GET",
+            `/v1/platform/connections/${connectionId}/portfolio`,
+            { query: query as Record<string, string | boolean | undefined> },
+        );
+    }
+
+    /** Alias for getConnectionPortfolio. */
+    async getConnectionBalances(
+        connectionId: string,
+        query?: { chains?: string },
+    ): Promise<OneclawResponse<Record<string, unknown>>> {
+        return this.http.request(
+            "GET",
+            `/v1/platform/connections/${connectionId}/balances`,
+            { query: query as Record<string, string | undefined> },
+        );
+    }
+
+    /** List automations for agents on a connection (`plt_` auth). */
+    async listConnectionAutomations(
+        connectionId: string,
+    ): Promise<OneclawResponse<{ automations: unknown[] }>> {
+        return this.http.request(
+            "GET",
+            `/v1/platform/connections/${connectionId}/automations`,
+        );
+    }
+
+    /** Create automation for a connection agent (`plt_` auth). */
+    async createConnectionAutomation(
+        connectionId: string,
+        body: Record<string, unknown>,
+    ): Promise<OneclawResponse<Record<string, unknown>>> {
+        return this.http.request(
+            "POST",
+            `/v1/platform/connections/${connectionId}/automations`,
+            { body, acceptStatuses: [201] },
+        );
+    }
+
+    /** Cancel an automation run (connection-scoped, `plt_` auth). */
+    async cancelConnectionAutomationRun(
+        connectionId: string,
+        automationId: string,
+        runId: string,
+    ): Promise<OneclawResponse<Record<string, unknown>>> {
+        return this.http.request(
+            "POST",
+            `/v1/platform/connections/${connectionId}/automations/${automationId}/runs/${runId}/cancel`,
+        );
+    }
+
+    /** Get agent memory on a connection (`plt_` auth). */
+    async getConnectionMemory(
+        connectionId: string,
+        namespace: string,
+        key: string,
+        agentId?: string,
+    ): Promise<OneclawResponse<Record<string, unknown>>> {
+        const query = agentId ? { agent_id: agentId } : undefined;
+        return this.http.request(
+            "GET",
+            `/v1/platform/connections/${connectionId}/memory/${encodeURIComponent(namespace)}/${encodeURIComponent(key)}`,
+            { query: query as Record<string, string | undefined> },
+        );
+    }
+
+    /** Upsert agent memory on a connection (`plt_` auth). */
+    async putConnectionMemory(
+        connectionId: string,
+        namespace: string,
+        key: string,
+        body: Record<string, unknown>,
+        agentId?: string,
+    ): Promise<OneclawResponse<Record<string, unknown>>> {
+        const query = agentId ? { agent_id: agentId } : undefined;
+        return this.http.request(
+            "PUT",
+            `/v1/platform/connections/${connectionId}/memory/${encodeURIComponent(namespace)}/${encodeURIComponent(key)}`,
+            { body, query: query as Record<string, string | undefined> },
+        );
+    }
+
+    /** Delete agent memory on a connection (`plt_` auth). */
+    async deleteConnectionMemory(
+        connectionId: string,
+        namespace: string,
+        key: string,
+        agentId?: string,
+    ): Promise<OneclawResponse<void>> {
+        const query = agentId ? { agent_id: agentId } : undefined;
+        return this.http.request<void>(
+            "DELETE",
+            `/v1/platform/connections/${connectionId}/memory/${encodeURIComponent(namespace)}/${encodeURIComponent(key)}`,
+            { query: query as Record<string, string | undefined> },
+        );
+    }
+
     /** Set a spend policy on a user connection. */
     async setUserSpendPolicy(
         connectionId: string,
