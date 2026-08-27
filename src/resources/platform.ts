@@ -743,6 +743,30 @@ export class PlatformResource {
         );
     }
 
+    /** Patch limited agent settings on a connection (`plt_` auth). */
+    async patchConnectionAgent(
+        connectionId: string,
+        agentId: string,
+        body: {
+            intents_api_enabled?: boolean;
+            execution_intents_enabled?: boolean;
+            system_prompt?: string | null;
+        },
+    ): Promise<
+        OneclawResponse<{
+            agent_id: string;
+            intents_api_enabled: boolean;
+            execution_intents_enabled: boolean;
+            system_prompt?: string | null;
+        }>
+    > {
+        return this.http.request(
+            "PATCH",
+            `/v1/platform/connections/${connectionId}/agents/${agentId}`,
+            { body },
+        );
+    }
+
     /** Set a spend policy on a user connection. */
     async setUserSpendPolicy(
         connectionId: string,

@@ -5350,6 +5350,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/platform/connections/{connectionId}/agents/{agentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update limited agent settings for a connection
+         * @description Platform-scoped agent update for connected end-users. Allows enabling Intents API,
+         *     Execution Intents, and updating the default system prompt without human dashboard access.
+         *     Agent must be provisioned on the connection. plt_ auth only.
+         */
+        patch: operations["patchConnectionAgent"];
+        trace?: never;
+    };
     "/v1/platform/connections/{connectionId}/runtimes": {
         parameters: {
             query?: never;
@@ -9710,6 +9732,18 @@ export interface components {
             address?: string;
             public_key?: string;
             curve?: string;
+        };
+        PatchConnectionAgentRequest: {
+            intents_api_enabled?: boolean;
+            execution_intents_enabled?: boolean;
+            system_prompt?: string | null;
+        };
+        PatchConnectionAgentResponse: {
+            /** Format: uuid */
+            agent_id?: string;
+            intents_api_enabled?: boolean;
+            execution_intents_enabled?: boolean;
+            system_prompt?: string | null;
         };
         LeaseBankrKeyRequest: {
             /** @description Bankr wallet ID (wlt_...). Uses org default if omitted. */
@@ -20482,6 +20516,36 @@ export interface operations {
                 };
                 content?: never;
             };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    patchConnectionAgent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connectionId: string;
+                agentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchConnectionAgentRequest"];
+            };
+        };
+        responses: {
+            /** @description Updated agent settings */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PatchConnectionAgentResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
         };
     };
