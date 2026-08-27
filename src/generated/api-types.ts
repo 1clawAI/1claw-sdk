@@ -3661,6 +3661,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/shroud/inspect-content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Inspect text for security threats
+         * @description Standalone content inspection (MCP `inspect_content` parity). Scans for command
+         *     injection, encoding tricks, social engineering, PII, and suspicious URLs.
+         *     Fail-closed — returns `safe: false` when high/critical threats match.
+         *     Accepts plt_ platform keys, agent JWTs, and user JWTs.
+         */
+        post: operations["inspectContent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/shroud/activity": {
         parameters: {
             query?: never;
@@ -4086,6 +4109,28 @@ export interface paths {
          * @description Returns aggregate statistics about a platform app's connected users, bootstraps, and grants.
          */
         get: operations["getPlatformAppStats"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/apps/{appId}/webhooks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Platform webhook delivery catalog
+         * @description Returns whether `webhook_url` is configured and the event types delivered to
+         *     the platform app webhook (payload includes `connection_id` when applicable).
+         *     Org-scoped webhook subscriptions (`GET /v1/webhooks`) are separate.
+         */
+        get: operations["getPlatformWebhooks"];
         put?: never;
         post?: never;
         delete?: never;
@@ -5233,7 +5278,15 @@ export interface paths {
          */
         get: operations["listConnectionPendingApprovals"];
         put?: never;
-        post?: never;
+        /**
+         * Create a pending consensus approval for a connection agent
+         * @description Platform apps submit over-cap or consensus-gated actions on behalf of a
+         *     connected user's agent. When `policy_id` is omitted, the server resolves the
+         *     matching agent `consensus_trigger` policy from `action_payload` (chain, to, value).
+         *     Returns **202** with `pending_approval_id` and `payload_hash` for decide/execute.
+         *     Requires plt_ auth; agent must be provisioned on the connection.
+         */
+        post: operations["createConnectionPendingApproval"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5334,7 +5387,8 @@ export interface paths {
         /**
          * Get a signing key for a connection agent by chain
          * @description Returns public signing-key metadata for one chain on a connection agent.
-         *     Never includes private keys. plt_ auth only.
+         *     Network names (e.g. `base`, `sepolia`) resolve to canonical signing keys
+         *     (e.g. `ethereum`). Never includes private keys. plt_ auth only.
          */
         get: operations["getConnectionSigningKey"];
         put?: never;
@@ -5370,6 +5424,101 @@ export interface paths {
          *     Agent must be provisioned on the connection. plt_ auth only.
          */
         patch: operations["patchConnectionAgent"];
+        trace?: never;
+    };
+    "/v1/platform/connections/{connectionId}/portfolio": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Portfolio for connection agents
+         * @description Aggregates signing-key and smart-account balances for agents provisioned on
+         *     the connection. plt_ auth only.
+         */
+        get: operations["getConnectionPortfolio"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/connections/{connectionId}/balances": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Balances alias for connection portfolio
+         * @description Alias of `GET .../portfolio`. plt_ auth only.
+         */
+        get: operations["getConnectionBalances"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/connections/{connectionId}/automations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List automations for connection agents */
+        get: operations["listConnectionAutomations"];
+        put?: never;
+        /** Create automation for a connection agent */
+        post: operations["createConnectionAutomation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/connections/{connectionId}/automations/{automationId}/runs/{runId}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel an automation run (connection-scoped) */
+        post: operations["cancelConnectionAutomationRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/connections/{connectionId}/memory/{namespace}/{key}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get agent memory entry (connection-scoped) */
+        get: operations["getConnectionMemory"];
+        /** Upsert agent memory entry (connection-scoped) */
+        put: operations["putConnectionMemory"];
+        post?: never;
+        /** Delete agent memory entry (connection-scoped) */
+        delete: operations["deleteConnectionMemory"];
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/v1/platform/connections/{connectionId}/runtimes": {
@@ -13194,6 +13343,53 @@ export interface components {
             action: string;
             action_payload: Record<string, never>;
         };
+        ConnectionSubmitPendingApprovalRequest: {
+            /**
+             * Format: uuid
+             * @description Required when the connection has multiple agents
+             */
+            agent_id?: string;
+            /**
+             * Format: uuid
+             * @description Optional — auto-resolved from agent consensus policies when omitted
+             */
+            policy_id?: string;
+            /** @default transaction */
+            action: string;
+            /** @description Transaction/intent fields (chain, to, value, …) hashed for decide binding */
+            action_payload: Record<string, never>;
+            /** @description Human-readable label included in webhook payloads */
+            summary?: string;
+        };
+        InspectContentRequest: {
+            content: string;
+            /**
+             * @description Inspection context (reserved for future rules)
+             * @enum {string}
+             */
+            context?: "input" | "output";
+        };
+        InspectContentResponse: {
+            safe?: boolean;
+            /** @enum {string} */
+            verdict?: "clean" | "malicious";
+            threat_count?: number;
+            threats?: {
+                type?: string;
+                pattern?: string;
+                severity?: string;
+            }[];
+            unicode_normalized?: boolean;
+            normalized_content?: string;
+        };
+        PlatformWebhookInfoResponse: {
+            /** Format: uuid */
+            app_id?: string;
+            webhook_configured?: boolean;
+            webhook_url_host?: string;
+            platform_events?: string[];
+            org_webhooks_note?: string;
+        };
         SubmitPendingApprovalResponse: {
             /** Format: uuid */
             pending_approval_id?: string;
@@ -19830,6 +20026,31 @@ export interface operations {
             };
         };
     };
+    inspectContent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InspectContentRequest"];
+            };
+        };
+        responses: {
+            /** @description Inspection report */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InspectContentResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+        };
+    };
     transferPlatformAppOwnership: {
         parameters: {
             query?: never;
@@ -19882,6 +20103,29 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getPlatformWebhooks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Webhook configuration summary */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlatformWebhookInfoResponse"];
+                };
+            };
             404: components["responses"]["NotFound"];
         };
     };
@@ -20322,6 +20566,34 @@ export interface operations {
             404: components["responses"]["NotFound"];
         };
     };
+    createConnectionPendingApproval: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connectionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConnectionSubmitPendingApprovalRequest"];
+            };
+        };
+        responses: {
+            /** @description Pending approval created */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubmitPendingApprovalResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            404: components["responses"]["NotFound"];
+        };
+    };
     getConnectionPendingApproval: {
         parameters: {
             query?: never;
@@ -20546,6 +20818,213 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getConnectionPortfolio: {
+        parameters: {
+            query?: {
+                chains?: string;
+                include_tokens?: boolean;
+            };
+            header?: never;
+            path: {
+                connectionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Connection-scoped portfolio */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PortfolioResponse"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getConnectionBalances: {
+        parameters: {
+            query?: {
+                chains?: string;
+            };
+            header?: never;
+            path: {
+                connectionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Connection-scoped portfolio */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PortfolioResponse"];
+                };
+            };
+        };
+    };
+    listConnectionAutomations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connectionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Automations scoped to connection agents */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AutomationListResponse"];
+                };
+            };
+        };
+    };
+    createConnectionAutomation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connectionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAutomationRequest"];
+            };
+        };
+        responses: {
+            /** @description Automation created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AutomationCreatedResponse"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    cancelConnectionAutomationRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connectionId: string;
+                automationId: string;
+                runId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Run cancelled */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AutomationRunResponse"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getConnectionMemory: {
+        parameters: {
+            query?: {
+                agent_id?: string;
+            };
+            header?: never;
+            path: {
+                connectionId: string;
+                namespace: string;
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Memory entry */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemoryEntry"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    putConnectionMemory: {
+        parameters: {
+            query?: {
+                agent_id?: string;
+            };
+            header?: never;
+            path: {
+                connectionId: string;
+                namespace: string;
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PutMemoryRequest"];
+            };
+        };
+        responses: {
+            /** @description Memory entry stored */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemoryEntry"];
+                };
+            };
+        };
+    };
+    deleteConnectionMemory: {
+        parameters: {
+            query?: {
+                agent_id?: string;
+            };
+            header?: never;
+            path: {
+                connectionId: string;
+                namespace: string;
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             404: components["responses"]["NotFound"];
         };
     };
