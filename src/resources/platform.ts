@@ -187,6 +187,26 @@ export interface InferenceBudgetResponse {
     connection_id?: string;
 }
 
+export interface ConnectionSigningKeyPublic {
+    chain: string;
+    address: string;
+    public_key: string;
+    curve: string;
+}
+
+export interface ConnectionSigningKeyListResponse {
+    agent_id: string;
+    keys: ConnectionSigningKeyPublic[];
+}
+
+export interface ConnectionSigningKeyDetailResponse {
+    agent_id: string;
+    chain: string;
+    address: string;
+    public_key: string;
+    curve: string;
+}
+
 export interface SpendPolicyListResponse {
     policies: SpendPolicyResponse[];
 }
@@ -679,6 +699,33 @@ export class PlatformResource {
             "POST",
             `/v1/platform/connections/${connectionId}/agents/${agentId}/chat`,
             { body },
+        );
+    }
+
+    /** List signing keys for a connection agent (`plt_` auth). Public metadata only. */
+    async listConnectionSigningKeys(
+        connectionId: string,
+        agentId?: string,
+    ): Promise<OneclawResponse<ConnectionSigningKeyListResponse>> {
+        const query = agentId ? { agent_id: agentId } : undefined;
+        return this.http.request<ConnectionSigningKeyListResponse>(
+            "GET",
+            `/v1/platform/connections/${connectionId}/signing-keys`,
+            { query: query as Record<string, string | undefined> },
+        );
+    }
+
+    /** Get a signing key for a connection agent by chain (`plt_` auth). Public metadata only. */
+    async getConnectionSigningKey(
+        connectionId: string,
+        chain: string,
+        agentId?: string,
+    ): Promise<OneclawResponse<ConnectionSigningKeyDetailResponse>> {
+        const query = agentId ? { agent_id: agentId } : undefined;
+        return this.http.request<ConnectionSigningKeyDetailResponse>(
+            "GET",
+            `/v1/platform/connections/${connectionId}/signing-keys/${encodeURIComponent(chain)}`,
+            { query: query as Record<string, string | undefined> },
         );
     }
 
