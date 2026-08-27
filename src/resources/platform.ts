@@ -833,10 +833,13 @@ export class PlatformResource {
         connectionId: string,
         query?: { chains?: string; include_tokens?: boolean },
     ): Promise<OneclawResponse<Record<string, unknown>>> {
+        const params: Record<string, string | undefined> = {};
+        if (query?.chains) params.chains = query.chains;
+        if (query?.include_tokens) params.include_tokens = "true";
         return this.http.request(
             "GET",
             `/v1/platform/connections/${connectionId}/portfolio`,
-            { query: query as Record<string, string | boolean | undefined> },
+            { query: params },
         );
     }
 
