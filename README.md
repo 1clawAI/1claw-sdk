@@ -1,4 +1,4 @@
-# @1claw/sdk (v0.58.2)
+# @1claw/sdk (v0.59.0)
 
 TypeScript/JavaScript client for the 1Claw Vault API.
 
@@ -1061,6 +1061,26 @@ await client.platform.decideConnectionApproval(connectionId, approvalId, {
 });
 await client.platform.deactivateConnectionSigningKey(connectionId, "ethereum", agentId);
 // setUserSpendPolicy(connectionId, data, { idempotencyKey: "..." }) — 24h replay protection
+```
+
+## v0.59 — Fathom platform integration
+
+Connection-scoped runtime, passkey enroll, and agent `system_prompt`:
+
+```typescript
+await client.platform.getConnectionRuntime(connectionId, runtimeId);
+await client.platform.connectionPasskeyEnrollBegin(connectionId);
+await client.platform.connectionPasskeyEnrollComplete(connectionId, {
+    credential_id: "...",
+    attestation_object: "...",
+    client_data_json: "...",
+});
+await client.platform.connectionAgentChat(connectionId, agentId, {
+    message: "Hello",
+    system_prompt: "You are helpful.",
+});
+await client.agents.create({ name: "bot", system_prompt: "Default persona" });
+// getConnection() includes provisioned_tier when billing_model is platform_pays
 ```
 
 ## OpenAPI Types

@@ -461,6 +461,8 @@ export interface CreateAgentRequest {
     shroud_enabled?: boolean;
     /** Shroud per-agent policy (PII, injection, providers, token limits, etc.). */
     shroud_config?: ShroudConfig;
+    /** Default system prompt for agent chat when requests do not override it. */
+    system_prompt?: string;
     /** ISO 8601 expiration timestamp for the agent's API key. Null = never expires. */
     api_key_expires_at?: string | null;
     tx_token_allowlist?: string[];
@@ -514,6 +516,8 @@ export interface UpdateAgentRequest {
     vault_ids?: string[];
     shroud_enabled?: boolean;
     shroud_config?: ShroudConfig | null;
+    /** Default system prompt for agent chat. Pass null to clear. */
+    system_prompt?: string | null;
     expires_at?: string | null;
     /** Chains this agent may create signing keys for (e.g. ["evm", "solana"]). */
     signing_chains?: string[];
@@ -606,6 +610,8 @@ export interface AgentResponse {
     shroud_enabled: boolean;
     /** Per-agent Shroud policy (PII, injection, providers, token limits, etc.). */
     shroud_config?: ShroudConfig | null;
+    /** Default system prompt for agent chat when requests do not override it. */
+    system_prompt?: string | null;
     /** Chains this agent may create signing keys for (e.g. ["evm", "solana"]). */
     signing_chains?: string[];
     /** Allowed EIP-712 domain names/verifyingContract pairs for typed-data signing. */

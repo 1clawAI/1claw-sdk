@@ -4354,7 +4354,9 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["PlatformConnectedUserResponse"][];
+                        "application/json": {
+                            users: components["schemas"]["PlatformConnectedUserResponse"][];
+                        };
                     };
                 };
             };
@@ -5297,6 +5299,65 @@ export interface paths {
          *     App must verify user intent out-of-band (e.g. wallet mandate) before calling.
          */
         post: operations["createConnectionRuntime"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/connections/{connectionId}/runtimes/{runtimeId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a connection runtime (plt_ scoped)
+         * @description Returns a runtime provisioned on this connection. Use instead of
+         *     `GET /v1/runtimes/{id}` with a plt_ key (which resolves to the platform org).
+         */
+        get: operations["getConnectionRuntime"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/connections/{connectionId}/passkeys/enroll/begin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Begin passkey enrollment for a connected user
+         * @description Starts WebAuthn registration for the end-user on this connection.
+         *     Platform apps use this instead of `POST /v1/auth/passkeys/register/begin` (user JWT only).
+         */
+        post: operations["connectionPasskeyEnrollBegin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/connections/{connectionId}/passkeys/enroll/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Complete passkey enrollment for a connected user */
+        post: operations["connectionPasskeyEnrollComplete"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8536,6 +8597,8 @@ export interface components {
              */
             shroud_enabled: boolean;
             shroud_config?: components["schemas"]["ShroudConfig"];
+            /** @description Default system prompt for agent chat when requests do not override it. */
+            system_prompt?: string;
             /**
              * @description Enable Execution Intents (bindings and execute endpoint) for this agent
              * @default false
@@ -8697,6 +8760,8 @@ export interface components {
             /** @description Enable/disable Shroud LLM Proxy */
             shroud_enabled?: boolean;
             shroud_config?: components["schemas"]["ShroudConfig"];
+            /** @description Default system prompt for agent chat (null clears). */
+            system_prompt?: string | null;
             /** @description Enable/disable Execution Intents for this agent */
             execution_intents_enabled?: boolean;
             /** @description Guardrails applied to all execution intents for this agent */
@@ -8877,6 +8942,8 @@ export interface components {
             /** @description Whether this agent routes LLM traffic through the Shroud TEE proxy */
             shroud_enabled: boolean;
             shroud_config?: components["schemas"]["ShroudConfig"];
+            /** @description Default system prompt for agent chat when requests do not override it. */
+            system_prompt?: string;
             /** @description Whether Execution Intents (bindings and execute endpoint) are enabled for this agent */
             execution_intents_enabled?: boolean;
             /** @description Guardrails applied to all execution intents for this agent */
@@ -11272,6 +11339,11 @@ export interface components {
             user_id: string;
             status: string;
             entitlement_status: string;
+            /**
+             * @description Billing tier granted to the end-user org when billing_model is platform_pays
+             *     (from template plan at bootstrap). Null when not provisioned.
+             */
+            provisioned_tier?: string | null;
             wallet_address?: string | null;
             vault_ids: string[];
             agent_ids: string[];
@@ -11390,6 +11462,30 @@ export interface components {
             source: string;
             /** @description Number of WebAuthn passkeys registered for the calling user. */
             registered_passkeys: number;
+        };
+        PasskeyRegisterBeginResponse: {
+            challenge?: string;
+            rp_id?: string;
+            rp_name?: string;
+            user_id?: string;
+            user_name?: string;
+            user_display_name?: string;
+            attestation?: string;
+            authenticator_selection?: Record<string, never>;
+            pub_key_cred_params?: Record<string, never>[];
+        };
+        PasskeyRegisterCompleteRequest: {
+            credential_id: string;
+            attestation_object: string;
+            client_data_json: string;
+            transports?: string[];
+            name?: string;
+        };
+        PasskeyRegisterCompleteResponse: {
+            /** Format: uuid */
+            passkey_id?: string;
+            credential_id?: string;
+            name?: string;
         };
         PasskeyTxAssertBeginRequest: {
             /** @description 64-char hex SHA-256 of canonical send or swap params */
@@ -12150,13 +12246,26 @@ export interface components {
             public_tags?: string[];
         };
         SendChatMessageRequest: {
-            message: string;
+            /** @description User message text. Optional when `messages` includes a user turn. */
+            message?: string;
             /** Format: uuid */
             conversation_id?: string;
             mode?: string;
             model?: string;
             provider?: string;
+            /** @description Stored on new conversations when `conversation_id` is omitted. */
             system_prompt?: string;
+            /** @description Per-request system prompt alias (same precedence as `system_prompt_override`). */
+            system?: string;
+            /** @description Per-request override; highest precedence except inline `messages` system role. */
+            system_prompt_override?: string;
+            /** @description Optional OpenAI-shaped history. When set, used for LLM context instead of DB history. */
+            messages?: {
+                role: string;
+                content: string;
+            }[];
+            llm_api_key_vault_id?: string;
+            llm_api_key_path?: string;
         };
         ChatMessageResponse: {
             /** Format: uuid */
@@ -20173,6 +20282,81 @@ export interface operations {
             404: components["responses"]["NotFound"];
         };
     };
+    getConnectionRuntime: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connectionId: string;
+                runtimeId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Runtime details */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RuntimeResponse"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    connectionPasskeyEnrollBegin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connectionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description WebAuthn registration ceremony options */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PasskeyRegisterBeginResponse"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    connectionPasskeyEnrollComplete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connectionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasskeyRegisterCompleteRequest"];
+            };
+        };
+        responses: {
+            /** @description Passkey registered */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PasskeyRegisterCompleteResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            404: components["responses"]["NotFound"];
+        };
+    };
     connectionAgentChat: {
         parameters: {
             query?: never;
@@ -20191,6 +20375,13 @@ export interface operations {
         responses: {
             /** @description Message sent (JSON or SSE stream) */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Payment required (LLM billing / inference allowance) */
+            402: {
                 headers: {
                     [name: string]: unknown;
                 };

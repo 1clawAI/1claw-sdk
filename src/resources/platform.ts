@@ -85,6 +85,8 @@ export interface ConnectionDetailResponse {
     user_id: string;
     status: string;
     entitlement_status: string;
+    /** Tier granted to end-user org when billing_model is platform_pays. */
+    provisioned_tier?: string | null;
     wallet_address?: string;
     vault_ids: string[];
     agent_ids: string[];
@@ -124,6 +126,9 @@ export interface ConnectionAgentChatRequest {
     model?: string;
     provider?: string;
     system_prompt?: string;
+    /** Alias for system_prompt (OpenAI-style). */
+    system?: string;
+    messages?: Array<{ role: string; content: string }>;
 }
 
 export interface DecideConnectionPendingApprovalRequest {
@@ -627,6 +632,39 @@ export class PlatformResource {
         return this.http.request<ConnectionRuntimeResponse>(
             "POST",
             `/v1/platform/connections/${connectionId}/runtimes`,
+            { body, acceptStatuses: [201] },
+        );
+    }
+
+    /** Get a runtime provisioned on a connection (`plt_` auth). */
+    async getConnectionRuntime(
+        connectionId: string,
+        runtimeId: string,
+    ): Promise<OneclawResponse<ConnectionRuntimeResponse>> {
+        return this.http.request<ConnectionRuntimeResponse>(
+            "GET",
+            `/v1/platform/connections/${connectionId}/runtimes/${runtimeId}`,
+        );
+    }
+
+    /** Begin WebAuthn passkey enrollment for a connected end-user (`plt_` auth). */
+    async connectionPasskeyEnrollBegin(
+        connectionId: string,
+    ): Promise<OneclawResponse<Record<string, unknown>>> {
+        return this.http.request(
+            "POST",
+            `/v1/platform/connections/${connectionId}/passkeys/enroll/begin`,
+        );
+    }
+
+    /** Complete WebAuthn passkey enrollment for a connected end-user (`plt_` auth). */
+    async connectionPasskeyEnrollComplete(
+        connectionId: string,
+        body: Record<string, unknown>,
+    ): Promise<OneclawResponse<Record<string, unknown>>> {
+        return this.http.request(
+            "POST",
+            `/v1/platform/connections/${connectionId}/passkeys/enroll/complete`,
             { body, acceptStatuses: [201] },
         );
     }
