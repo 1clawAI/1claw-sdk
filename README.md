@@ -1,5 +1,7 @@
 # @1claw/sdk (v0.59.4)
 
+> ⭐ **Star [1clawAI/agent-templates](https://github.com/1clawAI/agent-templates)** — ready-to-run agent templates wired to 1Claw. It is our single starred repo.
+
 TypeScript/JavaScript client for the 1Claw Vault API.
 
 This is the official SDK for Node.js, Next.js, and browser apps that call 1Claw over HTTP. It covers vaults, secrets, agents, policies, treasury, Intents API signing, execution bindings, platform apps, billing, and x402 payments. Types are generated from the OpenAPI spec, so request shapes stay in sync with the API.
@@ -20,7 +22,7 @@ npm install @1claw/sdk
 import { createClient } from "@1claw/sdk";
 
 const client = createClient({
-    baseUrl: "https://api.1claw.xyz",
+    baseUrl: "https://api.1claw.co",
     apiKey: "ocv_...", // auto-exchanges for a JWT
 });
 
@@ -38,7 +40,7 @@ const secret = await client.secrets.get("vault-id", "OPENAI_KEY");
 console.log(secret.data?.value);
 ```
 
-**API contract:** This SDK is built from the **OpenAPI 3.1** spec. The canonical spec is published as [@1claw/openapi-spec](https://www.npmjs.com/package/@1claw/openapi-spec) (YAML/JSON). Types are generated with `npm run generate` (`openapi-typescript ../openapi-spec/openapi.yaml`). Run `generate` after spec changes, then `npm run build`. Shapes such as `LlmTokenBillingStatus` (including optional `credit_balance` and `billing_cycle_usage.metered_lines`) come from the generated `api-types.ts`. For a full endpoint list, see the [API reference](https://docs.1claw.xyz/docs/reference/api-reference) or the spec.
+**API contract:** This SDK is built from the **OpenAPI 3.1** spec. The canonical spec is published as [@1claw/openapi-spec](https://www.npmjs.com/package/@1claw/openapi-spec) (YAML/JSON). Types are generated with `npm run generate` (`openapi-typescript ../openapi-spec/openapi.yaml`). Run `generate` after spec changes, then `npm run build`. Shapes such as `LlmTokenBillingStatus` (including optional `credit_balance` and `billing_cycle_usage.metered_lines`) come from the generated `api-types.ts`. For a full endpoint list, see the [API reference](https://docs.1claw.co/docs/reference/api-reference) or the spec.
 
 ## Authentication
 
@@ -49,20 +51,20 @@ The SDK supports three authentication modes:
 ```typescript
 // 1. User API key (auto-authenticates)
 const client = createClient({
-    baseUrl: "https://api.1claw.xyz",
+    baseUrl: "https://api.1claw.co",
     apiKey: "ocv_...",
 });
 
 // 2. Agent with API key (auto-authenticates as agent)
 const agent = createClient({
-    baseUrl: "https://api.1claw.xyz",
+    baseUrl: "https://api.1claw.co",
     apiKey: "ocv_...",
     agentId: "agent-uuid",
 });
 
 // 3. Pre-authenticated JWT
 const authed = createClient({
-    baseUrl: "https://api.1claw.xyz",
+    baseUrl: "https://api.1claw.co",
     token: "eyJ...",
 });
 
@@ -396,7 +398,7 @@ await client.agents.submitTransaction(agentId, {
 });
 ```
 
-See the [Intents API guide](https://docs.1claw.xyz/docs/guides/intents-api#non-evm-transaction-signing) for full field reference.
+See the [Intents API guide](https://docs.1claw.co/docs/guides/intents-api#non-evm-transaction-signing) for full field reference.
 
 Key properties:
 
@@ -418,13 +420,13 @@ await client.agents.update(agentId, {
 ```
 
 When `intents_require_tee` is true:
-- Transaction submit/sign requests to `api.1claw.xyz` are rejected (403)
-- Agents must route through `shroud.1claw.xyz` where signing happens inside TEE memory
+- Transaction submit/sign requests to `api.1claw.co` are rejected (403)
+- Agents must route through `shroud.1claw.co` where signing happens inside TEE memory
 
 When `execution_require_tee` is true:
-- Execute requests to `api.1claw.xyz` are rejected (403)
+- Execute requests to `api.1claw.co` are rejected (403)
 - All direct secret reads by the agent are blocked — forces use of Execution Intent bindings
-- Agents must route through `shroud.1claw.xyz`
+- Agents must route through `shroud.1claw.co`
 
 Both require `intents_api_enabled` / `execution_intents_enabled` to be on first.
 
@@ -498,7 +500,7 @@ import { generatePKCE, buildAuthorizeUrl, createClient } from "@1claw/sdk";
 const pkce = await generatePKCE();
 
 // 2. Build the authorize URL
-const authUrl = buildAuthorizeUrl("https://1claw.xyz", {
+const authUrl = buildAuthorizeUrl("https://1claw.co", {
     clientId: "your-platform-app-slug",
     redirectUri: "https://yourapp.com/callback",
     scopes: ["openid", "profile", "email"],
@@ -507,7 +509,7 @@ const authUrl = buildAuthorizeUrl("https://1claw.xyz", {
 });
 
 // 3. After redirect, exchange the code for tokens
-const client = createClient({ baseUrl: "https://api.1claw.xyz" });
+const client = createClient({ baseUrl: "https://api.1claw.co" });
 const tokens = await client.auth.exchangeOAuthCode({
     code: "authorization-code-from-callback",
     client_id: "your-platform-app-slug",
@@ -527,10 +529,10 @@ await client.auth.revokeConsent("platform-app-id");
 
 ## OIDC Federation (Anthropic WIF, GCP STS, AWS STS)
 
-`https://api.1claw.xyz` is a fully OpenID Connect–compliant issuer. External relying parties — Anthropic Workload Identity Federation, GCP STS, AWS STS, Stytch, etc. — can validate 1claw-issued JWTs by fetching:
+`https://api.1claw.co` is a fully OpenID Connect–compliant issuer. External relying parties — Anthropic Workload Identity Federation, GCP STS, AWS STS, Stytch, etc. — can validate 1claw-issued JWTs by fetching:
 
-- `GET https://api.1claw.xyz/.well-known/openid-configuration`
-- `GET https://api.1claw.xyz/.well-known/jwks.json`
+- `GET https://api.1claw.co/.well-known/openid-configuration`
+- `GET https://api.1claw.co/.well-known/jwks.json`
 
 The SDK exposes one method to mint a federation token:
 
@@ -618,7 +620,7 @@ When using agent credentials (`agentId` + `apiKey`), the SDK automatically refre
 
 ```typescript
 const client = createClient({
-    baseUrl: "https://api.1claw.xyz",
+    baseUrl: "https://api.1claw.co",
     apiKey: "ocv_...",
     agentId: "agent-uuid",
 });
@@ -631,7 +633,7 @@ Enable [DPoP (RFC 9449)](https://datatracker.ietf.org/doc/html/rfc9449) to bind 
 
 ```typescript
 const client = createClient({
-    baseUrl: "https://api.1claw.xyz",
+    baseUrl: "https://api.1claw.co",
     apiKey: "ocv_...",
     agentId: "agent-uuid",
     dpop: true, // Generates ephemeral P-256 keypair, attaches DPoP proofs
@@ -646,7 +648,7 @@ import { DPoPManager } from "@1claw/sdk";
 const dpop = new DPoPManager();
 await dpop.init();
 
-const proof = await dpop.generateProof("POST", "https://api.1claw.xyz/v1/auth/agent-token");
+const proof = await dpop.generateProof("POST", "https://api.1claw.co/v1/auth/agent-token");
 const thumbprint = dpop.getThumbprint(); // JWK SHA-256 thumbprint (base64url)
 ```
 
@@ -699,7 +701,7 @@ const signer: X402Signer = {
 };
 
 const client = createClient({
-    baseUrl: "https://api.1claw.xyz",
+    baseUrl: "https://api.1claw.co",
     apiKey: "ocv_...",
     x402Signer: signer,
     maxAutoPayUsd: 0.01, // auto-pay up to $0.01 per request
@@ -751,7 +753,7 @@ import { createClient } from "@1claw/sdk";
 import type { CryptoProvider, AuditSink, PolicyEngine } from "@1claw/sdk";
 
 const client = createClient({
-    baseUrl: "https://api.1claw.xyz",
+    baseUrl: "https://api.1claw.co",
     apiKey: "ocv_...",
     plugins: {
         cryptoProvider: myAwsKmsProvider,
@@ -864,7 +866,7 @@ When making LLM requests to Shroud, specify the model in one of two ways:
 
 **Option 1: Header**
 ```typescript
-const res = await fetch("https://shroud.1claw.xyz/v1/chat/completions", {
+const res = await fetch("https://shroud.1claw.co/v1/chat/completions", {
   method: "POST",
   headers: {
     "X-Shroud-Agent-Key": `${agentId}:${agentApiKey}`,
@@ -888,7 +890,7 @@ body: JSON.stringify({
 
 Shroud enforces the agent's `allowed_models` and `denied_models` restrictions automatically — requests using unauthorized models return **403 Forbidden**.
 
-See the [Shroud Security Guide](https://docs.1claw.xyz/docs/guides/shroud) for full configuration options.
+See the [Shroud Security Guide](https://docs.1claw.co/docs/guides/shroud) for full configuration options.
 
 ## v0.48 — Cedar/OPA Enforcement v2
 
