@@ -9842,7 +9842,7 @@ export interface components {
         };
         CreateSigningKeyRequest: {
             /** @enum {string} */
-            chain: "ethereum" | "bitcoin" | "solana" | "xrp" | "cardano" | "tron";
+            chain: "ethereum" | "bitcoin" | "solana" | "xrp" | "cardano" | "tron" | "midnight";
         };
         SigningKeyResponse: {
             /** Format: uuid */
