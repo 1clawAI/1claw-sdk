@@ -2392,7 +2392,15 @@ export interface paths {
         put?: never;
         /**
          * Provision MCP onboarding bundle
-         * @description Creates welcome vault + sample secret, MCP agent, and default ** policy. Returns one-time API key and stdio MCP config.
+         * @description Creates welcome vault + sample secret, MCP agent, and a policy on the
+         *     vault. Returns one-time API key and stdio MCP config.
+         *
+         *     The grant is `**` only when the welcome vault is newly created. If an
+         *     org already has a vault named `default`, it is reused and the agent is
+         *     granted `examples/**` instead — enough to read the sample it is asked to
+         *     verify with, without exposing secrets already kept there.
+         *
+         *     Subject to `agent.create` control-plane consensus; see `approval_id`.
          */
         post: operations["provisionOnboarding"];
         delete?: never;
@@ -5964,9 +5972,12 @@ export interface paths {
         put?: never;
         /**
          * Verify email OTP and get JWT
-         * @description Verifies the 6-digit code sent to the user's email. If the user does not
-         *     exist, a new account is created. Optionally auto-provisions treasury wallets
-         *     for the specified chains. Returns a JWT for subsequent API calls.
+         * @description Verifies the 6-digit code sent to the user's email. Optionally
+         *     auto-provisions treasury wallets for the specified chains. Returns a JWT
+         *     for subsequent API calls.
+         *
+         *     An unrecognized address is rejected unless the request carries
+         *     `platform_app_id` or sets `allow_signup`.
          */
         post: operations["verifyEmailOtp"];
         delete?: never;
@@ -9841,7 +9852,14 @@ export interface components {
             transactions: components["schemas"]["SimulateTransactionRequest"][];
         };
         CreateSigningKeyRequest: {
-            /** @enum {string} */
+            /**
+             * @description `midnight` is Preprod-only and requires the midnight-signer
+             *     sidecar. Note it can be provisioned but not rotated or
+             *     imported: derivation happens in the sidecar, so there is no
+             *     local keygen and no raw private key to import. Both of
+             *     those endpoints refuse it before consuming an approval.
+             * @enum {string}
+             */
             chain: "ethereum" | "bitcoin" | "solana" | "xrp" | "cardano" | "tron" | "midnight";
         };
         SigningKeyResponse: {
@@ -10267,6 +10285,14 @@ export interface components {
         OnboardingProvisionRequest: {
             agent_name?: string;
             client?: string;
+            /**
+             * Format: uuid
+             * @description Approval satisfying an `agent.create` control-plane consensus policy,
+             *     if the org has one. Same field and meaning as on `POST /v1/agents`:
+             *     the first call returns 202 with the approval to collect, and the
+             *     retry passes its id here.
+             */
+            approval_id?: string;
         };
         OnboardingProvisionResponse: {
             /** Format: uuid */
@@ -14695,6 +14721,14 @@ export interface operations {
                         require_passkey_for_vaults?: boolean;
                         require_passkey_for_mfa?: boolean;
                         passkey_count?: number;
+                        /**
+                         * @description True while this account carries a passkey requirement
+                         *     that the 1claw.xyz → 1claw.co move cleared on its
+                         *     behalf. The two flags above read false, but that was
+                         *     not the user's choice: registering a passkey on the
+                         *     canonical domain restores them.
+                         */
+                        passkey_requirements_downgraded?: boolean;
                     };
                 };
             };
@@ -21702,6 +21736,16 @@ export interface operations {
                     platform_app_id?: string;
                     /** @description Chains to auto-generate wallets for (e.g. ["ethereum", "base"]) */
                     auto_provision_chains?: string[];
+                    /**
+                     * @description Opt in to creating an account when the address is not
+                     *     recognized. Without it an unknown address is rejected
+                     *     rather than silently given a new user and org — a valid
+                     *     code proves control of an inbox, not consent to sign up.
+                     *     Not required when `platform_app_id` is present: creating
+                     *     the end user on first login is the embedded-wallet flow.
+                     * @default false
+                     */
+                    allow_signup?: boolean;
                 };
             };
         };
