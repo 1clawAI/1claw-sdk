@@ -51,7 +51,7 @@ import { EnvVarsResource } from "../resources/env-vars";
  * import { createClient } from "@1claw/sdk";
  *
  * const client = createClient({
- *   baseUrl: "https://api.1claw.xyz",
+ *   baseUrl: "https://api.1claw.co",
  *   apiKey: "ocv_...",
  * });
  *
@@ -237,20 +237,20 @@ export class OneclawClient {
  * ```ts
  * // User with API key
  * const client = createClient({
- *   baseUrl: "https://api.1claw.xyz",
+ *   baseUrl: "https://api.1claw.co",
  *   apiKey: "ocv_...",
  * });
  *
  * // Agent with API key
  * const agent = createClient({
- *   baseUrl: "https://api.1claw.xyz",
+ *   baseUrl: "https://api.1claw.co",
  *   apiKey: "ocv_...",
  *   agentId: "agent-uuid",
  * });
  *
  * // Pre-authenticated with JWT
  * const authed = createClient({
- *   baseUrl: "https://api.1claw.xyz",
+ *   baseUrl: "https://api.1claw.co",
  *   token: "eyJ...",
  * });
  * ```

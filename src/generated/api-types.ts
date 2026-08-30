@@ -11231,6 +11231,13 @@ export interface components {
              * @default false
              */
             create_sub_org: boolean;
+            /**
+             * Format: uuid
+             * @description Required only when calling as a user (the dashboard wizard).
+             *     A `plt_` key carries its app in the credential; a user does not,
+             *     so the app is named here and checked against the caller's org.
+             */
+            app_id?: string;
         };
         PlatformUserResponse: {
             /** Format: uuid */

@@ -15,7 +15,7 @@ export type ApiSchemas = components["schemas"];
 // ---------------------------------------------------------------------------
 
 export interface OneclawClientConfig {
-    /** Base URL for the 1Claw API (e.g. "https://api.1claw.xyz") */
+    /** Base URL for the 1Claw API (e.g. "https://api.1claw.co") */
     baseUrl: string;
     /** Pre-existing Bearer token (user JWT or agent JWT). */
     token?: string;
