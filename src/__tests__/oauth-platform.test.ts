@@ -77,13 +77,13 @@ describe("generatePKCE", () => {
 // ---------------------------------------------------------------------------
 describe("buildAuthorizeUrl", () => {
     it("constructs URL with required params", () => {
-        const url = buildAuthorizeUrl("https://1claw.xyz", {
+        const url = buildAuthorizeUrl("https://1claw.co", {
             clientId: "app-123",
             redirectUri: "https://example.com/callback",
         });
 
         const parsed = new URL(url);
-        expect(parsed.origin).toBe("https://1claw.xyz");
+        expect(parsed.origin).toBe("https://1claw.co");
         expect(parsed.pathname).toBe("/oauth/authorize");
         expect(parsed.searchParams.get("client_id")).toBe("app-123");
         expect(parsed.searchParams.get("redirect_uri")).toBe("https://example.com/callback");
@@ -91,7 +91,7 @@ describe("buildAuthorizeUrl", () => {
     });
 
     it("includes scopes when provided", () => {
-        const url = buildAuthorizeUrl("https://1claw.xyz", {
+        const url = buildAuthorizeUrl("https://1claw.co", {
             clientId: "app-123",
             redirectUri: "https://example.com/callback",
             scopes: ["openid", "profile", "email"],
@@ -102,7 +102,7 @@ describe("buildAuthorizeUrl", () => {
     });
 
     it("includes state when provided", () => {
-        const url = buildAuthorizeUrl("https://1claw.xyz", {
+        const url = buildAuthorizeUrl("https://1claw.co", {
             clientId: "app-123",
             redirectUri: "https://example.com/callback",
             state: "random-state-value",
@@ -113,7 +113,7 @@ describe("buildAuthorizeUrl", () => {
     });
 
     it("includes PKCE code_challenge and code_challenge_method", () => {
-        const url = buildAuthorizeUrl("https://1claw.xyz", {
+        const url = buildAuthorizeUrl("https://1claw.co", {
             clientId: "app-123",
             redirectUri: "https://example.com/callback",
             codeChallenge: "challenge-hash-value",
@@ -125,7 +125,7 @@ describe("buildAuthorizeUrl", () => {
     });
 
     it("omits optional params when not provided", () => {
-        const url = buildAuthorizeUrl("https://1claw.xyz", {
+        const url = buildAuthorizeUrl("https://1claw.co", {
             clientId: "app-123",
             redirectUri: "https://example.com/callback",
         });
@@ -138,7 +138,7 @@ describe("buildAuthorizeUrl", () => {
     });
 
     it("defaults response_type to 'code'", () => {
-        const url = buildAuthorizeUrl("https://1claw.xyz", {
+        const url = buildAuthorizeUrl("https://1claw.co", {
             clientId: "app-123",
             redirectUri: "https://example.com/callback",
         });
@@ -340,7 +340,7 @@ describe("PlatformResource", () => {
 
     it("bootstrapUser sends POST to /connections/{id}/bootstrap", async () => {
         globalThis.fetch = mockFetch(200, {
-            claim_url: "https://1claw.xyz/connect/slug/claim/ct_abc",
+            claim_url: "https://1claw.co/connect/slug/claim/ct_abc",
             claim_token: "ct_abc",
             connection_id: "conn-1",
         });
