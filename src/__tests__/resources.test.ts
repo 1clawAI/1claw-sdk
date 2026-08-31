@@ -432,16 +432,25 @@ describe("ApprovalsResource", () => {
         expect(url.searchParams.get("status")).toBe("pending");
     });
 
-    it("approve sends POST /v1/approvals/{id}/approve", async () => {
+    // These previously asserted /approve and /deny, which the API has never
+    // served — the test pinned the URL the SDK sent without ever checking the
+    // endpoint existed, so it locked in a 404 instead of catching one. The only
+    // decision route is /decide.
+    it("approve decides via POST /v1/approvals/{id}/decide", async () => {
         globalThis.fetch = mockFetch(200, { status: "approved" });
         await new ApprovalsResource(makeHttp()).approve("apr-1");
-        expect(lastCall().url).toBe(`${BASE}/v1/approvals/apr-1/approve`);
+        expect(lastCall().url).toBe(`${BASE}/v1/approvals/apr-1/decide`);
+        expect(JSON.parse(lastCall().init.body as string)).toMatchObject({ decision: "approved" });
     });
 
-    it("deny sends POST /v1/approvals/{id}/deny", async () => {
+    it("deny decides via POST /v1/approvals/{id}/decide and carries the reason", async () => {
         globalThis.fetch = mockFetch(200, { status: "denied" });
         await new ApprovalsResource(makeHttp()).deny("apr-1", "not authorized");
-        expect(JSON.parse(lastCall().init.body as string)).toEqual({ reason: "not authorized" });
+        expect(lastCall().url).toBe(`${BASE}/v1/approvals/apr-1/decide`);
+        expect(JSON.parse(lastCall().init.body as string)).toMatchObject({
+            decision: "rejected",
+            reason: "not authorized",
+        });
     });
 
     it("check sends GET /v1/approvals/{id}", async () => {

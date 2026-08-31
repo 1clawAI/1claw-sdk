@@ -110,7 +110,7 @@ export class PasskeysResource {
     ): Promise<OneclawResponse<PasskeyAssertBeginResponse>> {
         return this.http.request<PasskeyAssertBeginResponse>(
             "POST",
-            "/v1/auth/passkey-assert/begin",
+            "/v1/auth/passkeys/assert/begin",
             { body: options ?? {} },
         );
     }
@@ -120,7 +120,7 @@ export class PasskeysResource {
     ): Promise<OneclawResponse<PasskeyAssertCompleteResponse>> {
         return this.http.request<PasskeyAssertCompleteResponse>(
             "POST",
-            "/v1/auth/passkey-assert/complete",
+            "/v1/auth/passkeys/assert/complete",
             { body: options },
         );
     }

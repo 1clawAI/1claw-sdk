@@ -39,26 +39,31 @@ export class ApprovalsResource {
         });
     }
 
-    /** Approve a pending request. */
+    /**
+     * Approve a pending request.
+     *
+     * Delegates to `decide`. These previously posted to
+     * `/v1/approvals/{id}/approve` and `/deny`, which the API has never served
+     * — the only decision route is `/decide` — so both returned 404 for every
+     * caller. Keeping the methods and routing them correctly preserves the
+     * published surface; deleting them would break callers a second time.
+     *
+     * Pass `stepUpToken` / `mfaToken` when the approval requires step-up.
+     */
     async approve(
         requestId: string,
+        options?: { reason?: string; stepUpToken?: string; mfaToken?: string },
     ): Promise<OneclawResponse<ApprovalRequest>> {
-        return this.http.request<ApprovalRequest>(
-            "POST",
-            `/v1/approvals/${requestId}/approve`,
-        );
+        return this.decide(requestId, "approved", options);
     }
 
-    /** Deny a pending request with an optional reason. */
+    /** Deny a pending request with an optional reason. See `approve`. */
     async deny(
         requestId: string,
         reason?: string,
+        options?: { stepUpToken?: string; mfaToken?: string },
     ): Promise<OneclawResponse<ApprovalRequest>> {
-        return this.http.request<ApprovalRequest>(
-            "POST",
-            `/v1/approvals/${requestId}/deny`,
-            { body: reason ? { reason } : undefined },
-        );
+        return this.decide(requestId, "rejected", { ...options, ...(reason ? { reason } : {}) });
     }
 
     /**
