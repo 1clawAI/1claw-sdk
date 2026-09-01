@@ -9306,6 +9306,25 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/agents/{id}/browser/fills/consume": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Redeem a grant for the credential it authorised. Takes the browser session token and the bridge credential, and refuses an agent principal — the agent asks which binding, the bridge collects the answer. */
+        post: operations["consume_browser_fill"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/agents/{agent_id}/chat/unlock": {
         parameters: {
             query?: never;
@@ -29480,8 +29499,22 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": {
+                    /**
+                     * Format: uuid
+                     * @description Must match the session the presented bs_ token opened.
+                     */
+                    session_id: string;
                     /** Format: uuid */
                     binding_id: string;
+                    /** @description The target the fill is for. Recorded on the grant. */
+                    frame_id: string;
+                    /**
+                     * Format: int64
+                     * @description The bridge's navigation counter. Compared again at consume: a navigation in between means the page decided about is no longer the page in front of the bridge.
+                     */
+                    generation: number;
+                    /** @description Where the form would POST. Checked as well as the two origins — a login form on an allowed page can still submit to somebody else's host. */
+                    form_action_origin?: string;
                     /** @description Origin of the tab being driven. Checked against the binding's allowed and sso hosts by exact host match. */
                     tab_origin: string;
                     /** @description Origin of the frame holding the form. Checked separately — a credential typed into an allowed tab can still land in an attacker's iframe. */
@@ -29499,8 +29532,15 @@ export interface operations {
                     "application/json": {
                         /** @enum {string} */
                         kind?: "grant";
+                        /**
+                         * Format: uuid
+                         * @description Single-use, short-lived, redeemable only by the session it was issued to.
+                         */
+                        grant_id?: string;
                         /** Format: uuid */
                         binding_id?: string;
+                        /** Format: date-time */
+                        expires_at?: string;
                         /** @description The bridge navigates here itself. An agent-supplied URL would be the agent choosing who receives the password. */
                         login_url?: string;
                     };
@@ -29521,6 +29561,74 @@ export interface operations {
                 content?: never;
             };
             /** @description No such binding for this org */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    consume_browser_fill: {
+        parameters: {
+            query?: never;
+            header: {
+                "x-1claw-bridge-credential": string;
+                /** @description The bs_ session token. Proof the redemption belongs to a session this bridge opened. */
+                "x-1claw-bridge-session": string;
+                "x-1claw-bridge-version": string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    session_id: string;
+                    /** Format: uuid */
+                    grant_id: string;
+                    /**
+                     * Format: int64
+                     * @description The bridge's navigation counter now. A mismatch means the page moved after the decision.
+                     */
+                    generation: number;
+                };
+            };
+        };
+        responses: {
+            /** @description The credential. The only route in the feature that returns secret material. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        binding_id?: string;
+                        /** @description The secret the binding points at. */
+                        value?: unknown;
+                        form_fingerprint?: Record<string, never> | null;
+                    };
+                };
+            };
+            /** @description Missing or unsupported bridge version */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Grant expired, already used, issued to another session or device; the page navigated after authorisation; or an agent principal was presented */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The binding or the secret behind it is missing */
             404: {
                 headers: {
                     [name: string]: unknown;
