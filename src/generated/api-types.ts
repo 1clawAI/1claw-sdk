@@ -29750,7 +29750,7 @@ export interface operations {
             200: {
                 headers: {
                     "x-1claw-binding-id"?: string;
-                    /** @description The binding's form fingerprint as JSON, when it has one. */
+                    /** @description The binding's form fingerprint, base64-encoded JSON, when it has one. Base64 because a fingerprint naming a non-ASCII field is not a legal header value as raw JSON. */
                     "x-1claw-form-fingerprint"?: string;
                     [name: string]: unknown;
                 };
