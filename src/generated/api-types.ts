@@ -29746,19 +29746,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description The credential. The only route in the feature that returns secret material. */
+            /** @description The credential itself, as raw bytes — the only route in the feature that returns secret material. Not a JSON envelope: the bridge adopts the body into a zeroable buffer, and a wrapper would force it to parse, interning the secret as a string that lives until GC. Metadata rides in `x-1claw-binding-id` and `x-1claw-form-fingerprint`; the response is `cache-control: no-store`. */
             200: {
                 headers: {
+                    "x-1claw-binding-id"?: string;
+                    /** @description The binding's form fingerprint as JSON, when it has one. */
+                    "x-1claw-form-fingerprint"?: string;
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        /** Format: uuid */
-                        binding_id?: string;
-                        /** @description The secret the binding points at. */
-                        value?: unknown;
-                        form_fingerprint?: Record<string, never> | null;
-                    };
+                    "application/octet-stream": string;
                 };
             };
             /** @description Missing or unsupported bridge version */
