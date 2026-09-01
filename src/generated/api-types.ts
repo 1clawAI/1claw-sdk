@@ -9251,6 +9251,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/browser/devices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Pair a browser bridge and mint its credential. Human callers only, behind a step-up re-auth: pairing is what gives a browser the standing to ask for credentials later. */
+        post: operations["pair_browser_device"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/agents/{id}/browser/sessions": {
         parameters: {
             query?: never;
@@ -11021,9 +11038,18 @@ export interface components {
             public_key?: string;
             curve?: string;
         };
+        /** @description At least one field is required. */
         PatchConnectionAgentRequest: {
             intents_api_enabled?: boolean;
             execution_intents_enabled?: boolean;
+            /**
+             * @description Agent memory, off by default. Until this field existed a
+             *     platform app had no way to turn it on: a bootstrap template
+             *     accepted `memory_enabled` in its spec and never read it, so
+             *     the capability was reachable only from the end user's own
+             *     dashboard. Templates now honour the flag too.
+             */
+            memory_enabled?: boolean;
             system_prompt?: string | null;
         };
         PatchConnectionAgentResponse: {
@@ -11031,6 +11057,7 @@ export interface components {
             agent_id?: string;
             intents_api_enabled?: boolean;
             execution_intents_enabled?: boolean;
+            memory_enabled?: boolean;
             system_prompt?: string | null;
         };
         LeaseBankrKeyRequest: {
@@ -22110,6 +22137,11 @@ export interface operations {
     getConnectionMemory: {
         parameters: {
             query?: {
+                /**
+                 * @description Optional only while the connection has exactly one agent.
+                 *     With more than one it becomes required and the call answers
+                 *     400 without it — the Fleet template provisions three.
+                 */
                 agent_id?: string;
             };
             header?: never;
@@ -26540,6 +26572,15 @@ export interface operations {
             content: {
                 "application/json": {
                     token: string;
+                    /**
+                     * Format: uuid
+                     * @description Consensus approval to spend on this creation.
+                     *     Approving an enrollment creates an agent, so it is
+                     *     gated on `agent.create` exactly as POST /v1/agents
+                     *     is. Orgs without a control-plane consensus policy
+                     *     never need this.
+                     */
+                    approval_id?: string;
                 };
             };
         };
@@ -26558,7 +26599,10 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Forbidden, or the plan does not include this */
+            /**
+             * @description Forbidden, the plan does not include this, or the org requires
+             *     M-of-N consensus for `agent.create` and no approval was supplied.
+             */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -29295,6 +29339,64 @@ export interface operations {
             };
         };
     };
+    pair_browser_device: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description Name for this device. Re-pairing an existing label must present the same key. */
+                    label: string;
+                    /** @description The bridge's public key, pinned on first use for this label. */
+                    public_key_pin: string;
+                    bridge_version?: string;
+                    platform?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Paired. The credential is returned once and there is no endpoint that returns it again. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        device_id?: string;
+                        label?: string;
+                        /** @description The bb_ bridge credential. Shown once. */
+                        credential?: string;
+                    };
+                };
+            };
+            /** @description Unauthenticated, or step-up re-auth not satisfied */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not a human caller — agents and platform keys cannot pair a device */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description That label is already pinned to a different key */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     create_browser_session: {
         parameters: {
             query?: never;
@@ -29309,14 +29411,36 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * Format: uuid
+                     * @description Must belong to the same org as the paired device.
+                     */
+                    agent_id: string;
+                    client_id: string;
+                    bridge_version?: string;
+                    protocol_version?: string;
+                };
+            };
+        };
         responses: {
             /** @description Session created */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        session_id?: string;
+                        /** @description bs_ prefixed. Only its hash is stored. */
+                        session_token?: string;
+                        /** Format: date-time */
+                        expires_at?: string;
+                    };
+                };
             };
             /** @description Missing or unsupported bridge version */
             400: {
@@ -29327,6 +29451,13 @@ export interface operations {
             };
             /** @description Not a paired bridge, or an agent token was presented */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The device and the agent are not in the same org */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -29346,14 +29477,34 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    binding_id: string;
+                    /** @description Origin of the tab being driven. Checked against the binding's allowed and sso hosts by exact host match. */
+                    tab_origin: string;
+                    /** @description Origin of the frame holding the form. Checked separately — a credential typed into an allowed tab can still land in an attacker's iframe. */
+                    frame_origin: string;
+                };
+            };
+        };
         responses: {
             /** @description A grant, a denial, or a pending approval. Never a secret. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        kind?: "grant";
+                        /** Format: uuid */
+                        binding_id?: string;
+                        /** @description The bridge navigates here itself. An agent-supplied URL would be the agent choosing who receives the password. */
+                        login_url?: string;
+                    };
+                };
             };
             /** @description Missing or unsupported bridge version */
             400: {
@@ -29362,8 +29513,15 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Only one of the two required credentials was presented */
+            /** @description Only one of the two required credentials was presented, an origin is not on the binding's allowlist, or the fill velocity cap was hit */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such binding for this org */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
