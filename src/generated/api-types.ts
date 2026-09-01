@@ -5582,9 +5582,29 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Begin passkey enrollment for a connected user
-         * @description Starts WebAuthn registration for the end-user on this connection.
-         *     Platform apps use this instead of `POST /v1/auth/passkeys/register/begin` (user JWT only).
+         * Begin passkey enrollment for a connected user (always 403)
+         * @deprecated
+         * @description **This endpoint always returns 403 and cannot be made to work.**
+         *     The description here previously said platform apps should use it
+         *     instead of `POST /v1/auth/passkeys/register/begin`, which was
+         *     wrong and cost integrators a WebAuthn ceremony to discover.
+         *
+         *     A passkey enrolled this way is login-capable: it can be asserted
+         *     through the public sign-in flow to mint a full, non-delegated
+         *     user session, so an app that enrolled one would hold a credential
+         *     stronger than the delegation boundary it operates under. The
+         *     capability was removed for that reason and will not return.
+         *
+         *     **A passkey is enrolled by the user, in their own session**, via
+         *     `POST /v1/auth/passkeys/register/begin`. For a connected user
+         *     that means completing the claim flow on the connection first.
+         *
+         *     To *use* a passkey a connected user already has, see:
+         *       - `GET /v1/platform/connections/{connectionId}/passkeys` —
+         *         whether the confirm step can be offered at all.
+         *       - `POST /v1/platform/connections/{connectionId}/passkeys/tx-assert/begin`
+         *         and `.../complete` — ask that user to touch their
+         *         authenticator over a specific digest.
          */
         post: operations["connectionPasskeyEnrollBegin"];
         delete?: never;
@@ -5602,8 +5622,102 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Complete passkey enrollment for a connected user */
+        /**
+         * Complete passkey enrollment for a connected user (always 403)
+         * @deprecated
+         * @description **This endpoint always returns 403.** See
+         *     `POST /v1/platform/connections/{connectionId}/passkeys/enroll/begin`
+         *     for why, and for the paths that do work.
+         */
         post: operations["connectionPasskeyEnrollComplete"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/connections/{connectionId}/passkeys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Whether a connected user can be asked for a passkey touch
+         * @description Answers one question: can this app offer the passkey confirm
+         *     step to this user? No credential material is returned — not
+         *     credential ids, not public keys, not enrolment times.
+         *
+         *     `count` is what matters. Passkeys are bound to the domain they
+         *     were registered on, so an account can hold credentials that this
+         *     domain cannot offer; `count` reports only those usable on
+         *     `rp_id`, while `registered_count` is the raw total. Branch on
+         *     `has_passkey`.
+         */
+        get: operations["listConnectionPasskeys"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/connections/{connectionId}/passkeys/tx-assert/begin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ask a connected user to touch their authenticator
+         * @description Begins a WebAuthn assertion bound to `tx_digest`, for the user on
+         *     this connection. The connection in the path is the addressing
+         *     that `POST /v1/auth/passkeys/tx-assert/begin` lacks: that route
+         *     resolves the *calling* principal, so with a `plt_` key it looks
+         *     up the app itself and reports no passkeys. An app never needs to
+         *     hold an email to name one of its users.
+         *
+         *     Returns 404 when the user has no passkey usable on this domain —
+         *     check `GET /v1/platform/connections/{connectionId}/passkeys`
+         *     first and only offer the step when `has_passkey` is true.
+         */
+        post: operations["connectionPasskeyTxAssertBegin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/connections/{connectionId}/passkeys/tx-assert/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Verify the touch and return proof of it
+         * @description Verifies the assertion — origin, rpIdHash, the user-verified
+         *     flag, the signature, and a sign count that must increase, which
+         *     is what catches a cloned authenticator — and returns a
+         *     short-lived token proving this user touched their authenticator
+         *     over that digest.
+         *
+         *     The token records that a platform app requested it. That
+         *     provenance is deliberate: it proves the touch to your
+         *     application, and it is **refused** as authorization for a
+         *     1Claw treasury transfer. A user consenting to your action has
+         *     not consented to moving funds, and those remain a separate
+         *     assertion from the user's own session.
+         */
+        post: operations["connectionPasskeyTxAssertComplete"];
         delete?: never;
         options?: never;
         head?: never;
@@ -22139,16 +22253,18 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description WebAuthn registration ceremony options */
-            200: {
+            /**
+             * @description Always. Platform apps cannot enroll login passkeys for
+             *     connected users.
+             */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PasskeyRegisterBeginResponse"];
+                    "application/json": components["schemas"]["ProblemDetails"];
                 };
             };
-            404: components["responses"]["NotFound"];
         };
     };
     connectionPasskeyEnrollComplete: {
@@ -22166,16 +22282,144 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Passkey registered */
-            201: {
+            /**
+             * @description Always. Platform apps cannot enroll login passkeys for
+             *     connected users.
+             */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PasskeyRegisterCompleteResponse"];
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    listConnectionPasskeys: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connectionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Passkey availability for this connection */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description True when count > 0. */
+                        has_passkey: boolean;
+                        /**
+                         * Format: int64
+                         * @description Passkeys usable on rp_id.
+                         */
+                        count: number;
+                        /**
+                         * Format: int64
+                         * @description All passkeys on the account, including any
+                         *     bound to a different domain.
+                         */
+                        registered_count: number;
+                        /** @description The domain these counts are measured against. */
+                        rp_id: string;
+                    };
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    connectionPasskeyTxAssertBegin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connectionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description SHA-256 hex of the exact text being confirmed. */
+                    tx_digest: string;
+                    /**
+                     * @default send
+                     * @enum {string}
+                     */
+                    action?: "send" | "swap";
+                };
+            };
+        };
+        responses: {
+            /** @description WebAuthn assertion ceremony options */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PasskeyAssertBeginResponse"];
                 };
             };
             400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            /** @description This user has no passkey registered. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    connectionPasskeyTxAssertComplete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connectionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    credential_id: string;
+                    authenticator_data: string;
+                    client_data_json: string;
+                    signature: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Assertion verified */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description Single-use proof of the touch, bound to the
+                         *     digest and to this user.
+                         */
+                        passkey_token: string;
+                        /** @description Seconds until the token expires. */
+                        expires_in: number;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
         };
     };
