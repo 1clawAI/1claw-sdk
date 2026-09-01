@@ -5247,7 +5247,8 @@ export interface paths {
          */
         get: operations["listConnectionApprovals"];
         put?: never;
-        post?: never;
+        /** Create an approval on a platform connection */
+        post: operations["createConnectionApproval"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5421,7 +5422,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post?: never;
+        /** Alias for PATCH on this path — same handler, same limited settings. Present because some clients cannot send PATCH. */
+        post: operations["postConnectionAgent"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5851,7 +5853,8 @@ export interface paths {
          */
         get: operations["quickDecideApproval"];
         put?: never;
-        post?: never;
+        /** One-click approve or deny, as an API call. The GET on this path is the preview an email link opens; this is the decision itself. */
+        post: operations["quickDecide"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6973,7 +6976,8 @@ export interface paths {
         get: operations["listMemoryEntries"];
         put?: never;
         post?: never;
-        delete?: never;
+        /** Delete a memory namespace and every entry in it. Destructive and not reversible; there is no per-entry confirmation. */
+        delete: operations["deleteMemoryNamespace"];
         options?: never;
         head?: never;
         patch?: never;
@@ -8156,23 +8160,6 @@ export interface paths {
          */
         post: operations["executeCredentialRecovery"];
         delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/auth/credential-recovery/requests/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Cancel or reject a recovery request */
-        delete: operations["cancelCredentialRecovery"];
         options?: never;
         head?: never;
         patch?: never;
@@ -21760,6 +21747,28 @@ export interface operations {
             404: components["responses"]["NotFound"];
         };
     };
+    createConnectionApproval: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connectionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Approval created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
     getConnectionApproval: {
         parameters: {
             query?: never;
@@ -22033,6 +22042,29 @@ export interface operations {
                 };
                 content?: never;
             };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    postConnectionAgent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connectionId: string;
+                agentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Agent updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
         };
     };
@@ -22670,6 +22702,40 @@ export interface operations {
             400: components["responses"]["BadRequest"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
+        };
+    };
+    quickDecide: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    token: string;
+                    /** @enum {string} */
+                    decision: "approve" | "deny";
+                };
+            };
+        };
+        responses: {
+            /** @description Decision recorded */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Malformed or expired token */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: components["responses"]["NotFound"];
         };
     };
     listDepositDestinations: {
@@ -24593,6 +24659,29 @@ export interface operations {
             404: components["responses"]["NotFound"];
         };
     };
+    deleteMemoryNamespace: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+                namespace: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Namespace deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
     getMemoryEntry: {
         parameters: {
             query?: never;
@@ -26501,29 +26590,6 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["CredentialRecoveryExecuteResponse"];
                 };
-            };
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
-        };
-    };
-    cancelCredentialRecovery: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Request cancelled */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
