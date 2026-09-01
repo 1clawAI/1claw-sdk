@@ -9268,6 +9268,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/browser/credentials": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List this org's browser credential bindings */
+        get: operations["list_browser_credentials"];
+        put?: never;
+        /** Define a binding: which secret may be typed, and into which hosts. Humans only, behind a step-up — an agent that could create one could nominate any path it liked as fillable. */
+        post: operations["create_browser_credential"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/browser/credentials/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a browser credential binding */
+        delete: operations["delete_browser_credential"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/agents/{id}/browser/sessions": {
         parameters: {
             query?: never;
@@ -29409,6 +29446,116 @@ export interface operations {
             };
             /** @description That label is already pinned to a different key */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_browser_credentials: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The bindings */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    create_browser_credential: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    label: string;
+                    /**
+                     * Format: uuid
+                     * @description Must belong to the caller's org.
+                     */
+                    vault_id: string;
+                    /** @description Path of the secret inside that vault. The value never lands in the binding. */
+                    secret_path: string;
+                    /** @description https only, and its host must be in allowed_hosts or sso_hosts — the bridge navigates here itself, one step before a password is typed. */
+                    login_url: string;
+                    /** @description Bare hostnames, compared exactly. URLs, ports and wildcards are refused: a wildcard would match nothing while looking like it allowed something. */
+                    allowed_hosts: string[];
+                    /** @description Identity-provider hosts the login legitimately bounces through. */
+                    sso_hosts?: string[];
+                };
+            };
+        };
+        responses: {
+            /** @description Created. Every field is a pointer or a policy; none is secret. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A host is not a bare hostname, allowed_hosts is empty, or login_url is http or outside the allowlist */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not a human caller, step-up not satisfied, or the vault belongs to another org */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Vault not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    delete_browser_credential: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not a human caller */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Binding not found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
