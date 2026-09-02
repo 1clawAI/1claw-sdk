@@ -9245,11 +9245,29 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** List the browser bridges paired to this organization. Revoked devices are included: 'was this machine ever paired' is the question asked after a laptop goes missing. */
+        get: operations["list_browser_devices"];
         put?: never;
         /** Pair a browser bridge and mint its credential. Human callers only, behind a step-up re-auth: pairing is what gives a browser the standing to ask for credentials later. */
         post: operations["pair_browser_device"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/browser/devices/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Revoke a paired bridge. This is what makes a leaked bb_ credential stop working. */
+        delete: operations["revoke_browser_device"];
         options?: never;
         head?: never;
         patch?: never;
@@ -9713,6 +9731,7 @@ export interface components {
             keys?: components["schemas"]["ApiKeyResponse"][];
         };
         CreateVaultRequest: {
+            /** @description Unique within the organization. Trimmed before it is stored, and the trimmed value is what must be unique. Counted in characters, not bytes. */
             name: string;
             description?: string;
             /** @description MPC custody mode to enable at creation (e.g. "2-of-2", "2-of-3") */
@@ -16617,7 +16636,24 @@ export interface operations {
                     "application/json": components["schemas"]["VaultResponse"];
                 };
             };
-            400: components["responses"]["BadRequest"];
+            /** @description The name is empty or longer than 255 characters. Checked before the consensus gate and the quota, so a malformed request consumes neither an approval nor a rate-limit slot. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description A vault with that name already exists in this organization. Names are unique per org; this previously surfaced as a 500. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
         };
     };
     getVault: {
@@ -24608,6 +24644,21 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            /**
+             * @description The runtime's last start failed less than 120 seconds ago and is not
+             *     being retried yet. Chat starts a stopped runtime, so a client that
+             *     retries on failure turns every attempt into another deploy — one
+             *     polling client did exactly that every 8 seconds for days. Wait out
+             *     the cooldown, or call the start endpoint to see the underlying error.
+             */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
         };
     };
     listMemoryNamespaces: {
@@ -29461,6 +29512,50 @@ export interface operations {
             };
         };
     };
+    list_browser_devices: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The paired devices. No credential material is returned — the row holds an Argon2 hash and a prefix, and neither is exposed. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        devices?: {
+                            /** Format: uuid */
+                            id?: string;
+                            label?: string;
+                            platform?: string | null;
+                            bridge_version?: string | null;
+                            /** Format: date-time */
+                            last_seen_at?: string | null;
+                            /**
+                             * Format: date-time
+                             * @description Set once revoked. A revoked credential stops resolving.
+                             */
+                            revoked_at?: string | null;
+                            /** Format: date-time */
+                            created_at?: string;
+                        }[];
+                    };
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     pair_browser_device: {
         parameters: {
             query?: never;
@@ -29512,6 +29607,40 @@ export interface operations {
             };
             /** @description That label is already pinned to a different key */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    revoke_browser_device: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Revoked. Subsequent use of that credential resolves to nothing. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such device in this organization */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -29729,16 +29858,16 @@ export interface operations {
                     /** @description Where the form would POST. Checked as well as the two origins — a login form on an allowed page can still submit to somebody else's host. Absent is not treated as 'same as the tab'; it denies. */
                     form_action_origin?: string;
                     /** @description Path of the form being filled, checked against the binding's fingerprint. */
-                    form_path?: string;
+                    form_path: string;
                     /** @description Field names on that form. Every field the fingerprint expects must be present; extra fields are fine, since sites add hidden inputs. */
-                    field_names?: string[];
+                    field_names: string[];
                     /** @description Hosts the login has redirected through, in order. Each is checked against the binding's allowed hosts union its sso hosts. */
-                    redirect_chain?: string[];
+                    redirect_chain: string[];
                     /**
                      * Format: int64
                      * @description The target's generation now. A mismatch with `generation` means the page moved and the fill is denied.
                      */
-                    current_generation?: number;
+                    current_generation: number;
                     /** @description Origin of the tab being driven. Checked against the binding's allowed and sso hosts by exact host match. */
                     tab_origin: string;
                     /** @description Origin of the frame holding the form. Checked separately — a credential typed into an allowed tab can still land in an attacker's iframe. */
