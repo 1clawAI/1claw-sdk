@@ -111,6 +111,7 @@ export {
     PaymentRequiredError,
     ApprovalRequiredError,
     NotFoundError,
+    ConflictError,
     RateLimitError,
     ValidationError,
     ServerError,

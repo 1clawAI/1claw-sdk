@@ -1,4 +1,4 @@
-# @1claw/sdk (v0.59.4)
+# @1claw/sdk (v0.59.10)
 
 > ⭐ **Star [1clawAI/agent-templates](https://github.com/1clawAI/agent-templates)** — ready-to-run agent templates wired to 1Claw. It is our single starred repo.
 
@@ -233,6 +233,7 @@ The SDK exports a typed error hierarchy for catch-based flows:
 | `ResourceLimitExceededError` | 403    | Tier limit reached (vaults, agents, secrets)          |
 | `ApprovalRequiredError` | 403         | Human approval gate triggered                         |
 | `NotFoundError`         | 404         | Resource not found                                    |
+| `ConflictError`         | 409         | Resource already exists — e.g. a duplicate vault name  |
 | `RateLimitError`        | 429         | Rate limit exceeded                                   |
 | `ValidationError`       | 400         | Invalid request body                                  |
 | `ServerError`           | 500+        | Server-side failure                                   |

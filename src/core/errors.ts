@@ -83,6 +83,21 @@ export class NotFoundError extends OneclawError {
     }
 }
 
+/**
+ * Thrown on 409 Conflict — the resource already exists.
+ *
+ * Reachable since 0.59.10 on `POST /v1/vaults`, where a duplicate name used to
+ * surface as a 500. Without this class a 409 fell through to a bare
+ * `OneclawError` typed "unknown", which reads as our fault rather than as
+ * something the caller chose and can change.
+ */
+export class ConflictError extends OneclawError {
+    constructor(message: string = "Resource already exists") {
+        super(message, 409, "conflict");
+        this.name = "ConflictError";
+    }
+}
+
 /** Thrown on 429 Too Many Requests responses. Includes retry timing when available. */
 export class RateLimitError extends OneclawError {
     readonly retryAfterMs?: number;
@@ -162,6 +177,8 @@ export async function errorFromResponse(res: Response): Promise<OneclawError> {
         }
         case 404:
             return new NotFoundError(message);
+        case 409:
+            return new ConflictError(message);
         case 429: {
             const retryHeader = res.headers.get("Retry-After");
             const retryAfterMs = retryHeader

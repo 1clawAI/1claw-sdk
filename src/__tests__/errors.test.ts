@@ -5,6 +5,7 @@ import {
     PaymentRequiredError,
     ApprovalRequiredError,
     NotFoundError,
+    ConflictError,
     RateLimitError,
     ValidationError,
     ServerError,
@@ -154,5 +155,26 @@ describe("errorFromResponse", () => {
         } as unknown as Response;
         const err = await errorFromResponse(res);
         expect(err.message).toBe("HTTP 500");
+    });
+});
+
+describe("409 Conflict", () => {
+    /**
+     * A duplicate vault name is a 409 since 0.59.10 — it used to be a 500.
+     *
+     * Without a case for it the status fell through to the default arm and
+     * became a bare `OneclawError` typed "unknown", which tells a caller their
+     * own choice of name was a server fault.
+     */
+    it("maps to ConflictError, not the unknown default", async () => {
+        const res = new Response(
+            JSON.stringify({ detail: "A vault named 'prod' already exists in this organization." }),
+            { status: 409, headers: { "content-type": "application/json" } },
+        );
+        const err = await errorFromResponse(res);
+        expect(err).toBeInstanceOf(ConflictError);
+        expect(err.status).toBe(409);
+        expect(err.type).toBe("conflict");
+        expect(err.message).toContain("already exists");
     });
 });
