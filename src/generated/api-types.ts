@@ -29557,7 +29557,7 @@ export interface operations {
                     secret_path: string;
                     /** @description https only, and its host must be in allowed_hosts or sso_hosts — the bridge navigates here itself, one step before a password is typed. */
                     login_url: string;
-                    /** @description Bare hostnames, compared exactly. URLs, ports and wildcards are refused: a wildcard would match nothing while looking like it allowed something. */
+                    /** @description Hostnames. A bare entry matches only itself; a leading dot ('.example.com') matches that host and any subdomain. URLs, ports and '*' are refused — '*' has no meaning to the matcher, so it would be stored and then match nothing. */
                     allowed_hosts: string[];
                     /** @description Identity-provider hosts the login legitimately bounces through. */
                     sso_hosts?: string[];
@@ -29726,8 +29726,19 @@ export interface operations {
                      * @description The bridge's navigation counter. Compared again at consume: a navigation in between means the page decided about is no longer the page in front of the bridge.
                      */
                     generation: number;
-                    /** @description Where the form would POST. Checked as well as the two origins — a login form on an allowed page can still submit to somebody else's host. */
+                    /** @description Where the form would POST. Checked as well as the two origins — a login form on an allowed page can still submit to somebody else's host. Absent is not treated as 'same as the tab'; it denies. */
                     form_action_origin?: string;
+                    /** @description Path of the form being filled, checked against the binding's fingerprint. */
+                    form_path?: string;
+                    /** @description Field names on that form. Every field the fingerprint expects must be present; extra fields are fine, since sites add hidden inputs. */
+                    field_names?: string[];
+                    /** @description Hosts the login has redirected through, in order. Each is checked against the binding's allowed hosts union its sso hosts. */
+                    redirect_chain?: string[];
+                    /**
+                     * Format: int64
+                     * @description The target's generation now. A mismatch with `generation` means the page moved and the fill is denied.
+                     */
+                    current_generation?: number;
                     /** @description Origin of the tab being driven. Checked against the binding's allowed and sso hosts by exact host match. */
                     tab_origin: string;
                     /** @description Origin of the frame holding the form. Checked separately — a credential typed into an allowed tab can still land in an attacker's iframe. */
