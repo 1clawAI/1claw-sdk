@@ -81,6 +81,7 @@ export { DiscoveryResource } from "./resources/discovery";
 export { ChatResource } from "./resources/chat";
 export { ChannelsResource } from "./resources/channels";
 export { WebhooksResource } from "./resources/webhooks";
+export { ConnectorsResource } from "./resources/connectors";
 export { OAuthConnectResource } from "./resources/oauth-connect";
 export { CedarPoliciesResource } from "./resources/cedar-policies";
 export { OpaPoliciesResource } from "./resources/opa-policies";

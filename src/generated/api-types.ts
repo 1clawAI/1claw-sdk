@@ -7395,6 +7395,84 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/connectors/presets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List connector presets
+         * @description The catalogue of pre-built connectors — Gmail, Slack, GitHub and the rest.
+         *     Each preset carries the OAuth provider and scopes to request, plus the
+         *     binding config and host/path guardrails the agent will execute under.
+         *
+         *     No authentication required: this describes what 1Claw supports, not
+         *     anything belonging to an organisation.
+         */
+        get: operations["listConnectorPresets"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/connectors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List installed connectors
+         * @description Connectors installed on this agent, and whether each one has actually
+         *     been connected — an install creates the binding, but the binding is not
+         *     usable until the OAuth round trip completes.
+         */
+        get: operations["listInstalledConnectors"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/connectors/{slug}/install": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Install a connector
+         * @description Creates a binding from the preset — base URL, allowed hosts, allowed
+         *     paths — and starts the OAuth flow for it. Send the user to the returned
+         *     `authorization_url` to finish; until they do, the binding exists but
+         *     holds no credential.
+         *
+         *     Human users only. Installing gives an agent reach into a third-party
+         *     account, and the flow it starts is a person's browser.
+         *
+         *     Idempotent by binding name: re-installing re-runs the OAuth flow against
+         *     the existing binding rather than creating a second one holding a second
+         *     token for the same account. A name already taken by a binding that is
+         *     not this connector returns 409.
+         */
+        post: operations["installConnector"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/agents/{agent_id}/oauth/connect": {
         parameters: {
             query?: never;
@@ -12778,6 +12856,46 @@ export interface components {
             decision: "approve" | "reject";
             /** @description Optional human-readable reason for the decision */
             reason?: string;
+        };
+        ConnectorPreset: {
+            /** @example gmail */
+            slug: string;
+            /** @example Gmail */
+            display_name: string;
+            description: string;
+            /** @example communication */
+            category: string;
+            /** @description `oauth_providers.slug`, or null when the connector uses a pasted API key. */
+            provider_slug?: string | null;
+            oauth_scopes?: string[];
+            /** @description Scopes without which the connector cannot do anything. */
+            required_scopes?: string[];
+            /** @example http */
+            binding_type: string;
+            /** Format: uri */
+            base_url: string;
+            /** @description Hosts the installed binding may reach. Always includes the base URL's host. */
+            allowed_hosts?: string[];
+            /** Format: uri */
+            documentation_url?: string;
+            /** @example free */
+            tier_required?: string;
+            requires_oauth: boolean;
+        };
+        InstalledConnector: {
+            /** Format: uuid */
+            binding_id: string;
+            binding_name: string;
+            preset_slug: string;
+            /** @description Null if the preset has since been retired from the catalogue. */
+            display_name?: string | null;
+            is_active: boolean;
+            /** @description The OAuth round trip completed and a token is stored. */
+            connected: boolean;
+            /** @description The stored token was rejected; the user must reconnect. */
+            needs_reauth: boolean;
+            /** Format: date-time */
+            created_at: string;
         };
         ApprovalResponse: {
             /** Format: uuid */
@@ -25491,6 +25609,106 @@ export interface operations {
                     "application/json": components["schemas"]["OAuthProviderListResponse"];
                 };
             };
+        };
+    };
+    listConnectorPresets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Preset catalogue */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        presets?: components["schemas"]["ConnectorPreset"][];
+                    };
+                };
+            };
+        };
+    };
+    listInstalledConnectors: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Installed connectors */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        connectors?: components["schemas"]["InstalledConnector"][];
+                    };
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    installConnector: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: string;
+                /** @description Connector preset slug, e.g. `gmail`. */
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description Defaults to the preset slug. */
+                    binding_name?: string;
+                    /**
+                     * @description Narrow the preset's scopes. Widening is refused — the
+                     *     preset's scope list is the reviewed part of a one-click
+                     *     install. Must still include the preset's required scopes.
+                     */
+                    scopes?: string[];
+                    /** @description Where to send the user after the OAuth round trip. */
+                    redirect_after?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Connector installed; OAuth may still be pending */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        binding_id: string;
+                        binding_name: string;
+                        preset_slug: string;
+                        /** @description Absent for connectors that use a pasted API key rather than OAuth. */
+                        authorization_url?: string | null;
+                        /** @description What the user still has to do, in words. */
+                        next_step: string;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
         };
     };
     connectOAuth: {

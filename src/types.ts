@@ -3104,3 +3104,66 @@ export interface ShamirSetupResponse {
     custody_mode: string;
     created_at: string;
 }
+
+// ---------------------------------------------------------------------------
+// Connectors
+// ---------------------------------------------------------------------------
+
+export interface ConnectorPreset {
+    slug: string;
+    display_name: string;
+    description: string;
+    category: string;
+    /** `oauth_providers.slug`, or null when the connector uses a pasted API key. */
+    provider_slug: string | null;
+    oauth_scopes: string[];
+    /** Scopes without which the connector cannot do anything. */
+    required_scopes: string[];
+    binding_type: string;
+    base_url: string;
+    /** Hosts the installed binding may reach. Always includes the base URL's host. */
+    allowed_hosts: string[];
+    documentation_url: string;
+    tier_required: string;
+    requires_oauth: boolean;
+}
+
+export interface ConnectorPresetListResponse {
+    presets: ConnectorPreset[];
+}
+
+export interface InstallConnectorRequest {
+    /** Defaults to the preset slug. */
+    binding_name?: string;
+    /** May narrow the preset's scopes; never extend them. */
+    scopes?: string[];
+    redirect_after?: string;
+}
+
+export interface InstallConnectorResponse {
+    binding_id: string;
+    binding_name: string;
+    preset_slug: string;
+    /** Absent for connectors that use a pasted API key rather than OAuth. */
+    authorization_url?: string | null;
+    /** What the user still has to do, in words. */
+    next_step: string;
+}
+
+export interface InstalledConnector {
+    binding_id: string;
+    binding_name: string;
+    preset_slug: string;
+    /** Null if the preset has since been retired from the catalogue. */
+    display_name?: string | null;
+    is_active: boolean;
+    /** The OAuth round trip completed and a token is stored. */
+    connected: boolean;
+    /** The stored token was rejected; the user must reconnect. */
+    needs_reauth: boolean;
+    created_at: string;
+}
+
+export interface InstalledConnectorListResponse {
+    connectors: InstalledConnector[];
+}

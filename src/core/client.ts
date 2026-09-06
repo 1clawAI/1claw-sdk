@@ -33,6 +33,7 @@ import { DiscoveryResource } from "../resources/discovery";
 import { ChatResource } from "../resources/chat";
 import { ChannelsResource } from "../resources/channels";
 import { WebhooksResource } from "../resources/webhooks";
+import { ConnectorsResource } from "../resources/connectors";
 import { OAuthConnectResource } from "../resources/oauth-connect";
 import { CedarPoliciesResource } from "../resources/cedar-policies";
 import { OpaPoliciesResource } from "../resources/opa-policies";
@@ -134,6 +135,8 @@ export class OneclawClient {
     readonly webhooks: WebhooksResource;
     /** OAuth Connected Accounts — manage OAuth connections for agents. */
     readonly oauthConnect: OAuthConnectResource;
+    /** Pre-built connectors: catalogue, install, and what is installed. */
+    readonly connectors: ConnectorsResource;
     /** Cedar policy engine — create and test Cedar authorization policies. */
     readonly cedarPolicies: CedarPoliciesResource;
     /** OPA policy engine — create and test Rego policies. */
@@ -194,6 +197,7 @@ export class OneclawClient {
         this.channels = new ChannelsResource(this.http);
         this.webhooks = new WebhooksResource(this.http);
         this.oauthConnect = new OAuthConnectResource(this.http);
+        this.connectors = new ConnectorsResource(this.http);
         this.cedarPolicies = new CedarPoliciesResource(this.http);
         this.opaPolicies = new OpaPoliciesResource(this.http);
         this.subOrgs = new SubOrgsResource(this.http);
