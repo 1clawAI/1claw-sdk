@@ -3167,3 +3167,44 @@ export interface InstalledConnector {
 export interface InstalledConnectorListResponse {
     connectors: InstalledConnector[];
 }
+
+// ---------------------------------------------------------------------------
+// Notification targets
+// ---------------------------------------------------------------------------
+
+export type NotificationTargetType = "sms" | "webhook" | "expo" | "email";
+
+export interface NotificationTarget {
+    id: string;
+    target_type: NotificationTargetType;
+    user_id?: string | null;
+    agent_id?: string | null;
+    /**
+     * `{ phone_number }` for sms (E.164 only), `{ url }` for webhook (https
+     * only), `{ email }`, or `{ push_token }`.
+     */
+    config: Record<string, unknown>;
+    /** Empty means every event. */
+    events: string[];
+    is_active: boolean;
+    /**
+     * An unverified SMS target receives notifications but cannot decide an
+     * approval by reply.
+     */
+    verified: boolean;
+    created_at: string;
+}
+
+export interface NotificationTargetListResponse {
+    targets: NotificationTarget[];
+}
+
+export interface CreateNotificationTargetRequest {
+    target_type: NotificationTargetType;
+    config: Record<string, unknown>;
+    events?: string[];
+    /** The agent whose SMS channel sends to this target. */
+    agent_id?: string;
+    /** Defaults to the caller. */
+    user_id?: string;
+}

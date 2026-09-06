@@ -7354,6 +7354,132 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/notification-targets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List your notification targets */
+        get: operations["listNotificationTargets"];
+        put?: never;
+        /**
+         * Add a notification target
+         * @description Where approvals and automation output reach a human: a phone number, an
+         *     https webhook, an email address, or a push token.
+         *
+         *     An SMS target is created **unverified** and stays that way until someone
+         *     proves they hold the number. Adding a number must not itself be an
+         *     authorisation — otherwise a session borrowed for five minutes leaves
+         *     behind a number that can approve things long after it is gone. An
+         *     unverified target still receives notifications; it just cannot reply to
+         *     decide one.
+         */
+        post: operations["createNotificationTarget"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/notification-targets/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a notification target */
+        delete: operations["deleteNotificationTarget"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/notification-targets/{id}/verify/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Text a verification code to an SMS target
+         * @description Sends a six-digit code from the same channel the target's notifications
+         *     will come from — a code arriving from a different number than the one
+         *     the recipient will later see is a code they are right to distrust.
+         *
+         *     Expires in 10 minutes. Five wrong answers void it.
+         */
+        post: operations["startNotificationTargetVerification"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/notification-targets/{id}/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Submit the verification code */
+        post: operations["completeNotificationTargetVerification"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/webhooks/sms/{webhook_path}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Inbound SMS webhook (Twilio)
+         * @description Called by Twilio when someone texts the channel's number. Public, because
+         *     the provider calls it — so the `X-Twilio-Signature` header is the only
+         *     thing establishing that a message is genuine, and it is verified over the
+         *     exact public URL and every POST parameter.
+         *
+         *     A verified signature proves the message came from Twilio, **not** that it
+         *     came from the right person: anyone who knows the number can text it and
+         *     their message arrives correctly signed. So the sending number must also
+         *     match a *verified* SMS notification target.
+         *
+         *     A reply may decide an approval only when its server-derived
+         *     `risk_tier` is 1. Anything higher is answered with a link to confirm in
+         *     the app; replying cannot decide it. When more than one approval is
+         *     pending, a bare YES/NO is answered with a request for the reference code
+         *     rather than applied to a guess.
+         *
+         *     Always answers 200 with TwiML — a non-2xx makes Twilio retry a message
+         *     that was deliberately refused. The exception is a bad signature, which is
+         *     403, because a persistently failing signature is a misconfiguration as
+         *     often as an attack and silence would hide both.
+         */
+        post: operations["smsWebhook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/webhooks/discord/{webhook_path}": {
         parameters: {
             query?: never;
@@ -12856,6 +12982,28 @@ export interface components {
             decision: "approve" | "reject";
             /** @description Optional human-readable reason for the decision */
             reason?: string;
+        };
+        NotificationTarget: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            target_type: "sms" | "webhook" | "expo" | "email";
+            /** Format: uuid */
+            user_id?: string | null;
+            /** Format: uuid */
+            agent_id?: string | null;
+            config: {
+                [key: string]: unknown;
+            };
+            events: string[];
+            is_active: boolean;
+            /**
+             * @description An unverified SMS target receives notifications but cannot decide
+             *     an approval by reply.
+             */
+            verified: boolean;
+            /** Format: date-time */
+            created_at: string;
         };
         ConnectorPreset: {
             /** @example gmail */
@@ -25565,6 +25713,197 @@ export interface operations {
                 };
                 content?: never;
             };
+        };
+    };
+    listNotificationTargets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Your targets */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        targets?: components["schemas"]["NotificationTarget"][];
+                    };
+                };
+            };
+        };
+    };
+    createNotificationTarget: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    target_type: "sms" | "webhook" | "expo" | "email";
+                    /**
+                     * @description `{"phone_number": "+14155550123"}` for sms (E.164 only),
+                     *     `{"url": "https://…"}` for webhook (https only),
+                     *     `{"email": "…"}`, or `{"push_token": "…"}`.
+                     */
+                    config: Record<string, never>;
+                    /** @description Empty means every event. */
+                    events?: string[];
+                    /**
+                     * Format: uuid
+                     * @description The agent whose SMS channel sends to this target.
+                     */
+                    agent_id?: string;
+                    /**
+                     * Format: uuid
+                     * @description Defaults to the caller.
+                     */
+                    user_id?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Target created, unverified */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationTarget"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    deleteNotificationTarget: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Removed */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    startNotificationTargetVerification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Code sent */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        message?: string;
+                        expires_in_seconds?: number;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    completeNotificationTargetVerification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @example 042913 */
+                    code: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Verified */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        verified?: boolean;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    smsWebhook: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Twilio-Signature": string;
+            };
+            path: {
+                webhook_path: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/x-www-form-urlencoded": {
+                    /** @example +14155550123 */
+                    From?: string;
+                    /** @example +14155550999 */
+                    To?: string;
+                    /** @example YES A1 */
+                    Body?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description TwiML response; `<Response/>` when there is nothing to reply */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/xml": string;
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
         };
     };
     discordWebhook: {
