@@ -83,6 +83,7 @@ export { ChannelsResource } from "./resources/channels";
 export { WebhooksResource } from "./resources/webhooks";
 export { ConnectorsResource } from "./resources/connectors";
 export { NotificationTargetsResource } from "./resources/notification-targets";
+export { PeersResource } from "./resources/peers";
 export { OAuthConnectResource } from "./resources/oauth-connect";
 export { CedarPoliciesResource } from "./resources/cedar-policies";
 export { OpaPoliciesResource } from "./resources/opa-policies";

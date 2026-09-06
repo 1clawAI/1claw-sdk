@@ -35,6 +35,7 @@ import { ChannelsResource } from "../resources/channels";
 import { WebhooksResource } from "../resources/webhooks";
 import { ConnectorsResource } from "../resources/connectors";
 import { NotificationTargetsResource } from "../resources/notification-targets";
+import { PeersResource } from "../resources/peers";
 import { OAuthConnectResource } from "../resources/oauth-connect";
 import { CedarPoliciesResource } from "../resources/cedar-policies";
 import { OpaPoliciesResource } from "../resources/opa-policies";
@@ -140,6 +141,8 @@ export class OneclawClient {
     readonly connectors: ConnectorsResource;
     /** Where approvals reach a human: SMS, webhook, email, push. */
     readonly notificationTargets: NotificationTargetsResource;
+    /** Peer memory: a shared model of one human across the agents serving them. */
+    readonly peers: PeersResource;
     /** Cedar policy engine — create and test Cedar authorization policies. */
     readonly cedarPolicies: CedarPoliciesResource;
     /** OPA policy engine — create and test Rego policies. */
@@ -202,6 +205,7 @@ export class OneclawClient {
         this.oauthConnect = new OAuthConnectResource(this.http);
         this.connectors = new ConnectorsResource(this.http);
         this.notificationTargets = new NotificationTargetsResource(this.http);
+        this.peers = new PeersResource(this.http);
         this.cedarPolicies = new CedarPoliciesResource(this.http);
         this.opaPolicies = new OpaPoliciesResource(this.http);
         this.subOrgs = new SubOrgsResource(this.http);

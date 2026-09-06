@@ -3251,3 +3251,80 @@ export interface AppUsageReport {
     totals: UsageCounts;
     has_ambiguous_usage: boolean;
 }
+
+// ---------------------------------------------------------------------------
+// Peer memory (Feature 11)
+// ---------------------------------------------------------------------------
+
+export interface Peer {
+    id: string;
+    peer_type: "user" | "platform_connection" | "external";
+    peer_ref: string;
+    display_name?: string | null;
+    profile: Record<string, unknown>;
+    /** Archived when a connection is disconnected: agents lose observation, the person keeps export and delete. */
+    status: "active" | "archived";
+    /** How many agents observe this peer. The list itself is not returned. */
+    observer_count: number;
+    created_at: string;
+}
+
+export interface PeerFact {
+    fact_key: string;
+    fact_value: Record<string, unknown>;
+    /** 0..1, capped below certainty — no history makes the next decision certain. */
+    confidence?: string | null;
+    /** Why this is believed. Entries are `event`, `tombstone` (the event expired) or `human`. */
+    provenance: unknown[];
+    /** A person corrected this; the processor will not overwrite it. */
+    edited_by_human: boolean;
+    updated_at: string;
+}
+
+export interface PeerWithFacts {
+    peer: Peer;
+    facts: PeerFact[];
+}
+
+export interface CreatePeerRequest {
+    peer_type: "user" | "platform_connection" | "external";
+    peer_ref: string;
+    display_name?: string;
+    platform_connection_id?: string;
+    /** Empty means nobody. A peer with no observers is readable by no agent. */
+    observer_agent_ids?: string[];
+}
+
+export interface PeerContextResponse {
+    /** Empty when nothing has been derived yet. */
+    context: string;
+    characters: number;
+    budget?: number;
+    facts_available?: number;
+}
+
+export interface PredictApprovalRequest {
+    action_type: string;
+    payload?: Record<string, unknown>;
+    /** The server-derived tier for this action. */
+    effective_risk_tier: number;
+}
+
+export type PredictApprovalBlockedReason =
+    | "no_matching_rule"
+    | "rule_requires_approval"
+    | "above_configured_threshold"
+    | "risk_tier_requires_step_up"
+    | "action_is_sensitive";
+
+export interface PredictApprovalResponse {
+    /** An observation about a person. Absent when there is no comparable history. */
+    likelihood?: number | null;
+    reasoning: string;
+    /**
+     * A statement about your policy — whether a rule you already wrote permits
+     * this automatically. Never derived from `likelihood`.
+     */
+    suggest_auto: boolean;
+    blocked_reason?: PredictApprovalBlockedReason;
+}
