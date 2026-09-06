@@ -489,7 +489,20 @@ export interface paths {
         put?: never;
         /**
          * Request human approval (agent-only)
-         * @description Agents can request policy changes or other sensitive actions that require human approval.
+         * @description Ask a human to approve an action.
+         *
+         *     Two families of action are accepted:
+         *
+         *     * the control-plane requests `access_request`, `policy_request`
+         *       and `binding_request`, which widen the agent's own authority; and
+         *     * business actions named `namespace.verb` (`refund.create`,
+         *       `social.post`), whose meaning is carried by `summary` and `payload`.
+         *
+         *     Actions that 1Claw itself executes on approval — `policy_change`,
+         *     `card_order`, `agent_transaction`, `agent_execution`,
+         *     `agent_sign_intent` — are created by the platform and rejected here,
+         *     because the summary a human reads would be agent-supplied while the
+         *     side effect would not be.
          */
         post: operations["requestApproval"];
         delete?: never;
@@ -10114,6 +10127,22 @@ export interface components {
                 [key: string]: unknown;
             } | null;
             /**
+             * @description Which business actions this agent must ask a human about, and above what
+             *     amount. `{}` means no per-action rules.
+             *
+             *     Shape: `{ "default_mode": "deny|approve|allow", "rules": [ { "action_type":
+             *     "refund.create", "mode": "approve", "require_for_amount_above_usd": "50",
+             *     "summary_template": "Refund {{amount_usd}} to {{customer_email}}" } ] }`.
+             *
+             *     A rule can only raise the bar. Editing this is classified as a guardrail
+             *     widening, so it routes through the same approval flow as loosening a
+             *     transaction limit. Malformed rules are rejected on write rather than
+             *     ignored at request time.
+             */
+            action_approval_policy?: {
+                [key: string]: unknown;
+            } | null;
+            /**
              * @description EIP-712 escalation when typed_data matches no allowlist — deny (403) or route to HITL (approve).
              * @enum {string}
              */
@@ -10243,6 +10272,22 @@ export interface components {
             card_require_approval?: boolean;
             /** @description Graduated transaction approval policy (HITL thresholds). */
             tx_approval_policy?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * @description Which business actions this agent must ask a human about, and above what
+             *     amount. `{}` means no per-action rules.
+             *
+             *     Shape: `{ "default_mode": "deny|approve|allow", "rules": [ { "action_type":
+             *     "refund.create", "mode": "approve", "require_for_amount_above_usd": "50",
+             *     "summary_template": "Refund {{amount_usd}} to {{customer_email}}" } ] }`.
+             *
+             *     A rule can only raise the bar. Editing this is classified as a guardrail
+             *     widening, so it routes through the same approval flow as loosening a
+             *     transaction limit. Malformed rules are rejected on write rather than
+             *     ignored at request time.
+             */
+            action_approval_policy?: {
                 [key: string]: unknown;
             } | null;
             /**
@@ -10425,6 +10470,22 @@ export interface components {
             card_require_approval?: boolean;
             /** @description Graduated transaction approval policy (HITL thresholds). */
             tx_approval_policy?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * @description Which business actions this agent must ask a human about, and above what
+             *     amount. `{}` means no per-action rules.
+             *
+             *     Shape: `{ "default_mode": "deny|approve|allow", "rules": [ { "action_type":
+             *     "refund.create", "mode": "approve", "require_for_amount_above_usd": "50",
+             *     "summary_template": "Refund {{amount_usd}} to {{customer_email}}" } ] }`.
+             *
+             *     A rule can only raise the bar. Editing this is classified as a guardrail
+             *     widening, so it routes through the same approval flow as loosening a
+             *     transaction limit. Malformed rules are rejected on write rather than
+             *     ignored at request time.
+             */
+            action_approval_policy?: {
                 [key: string]: unknown;
             } | null;
             /** @enum {string|null} */
@@ -12730,7 +12791,16 @@ export interface components {
             action: string;
             target_type: string;
             target_id: string;
+            /** @description The tier actually enforced. Authoritative. */
             risk_tier: number;
+            /** @description What the caller asked for, when it asked for anything. */
+            declared_risk_tier?: number | null;
+            /** @description The caller asked for a lower tier than policy required. */
+            declared_below_floor?: boolean;
+            /** @description Plain-language line sent to SMS, push and email. */
+            human_summary?: string | null;
+            /** @description What the action will do, as submitted. */
+            payload?: Record<string, never>;
             /** @enum {string} */
             status: "pending" | "approved" | "rejected" | "expired";
             /** @description Structured summary of the action requiring approval */
@@ -15819,13 +15889,44 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": {
-                    /** @description Type of action (e.g. policy_change) */
+                    /**
+                     * @description Control-plane action, or a business action named `namespace.verb`.
+                     * @example refund.create
+                     */
                     action: string;
                     target_type: string;
                     target_id: string;
-                    /** @description JSON payload describing the request */
+                    /**
+                     * @description What the human is shown: title, body, and key-value fields.
+                     * @example {
+                     *       "title": "Refund $49.99",
+                     *       "body": "Order #1234 arrived damaged."
+                     *     }
+                     */
                     summary: Record<string, never>;
+                    /**
+                     * @description What the action will actually do. The enforced risk tier and
+                     *     the human-readable line are derived from this, not from
+                     *     `summary` — the two can disagree, and only this one describes
+                     *     what happens if the human approves.
+                     * @example {
+                     *       "amount_usd": "49.99",
+                     *       "customer_email": "a.user@example.com"
+                     *     }
+                     */
+                    payload?: Record<string, never>;
                     reason?: string;
+                    /**
+                     * @description Advisory. The server derives the enforced tier from the agent's
+                     *     `action_approval_policy` and the payload, then takes the higher
+                     *     of the two: a caller may raise its own bar, never lower it.
+                     *     The response returns both.
+                     */
+                    declared_risk_tier?: number;
+                    /**
+                     * @deprecated
+                     * @description Former name for `declared_risk_tier`. Still accepted.
+                     */
                     risk_tier?: number;
                 };
             };

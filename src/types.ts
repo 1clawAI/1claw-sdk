@@ -1568,12 +1568,61 @@ export interface ApprovalRequest {
 }
 
 export interface CreateApprovalRequest {
+    /**
+     * A control-plane request (`access_request`, `policy_request`,
+     * `binding_request`) or a business action named `namespace.verb`
+     * (`refund.create`, `social.post`).
+     *
+     * Actions 1Claw executes on approval — `card_order`, `agent_transaction`
+     * and friends — are created by the platform and rejected here.
+     */
     action: string;
     target_type: string;
     target_id: string;
+    /** What the human is shown: `{ title, body, fields }`. */
     summary: Record<string, unknown>;
+    /**
+     * What the action will actually do. The enforced risk tier and the
+     * plain-language line are derived from this, not from `summary`.
+     */
+    payload?: Record<string, unknown>;
     reason?: string;
+    /**
+     * Advisory. The server derives the enforced tier and takes the higher of
+     * the two — a caller may raise its own bar, never lower it. The response
+     * returns both.
+     */
+    declared_risk_tier?: number;
+    /** @deprecated Renamed to `declared_risk_tier`. Still accepted. */
     risk_tier?: number;
+}
+
+/** An approval as returned by the API. */
+export interface Approval {
+    id: string;
+    org_id: string;
+    user_id: string;
+    agent_id: string | null;
+    action: string;
+    target_type: string;
+    target_id: string;
+    /** The tier actually enforced. Authoritative. */
+    risk_tier: number;
+    /** What the caller asked for, when it asked for anything. */
+    declared_risk_tier?: number | null;
+    /** The caller asked for a lower tier than policy required. */
+    declared_below_floor?: boolean;
+    status: "pending" | "approved" | "rejected";
+    summary: Record<string, unknown>;
+    /** Plain-language line, rendered server-side from the agent's policy template. */
+    human_summary?: string | null;
+    payload?: Record<string, unknown>;
+    reason: string | null;
+    decision_reason: string | null;
+    decided_by: string | null;
+    decided_at: string | null;
+    expires_at: string | null;
+    created_at: string;
 }
 
 export interface ApprovalListResponse {
