@@ -27,6 +27,7 @@ import type {
     GrantListResponse,
     UpdateConnectionDelegationRequest,
     OneclawResponse,
+    AppUsageReport,
 } from "../types";
 
 export interface CreateSpendPolicyRequest {
@@ -1119,6 +1120,36 @@ export class PlatformResource {
         return this.http.request(
             "GET",
             `/v1/platform/connections/${connectionId}/usage`,
+        );
+    }
+
+    /**
+     * Usage for every connection on an app, plus what could not be charged to
+     * one.
+     *
+     * Read `unattributed` — summing only `connections` gives a figure that will
+     * not match the invoice you are reconciling against. `has_ambiguous_usage`
+     * means some usage belongs to an end-user who cannot be identified, which is
+     * the case worth acting on; `unattributed.none` is ordinary unlinked traffic.
+     *
+     * `totals` is derived from the parts, so it cannot disagree with them.
+     */
+    async getAppUsage(
+        appId: string,
+    ): Promise<OneclawResponse<AppUsageReport>> {
+        return this.http.request("GET", `/v1/platform/apps/${appId}/usage`);
+    }
+
+    /**
+     * The same report as CSV, including the ambiguous, none and total rows.
+     *
+     * Returned as text — a CSV listing only connections looks complete and is
+     * not, and whoever imports it has no way to tell.
+     */
+    async exportAppUsage(appId: string): Promise<OneclawResponse<string>> {
+        return this.http.request(
+            "GET",
+            `/v1/platform/apps/${appId}/usage/export`,
         );
     }
 

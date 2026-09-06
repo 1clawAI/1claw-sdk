@@ -3208,3 +3208,46 @@ export interface CreateNotificationTargetRequest {
     /** Defaults to the caller. */
     user_id?: string;
 }
+
+// ---------------------------------------------------------------------------
+// Platform usage (Feature 7)
+// ---------------------------------------------------------------------------
+
+export interface UsageCounts {
+    api_requests: number;
+    signatures: number;
+    execution_intents: number;
+    execution_intents_tee: number;
+    /** A decimal string. Money is not a float; zero is `"0"`. */
+    inference_usd: string;
+    credits_debited_cents: number;
+}
+
+export interface ConnectionUsageEntry {
+    connection_id: string;
+    usage: UsageCounts;
+}
+
+/**
+ * Usage that could not be charged to a connection.
+ *
+ * The two are different problems. `none` is ordinary traffic with no platform
+ * linkage. `ambiguous` belongs to a real end-user whose connection could not be
+ * determined — that is the one worth acting on.
+ */
+export interface UnattributedUsage {
+    ambiguous: UsageCounts;
+    none: UsageCounts;
+}
+
+export interface AppUsageReport {
+    app_id: string;
+    period_start: string;
+    /** Exclusive: the period is half-open. */
+    period_end: string;
+    connections: ConnectionUsageEntry[];
+    unattributed: UnattributedUsage;
+    /** Connections plus both unattributed buckets. Derived, not queried. */
+    totals: UsageCounts;
+    has_ambiguous_usage: boolean;
+}

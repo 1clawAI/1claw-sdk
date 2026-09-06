@@ -7354,6 +7354,65 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/platform/apps/{app_id}/usage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Usage for every connection on an app
+         * @description Billable activity for the current month, grouped by end-user connection,
+         *     **plus what could not be charged to one**.
+         *
+         *     The `unattributed` block is not an implementation detail. Summing only the
+         *     per-connection numbers gives a figure that will not match the invoice you
+         *     are reconciling against, and the gap is usage that belongs to a real
+         *     end-user we cannot name.
+         *
+         *     Two kinds, deliberately kept apart:
+         *
+         *     * `none` — no platform linkage at all. Normal for most traffic, not a problem.
+         *     * `ambiguous` — the agent belongs to several connections and no
+         *       `X-Platform-Connection` header said which. This usage belongs to
+         *       *someone*. `has_ambiguous_usage` flags it so you do not have to notice
+         *       a non-zero nested number.
+         *
+         *     `totals` is derived from the parts, never queried separately, so it cannot
+         *     disagree with its own breakdown.
+         */
+        get: operations["getAppUsage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/apps/{app_id}/usage/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Usage as CSV for billing reconciliation
+         * @description The same report as `GET /usage`, as CSV. Includes the `ambiguous`, `none`
+         *     and `total` rows — a CSV listing only connections looks complete and is
+         *     not, and whoever imports it has no way to tell.
+         */
+        get: operations["exportAppUsage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/notification-targets": {
         parameters: {
             query?: never;
@@ -12983,6 +13042,50 @@ export interface components {
             /** @description Optional human-readable reason for the decision */
             reason?: string;
         };
+        UsageCounts: {
+            /** Format: int64 */
+            api_requests: number;
+            /** Format: int64 */
+            signatures: number;
+            /** Format: int64 */
+            execution_intents: number;
+            /** Format: int64 */
+            execution_intents_tee: number;
+            /**
+             * @description A decimal string. Money is not a float; zero is "0".
+             * @example 3.42
+             */
+            inference_usd: string;
+            /** Format: int64 */
+            credits_debited_cents: number;
+        };
+        AppUsageReport: {
+            /** Format: uuid */
+            app_id: string;
+            /** Format: date-time */
+            period_start: string;
+            /**
+             * Format: date-time
+             * @description Exclusive. The period is half-open, so an event at midnight belongs to one month, not two.
+             */
+            period_end: string;
+            connections: {
+                /** Format: uuid */
+                connection_id: string;
+                usage: components["schemas"]["UsageCounts"];
+            }[];
+            /** @description Usage that could not be charged to a connection. */
+            unattributed: {
+                /** @description The agent belongs to several connections and none was named. This belongs to someone. */
+                ambiguous?: components["schemas"]["UsageCounts"];
+                /** @description No platform linkage. Normal for most traffic. */
+                none?: components["schemas"]["UsageCounts"];
+            };
+            /** @description Connections plus both unattributed buckets. Derived, not queried. */
+            totals: components["schemas"]["UsageCounts"];
+            /** @description Some usage this period belongs to an end-user who cannot be identified. */
+            has_ambiguous_usage: boolean;
+        };
         NotificationTarget: {
             /** Format: uuid */
             id: string;
@@ -13248,7 +13351,24 @@ export interface components {
             connection_id: string;
             /** @description UTC month (YYYY-MM) */
             period: string;
+            /**
+             * @description Kept for compatibility — this field predates the breakdown below and
+             *     existing integrations read it. Same number as `usage.inference_usd`.
+             */
             inference_spent_usd: string;
+            /**
+             * @description Everything billable for this connection in the period. Derived from the
+             *     same grouped query as the app report, so a connection can never report a
+             *     number the app report disagrees with.
+             */
+            usage: components["schemas"]["UsageCounts"];
+            /** Format: date-time */
+            period_start: string;
+            /**
+             * Format: date-time
+             * @description Exclusive. The period is half-open.
+             */
+            period_end: string;
         };
         EntitlementsListResponse: {
             evaluations: components["schemas"]["EntitlementEvaluationResponse"][];
@@ -25713,6 +25833,52 @@ export interface operations {
                 };
                 content?: never;
             };
+        };
+    };
+    getAppUsage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Usage report */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppUsageReport"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    exportAppUsage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description CSV */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
+                };
+            };
+            404: components["responses"]["NotFound"];
         };
     };
     listNotificationTargets: {
