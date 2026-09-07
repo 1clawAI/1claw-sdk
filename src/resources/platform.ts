@@ -9,6 +9,12 @@ import type {
     CreateTemplateRequest,
     TemplateResponse,
     TemplateListResponse,
+    FleetSummaryResponse,
+    ListFleetAgentsResponse,
+    BulkPatchFleetResponse,
+    FleetRolloutRequest,
+    FleetRolloutResponse,
+    PauseFleetResponse,
     UpsertPlatformUserRequest,
     PlatformUserResponse,
     PlatformConnectedUserListResponse,
@@ -465,6 +471,105 @@ export class PlatformResource {
         return this.http.request<TemplateResponse>(
             "GET",
             `/v1/platform/apps/${appId}/templates/${templateId}`,
+        );
+    }
+
+    // ── Fleets ────────────────────────────────────────────────────────
+    //
+    // Every agent one template provisioned, as one cohort. Each of these
+    // applies to all of them at once, which is the point and also the hazard:
+    // nobody reviews a fleet request per agent.
+
+    /**
+     * Fleet summary: how many agents the template provisioned, how they split
+     * across the versions they were built from, and how many a previous
+     * rollout declined to touch.
+     */
+    async getFleet(
+        appId: string,
+        templateId: string,
+    ): Promise<OneclawResponse<FleetSummaryResponse>> {
+        return this.http.request<FleetSummaryResponse>(
+            "GET",
+            `/v1/platform/apps/${appId}/fleets/${templateId}`,
+        );
+    }
+
+    /** List the agents in a fleet. */
+    async listFleetAgents(
+        appId: string,
+        templateId: string,
+        params?: { limit?: number; offset?: number },
+    ): Promise<OneclawResponse<ListFleetAgentsResponse>> {
+        const q = new URLSearchParams();
+        if (params?.limit !== undefined) q.set("limit", String(params.limit));
+        if (params?.offset !== undefined) q.set("offset", String(params.offset));
+        const qs = q.toString();
+        return this.http.request<ListFleetAgentsResponse>(
+            "GET",
+            `/v1/platform/apps/${appId}/fleets/${templateId}/agents${qs ? `?${qs}` : ""}`,
+        );
+    }
+
+    /**
+     * Apply one patch to every agent in the cohort.
+     *
+     * The allowlist is narrower than a single-agent patch: guardrails and
+     * capability flags (`intents_api_enabled`, `execution_intents_enabled`)
+     * are refused, because changing them for a thousand agents in one request
+     * is a thousand decisions nobody made individually. Read the current
+     * allowlist from `getFleet().bulk_patchable_fields` rather than hard-coding
+     * it. A field outside it returns 400 naming the field, and refuses the
+     * whole patch rather than applying it in part.
+     */
+    async bulkPatchFleet(
+        appId: string,
+        templateId: string,
+        patch: Record<string, unknown>,
+    ): Promise<OneclawResponse<BulkPatchFleetResponse>> {
+        return this.http.request<BulkPatchFleetResponse>(
+            "POST",
+            `/v1/platform/apps/${appId}/fleets/${templateId}/bulk-patch`,
+            { body: { patch } },
+        );
+    }
+
+    /**
+     * Bring the cohort up to the template's current version.
+     *
+     * An agent changed outside fleet control is skipped rather than corrected —
+     * someone changed it for a reason, and a rollout that overwrites that
+     * reason at cohort scale destroys a thousand of them at once. `force: true`
+     * overrides the skip but still cannot carry a guardrail or a capability
+     * flag. `dry_run: true` reports the plan, claims no job, and so never
+     * blocks the real rollout that follows it.
+     *
+     * Only one rollout may run per template at a time; a second returns 409.
+     */
+    async rolloutFleet(
+        appId: string,
+        templateId: string,
+        options: FleetRolloutRequest = {},
+    ): Promise<OneclawResponse<FleetRolloutResponse>> {
+        return this.http.request<FleetRolloutResponse>(
+            "POST",
+            `/v1/platform/apps/${appId}/fleets/${templateId}/rollout`,
+            { body: options },
+        );
+    }
+
+    /**
+     * Deactivate every agent in the cohort. The blast radius is the point:
+     * this exists for the moment an operator needs a thousand agents to stop.
+     */
+    async pauseFleet(
+        appId: string,
+        templateId: string,
+    ): Promise<OneclawResponse<PauseFleetResponse>> {
+        return this.http.request<PauseFleetResponse>(
+            "POST",
+            `/v1/platform/apps/${appId}/fleets/${templateId}/pause`,
+            { body: {} },
         );
     }
 

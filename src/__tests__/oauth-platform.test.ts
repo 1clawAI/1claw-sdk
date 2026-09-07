@@ -281,6 +281,94 @@ describe("PlatformResource", () => {
         expect(res.data?.total_grants).toBe(15);
     });
 
+    // ── Fleets ────────────────────────────────────────────────────────
+
+    it("getFleet sends GET to the fleet path", async () => {
+        globalThis.fetch = mockFetch(200, {
+            template_id: "tpl-1",
+            total_agents: 3,
+            agents_behind: 1,
+            bulk_patchable_fields: ["system_prompt", "description"],
+        });
+        const res = await new PlatformResource(makeHttp()).getFleet("app-1", "tpl-1");
+
+        const { url, init } = lastCall();
+        expect(url).toBe(`${BASE}/v1/platform/apps/app-1/fleets/tpl-1`);
+        expect(init.method).toBe("GET");
+        expect(res.data?.agents_behind).toBe(1);
+    });
+
+    it("listFleetAgents passes limit and offset through as query params", async () => {
+        globalThis.fetch = mockFetch(200, { agents: [], limit: 10, offset: 20, current_version: 3 });
+        await new PlatformResource(makeHttp()).listFleetAgents("app-1", "tpl-1", {
+            limit: 10,
+            offset: 20,
+        });
+
+        const { url } = lastCall();
+        expect(url).toBe(`${BASE}/v1/platform/apps/app-1/fleets/tpl-1/agents?limit=10&offset=20`);
+    });
+
+    it("listFleetAgents omits the query string entirely when unpaginated", async () => {
+        globalThis.fetch = mockFetch(200, { agents: [], limit: 50, offset: 0, current_version: 1 });
+        await new PlatformResource(makeHttp()).listFleetAgents("app-1", "tpl-1");
+
+        const { url } = lastCall();
+        expect(url).toBe(`${BASE}/v1/platform/apps/app-1/fleets/tpl-1/agents`);
+        expect(url).not.toContain("?");
+    });
+
+    it("bulkPatchFleet wraps the patch in a `patch` envelope", async () => {
+        globalThis.fetch = mockFetch(200, {
+            fields_applied: ["system_prompt"],
+            agents_matched: 12,
+            agents_updated: 12,
+        });
+        const res = await new PlatformResource(makeHttp()).bulkPatchFleet("app-1", "tpl-1", {
+            system_prompt: "v2",
+        });
+
+        const { url, init } = lastCall();
+        expect(url).toBe(`${BASE}/v1/platform/apps/app-1/fleets/tpl-1/bulk-patch`);
+        expect(init.method).toBe("POST");
+        // The API takes {patch: {...}}, not the fields at the top level. A
+        // client that sends them flat gets a 400 that reads like a bad field
+        // name, so this is worth pinning.
+        expect(JSON.parse(init.body as string)).toEqual({ patch: { system_prompt: "v2" } });
+    });
+
+    it("rolloutFleet defaults to a body of {}, not an absent body", async () => {
+        globalThis.fetch = mockFetch(200, { job_id: "job-1", dry_run: false, forced: false });
+        await new PlatformResource(makeHttp()).rolloutFleet("app-1", "tpl-1");
+
+        const { url, init } = lastCall();
+        expect(url).toBe(`${BASE}/v1/platform/apps/app-1/fleets/tpl-1/rollout`);
+        expect(JSON.parse(init.body as string)).toEqual({});
+    });
+
+    it("rolloutFleet sends force and dry_run when asked", async () => {
+        globalThis.fetch = mockFetch(200, { job_id: null, dry_run: true, forced: true });
+        const res = await new PlatformResource(makeHttp()).rolloutFleet("app-1", "tpl-1", {
+            force: true,
+            dry_run: true,
+        });
+
+        const { init } = lastCall();
+        expect(JSON.parse(init.body as string)).toEqual({ force: true, dry_run: true });
+        // A dry run claims no job; the type permits null and callers branch on it.
+        expect(res.data?.job_id).toBeNull();
+    });
+
+    it("pauseFleet sends POST to /pause", async () => {
+        globalThis.fetch = mockFetch(200, { agents_paused: 7 });
+        const res = await new PlatformResource(makeHttp()).pauseFleet("app-1", "tpl-1");
+
+        const { url, init } = lastCall();
+        expect(url).toBe(`${BASE}/v1/platform/apps/app-1/fleets/tpl-1/pause`);
+        expect(init.method).toBe("POST");
+        expect(res.data?.agents_paused).toBe(7);
+    });
+
     it("createApp sends POST /v1/platform/apps", async () => {
         globalThis.fetch = mockFetch(201, {
             app: { id: "app-1", name: "My App" },

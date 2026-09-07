@@ -1770,10 +1770,101 @@ export interface TemplateResponse {
     name: string;
     description: string;
     version: number;
+    /**
+     * SHA-256 of `spec`. Lets a caller tell a version bump that changed nothing
+     * from one that did. Null on templates written before migration 245.
+     */
+    spec_hash?: string | null;
     spec: Record<string, unknown>;
     is_active: boolean;
     created_at: string;
     updated_at: string;
+}
+
+/** How a cohort splits across the template versions it was provisioned from. */
+export interface FleetVersionBucket {
+    template_version: number | null;
+    agents: number;
+}
+
+export interface FleetSummaryResponse {
+    template_id: string;
+    template_name: string;
+    current_version: number;
+    spec_hash?: string | null;
+    total_agents: number;
+    version_skew: FleetVersionBucket[];
+    agents_on_current_version: number;
+    agents_behind: number;
+    /** Agents a previous rollout declined to touch. */
+    drifted_agents: number;
+    /**
+     * The fields `bulkPatch` and `rollout` will carry.
+     *
+     * Read this rather than hard-coding the list. It is deliberately narrower
+     * than a single-agent patch — no guardrails, no capability flags — because
+     * a fleet request applies to every agent at once and nobody reviews it per
+     * agent. It may narrow further.
+     */
+    bulk_patchable_fields: string[];
+}
+
+export interface FleetAgent {
+    agent_id: string;
+    name: string;
+    org_id: string;
+    platform_connection_id?: string | null;
+    provisioned_from_version?: number | null;
+    last_fleet_sync_at?: string | null;
+    /**
+     * Fields a rollout skipped because they were changed outside fleet control.
+     * The standing answer to "why is this agent behind?".
+     */
+    drift_fields: string[];
+    is_active: boolean;
+    is_current: boolean;
+}
+
+export interface ListFleetAgentsResponse {
+    agents: FleetAgent[];
+    limit: number;
+    offset: number;
+    current_version: number;
+}
+
+export interface BulkPatchFleetResponse {
+    fields_applied: string[];
+    agents_matched: number;
+    agents_updated: number;
+}
+
+export type FleetRolloutOutcome =
+    | { outcome: "already_current"; agent_id: string }
+    | { outcome: "synced"; agent_id: string; fields: string[] }
+    | { outcome: "skipped_drifted"; agent_id: string; drift_fields: string[] };
+
+export interface FleetRolloutResponse {
+    /** Null for a dry run, which claims no job. */
+    job_id: string | null;
+    to_version: number;
+    dry_run: boolean;
+    forced: boolean;
+    total_agents: number;
+    synced: number;
+    already_current: number;
+    skipped_drifted: number;
+    outcomes: FleetRolloutOutcome[];
+}
+
+export interface FleetRolloutRequest {
+    /** Overwrite hand edits. Still cannot carry a guardrail. */
+    force?: boolean;
+    /** Report the plan without applying it. Claims no job. */
+    dry_run?: boolean;
+}
+
+export interface PauseFleetResponse {
+    agents_paused: number;
 }
 
 export interface TemplateListResponse {
