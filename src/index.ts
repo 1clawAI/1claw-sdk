@@ -74,6 +74,7 @@ export type {
 export { TokensResource } from "./resources/tokens";
 export { BindingsResource } from "./resources/bindings";
 export { CardsResource } from "./resources/cards";
+export { PayResource } from "./resources/pay";
 export { MemoryResource } from "./resources/memory";
 export { AutomationsResource } from "./resources/automations";
 export { RuntimesResource } from "./resources/runtimes";

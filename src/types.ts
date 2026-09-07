@@ -3477,3 +3477,93 @@ export interface PredictApprovalResponse {
     suggest_auto: boolean;
     blocked_reason?: PredictApprovalBlockedReason;
 }
+
+// ── 1claw pay (x402 micropayments) ──────────────────────────────────────────
+
+export interface PayPrepareRequest {
+    /**
+     * The exact bytes the paywall served, base64. Send them verbatim: the digest
+     * a person authorizes is computed from this preimage, so any field parsed
+     * out and re-sent would fall outside what they actually approved.
+     */
+    challenge_b64: string;
+    method: string;
+    resource_url: string;
+    /** Reuse on retry so one 402 cannot become two payments. */
+    idempotency_key?: string;
+    /** A request, not an instruction — the vault decides (D12). */
+    mode?: "strict" | "session" | "auto";
+}
+
+export interface PayPrepareResponse {
+    session_id: string;
+    payment_digest: string;
+    sign_idempotency_key: string;
+    quote: Record<string, unknown>;
+    valid_before: string | null;
+    expires_at: string;
+    /** `allow` | `require_passkey` | `require_grant` | `deny: <reason>` */
+    authorization: string;
+    /** Under 30 seconds left — may expire while a person reads the page. */
+    short_window: boolean;
+}
+
+export interface PaySignRequest {
+    session_id: string;
+    mode?: "strict" | "session" | "auto";
+    /** Offer a specific grant; omit for the newest live one. */
+    grant_id?: string;
+}
+
+export interface PaySignResponse {
+    payment_id: string;
+    /** The `X-PAYMENT` header value. The signature, never the key. */
+    payment_header: string;
+    amount_usd: string;
+    pay_to: string;
+    grant_id: string | null;
+}
+
+export interface PayResultRequest {
+    http_status?: number;
+    /** Omit when the outcome is genuinely unknown rather than guessing false. */
+    settled?: boolean;
+    error?: string | null;
+}
+
+export interface CreatePayGrantRequest {
+    cap_usd: string;
+    ttl_secs: number;
+    /** `null`/omitted means any recipient; `[]` means none. */
+    allowed_paytos?: string[] | null;
+    /** The digest the person asserted over. */
+    grant_digest: string;
+}
+
+export interface PayGrantResponse {
+    grant_id: string;
+    cap_usd: string;
+    remaining_usd: string;
+    expires_at: string;
+    allowed_paytos: string[] | null;
+}
+
+export interface PaySessionResponse {
+    session_id: string;
+    agent_id: string;
+    agent_name: string;
+    status: string;
+    quote: Record<string, unknown>;
+    payment_digest: string;
+    valid_before: string | null;
+    expires_at: string;
+}
+
+export interface PaymentStatusResponse {
+    payment_id: string;
+    status: string;
+    amount_usd: string | null;
+    pay_to: string;
+    resource_url: string;
+    grant_id: string | null;
+}

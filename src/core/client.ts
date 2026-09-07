@@ -26,6 +26,7 @@ import { RiskResource } from "../resources/risk";
 import { TokensResource } from "../resources/tokens";
 import { BindingsResource } from "../resources/bindings";
 import { CardsResource } from "../resources/cards";
+import { PayResource } from "../resources/pay";
 import { MemoryResource } from "../resources/memory";
 import { AutomationsResource } from "../resources/automations";
 import { RuntimesResource } from "../resources/runtimes";
@@ -121,6 +122,8 @@ export class OneclawClient {
     readonly tokens: TokensResource;
     /** Payment Card Vault — order, list, reveal, void, and refresh payment cards. */
     readonly cards: CardsResource;
+    /** x402 micropayments (`1claw pay`). */
+    readonly pay: PayResource;
     /** Agent memory — namespaced key-value storage with optional TTL. */
     readonly memory: MemoryResource;
     /** Automations — scheduled, event-driven, and webhook-triggered workflows. */
@@ -195,6 +198,7 @@ export class OneclawClient {
         this.risk = new RiskResource(this.http);
         this.tokens = new TokensResource(this.http);
         this.cards = new CardsResource(this.http);
+        this.pay = new PayResource(this.http);
         this.memory = new MemoryResource(this.http);
         this.automations = new AutomationsResource(this.http);
         this.runtimes = new RuntimesResource(this.http);
