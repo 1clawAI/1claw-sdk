@@ -1,4 +1,4 @@
-# @1claw/sdk (v0.59.10)
+# @1claw/sdk (v0.60.0)
 
 > ⭐ **Star [1clawAI/agent-templates](https://github.com/1clawAI/agent-templates)** — ready-to-run agent templates wired to 1Claw. It is our single starred repo.
 
@@ -1029,6 +1029,34 @@ await client.platform.listEntitlements(connectionId);
 await client.platform.previewTemplate(appId, templateId, { parameters: { agent_name: "demo" } });
 
 await client.treasuryWallets.getInferenceBudget();
+```
+
+## v0.60 — Fleet management
+
+Every agent one bootstrap template provisioned, as one cohort. Each call acts on
+all of them at once, which is why the surface is narrower than the per-agent
+API: guardrails and capability flags are not bulk-patchable, and one bad field
+refuses the whole patch.
+
+```typescript
+const { data: fleet } = await client.platform.getFleet(appId, templateId);
+console.log(`${fleet.agents_behind} of ${fleet.total_agents} behind`);
+
+// Read the allowlist from the server rather than hard-coding it.
+if (fleet.bulk_patchable_fields.includes("system_prompt")) {
+    await client.platform.bulkPatchFleet(appId, templateId, {
+        system_prompt: "You are a careful assistant.",
+    });
+}
+
+// A dry run changes nothing and claims no job, so job_id comes back null.
+const { data: plan } = await client.platform.rolloutFleet(appId, templateId, {
+    dry_run: true,
+});
+console.log(plan.skipped_drifted, "agent(s) were hand-edited and would be skipped");
+
+await client.platform.listFleetAgents(appId, templateId, { limit: 100 });
+await client.platform.pauseFleet(appId, templateId);
 ```
 
 ## v0.58 — Platform API control plane
