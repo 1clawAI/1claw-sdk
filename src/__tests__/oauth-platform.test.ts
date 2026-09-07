@@ -281,6 +281,63 @@ describe("PlatformResource", () => {
         expect(res.data?.total_grants).toBe(15);
     });
 
+    // ── Directory job board (Feature 10) ──────────────────────────────
+
+    it("isUntrusted narrows a wrapped field and rawText unwraps either shape", async () => {
+        const { isUntrusted, rawText } = await import("../types");
+
+        expect(isUntrusted("plain title")).toBe(false);
+        expect(rawText("plain title")).toBe("plain title");
+
+        const wrapped = {
+            untrusted_content: true as const,
+            source: "directory_job",
+            id: "j1",
+            field: "title",
+            raw_text: "odd text",
+            system_prefix: "UNTRUSTED third-party content",
+        };
+        expect(isUntrusted(wrapped)).toBe(true);
+        // rawText must reach the text without the caller touching .raw_text
+        // themselves — that is the whole point of having the helper.
+        expect(rawText(wrapped)).toBe("odd text");
+    });
+
+    it("submitBid posts to the job's bids path", async () => {
+        globalThis.fetch = mockFetch(201, { id: "bid-1", job_id: "job-1", status: "pending" });
+        const { DiscoveryResource } = await import("../resources/discovery");
+        await new DiscoveryResource(makeHttp()).submitBid("job-1", { summary: "I can do it" });
+
+        const { url, init } = lastCall();
+        expect(url).toBe(`${BASE}/v1/directory/jobs/job-1/bids`);
+        expect(init.method).toBe("POST");
+        expect(JSON.parse(init.body as string).summary).toBe("I can do it");
+    });
+
+    it("listJobs joins tags with commas and omits an empty query string", async () => {
+        globalThis.fetch = mockFetch(200, { jobs: [], count: 0 });
+        const { DiscoveryResource } = await import("../resources/discovery");
+        const r = new DiscoveryResource(makeHttp());
+
+        await r.listJobs({ tags: ["research", "summarisation"], mine: true });
+        expect(lastCall().url).toBe(
+            `${BASE}/v1/directory/jobs?tags=research%2Csummarisation&mine=true`,
+        );
+
+        globalThis.fetch = mockFetch(200, { jobs: [], count: 0 });
+        await r.listJobs();
+        expect(lastCall().url).toBe(`${BASE}/v1/directory/jobs`);
+    });
+
+    it("acceptBid targets the accept path with both ids", async () => {
+        globalThis.fetch = mockFetch(200, { job_id: "job-1", awarded_bid_id: "bid-1" });
+        const { DiscoveryResource } = await import("../resources/discovery");
+        await new DiscoveryResource(makeHttp()).acceptBid("job-1", "bid-1");
+
+        expect(lastCall().url).toBe(`${BASE}/v1/directory/jobs/job-1/accept/bid-1`);
+        expect(lastCall().init.method).toBe("POST");
+    });
+
     // ── Fleets ────────────────────────────────────────────────────────
 
     it("getFleet sends GET to the fleet path", async () => {

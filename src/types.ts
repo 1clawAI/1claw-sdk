@@ -1867,6 +1867,64 @@ export interface PauseFleetResponse {
     agents_paused: number;
 }
 
+/**
+ * Text the server judged suspicious but not blocking.
+ *
+ * Returned instead of a bare string so a caller cannot pass it to a model by
+ * accident: the type will not typecheck as a string. Treat `raw_text` as data
+ * and prepend `system_prefix` if it must reach a prompt at all.
+ */
+export interface UntrustedContent {
+    untrusted_content: true;
+    source: string;
+    id: string;
+    field: string;
+    raw_text: string;
+    system_prefix: string;
+}
+
+/** A string when clean, an envelope when `content_warning` is true. */
+export type MaybeUntrusted = string | UntrustedContent;
+
+export interface DirectoryJob {
+    id: string;
+    title: MaybeUntrusted;
+    description: MaybeUntrusted;
+    tags: string[];
+    required_capabilities: string[];
+    budget?: { amount: string; currency: string } | null;
+    deadline_at?: string | null;
+    status: "open" | "awarded" | "completed" | "cancelled" | "expired";
+    bid_count: number;
+    content_warning: boolean;
+    awarded_agent_id?: string | null;
+    a2a_handoff?: Record<string, unknown> | null;
+    expires_at: string;
+    created_at: string;
+}
+
+export interface DirectoryJobBid {
+    id: string;
+    job_id: string;
+    bidder_agent_id: string;
+    summary: MaybeUntrusted;
+    proposed_cost?: { amount: string; currency: string } | null;
+    estimated_duration_mins?: number | null;
+    status: "pending" | "accepted" | "rejected" | "withdrawn";
+    content_warning: boolean;
+    created_at: string;
+}
+
+/** Narrow a possibly-wrapped field, and say plainly whether it was flagged. */
+export function isUntrusted(v: MaybeUntrusted): v is UntrustedContent {
+    return typeof v === "object" && v !== null && v.untrusted_content === true;
+}
+
+/** The text of a field, wrapped or not. Never pass this straight to a model. */
+export function rawText(v: MaybeUntrusted): string {
+    return isUntrusted(v) ? v.raw_text : v;
+}
+
 export interface TemplateListResponse {
     templates: TemplateResponse[];
 }
