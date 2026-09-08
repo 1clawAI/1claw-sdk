@@ -9,6 +9,8 @@ import type {
     PayGrantResponse,
     PaySessionResponse,
     PaymentStatusResponse,
+    UpdatePayGuardrailsRequest,
+    PaySettingsResponse,
     OneclawResponse,
 } from "../types";
 
@@ -136,6 +138,24 @@ export class PayResource {
             "POST",
             `/v1/agents/${agentId}/pay/grants`,
             { body, headers: { "X-Passkey-Token": options.passkeyToken } },
+        );
+    }
+
+    /**
+     * Set the agent's payment guardrails.
+     *
+     * Human callers only. These are the numbers every other pay decision is
+     * measured against, so an agent cannot set them. Omitted fields are left
+     * alone; values can be set but not currently cleared.
+     */
+    async updateSettings(
+        agentId: string,
+        body: UpdatePayGuardrailsRequest,
+    ): Promise<OneclawResponse<PaySettingsResponse>> {
+        return this.http.request<PaySettingsResponse>(
+            "PATCH",
+            `/v1/agents/${agentId}/pay/settings`,
+            { body },
         );
     }
 

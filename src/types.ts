@@ -3567,3 +3567,30 @@ export interface PaymentStatusResponse {
     resource_url: string;
     grant_id: string | null;
 }
+
+export interface UpdatePayGuardrailsRequest {
+    pay_enabled?: boolean;
+    pay_max_usd?: string | null;
+    pay_daily_limit_usd?: string | null;
+    /** Null is not a wildcard — for an unattended agent it means no one. */
+    pay_payto_allowlist?: string[] | null;
+    /** Defaults true. Turning it off is what "unattended" means. */
+    pay_require_passkey?: boolean;
+    pay_require_approval?: boolean;
+    pay_grant_mode_enabled?: boolean;
+    pay_grant_max_usd?: string | null;
+    pay_grant_max_ttl_secs?: number | null;
+}
+
+export interface PaySettingsResponse {
+    agent_id: string;
+    pay_enabled: boolean;
+    pay_max_usd: string | null;
+    pay_daily_limit_usd: string | null;
+    pay_payto_allowlist: string[] | null;
+    pay_require_passkey: boolean;
+    pay_require_approval: boolean;
+    pay_grant_mode_enabled: boolean;
+    pay_grant_max_usd: string | null;
+    pay_grant_max_ttl_secs: number | null;
+}
