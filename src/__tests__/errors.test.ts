@@ -178,3 +178,56 @@ describe("409 Conflict", () => {
         expect(err.message).toContain("already exists");
     });
 });
+
+describe("agent token refresh failure", () => {
+    /**
+     * The vault distinguishes four 401s at token exchange — an unmatched or
+     * rotated key, a deactivated agent, an expired agent, and an expired key —
+     * and they need different fixes. The SDK used to report only the status,
+     * which turned all four into the same dead end and cost a user an evening.
+     */
+    it("surfaces the server's reason, not just the status", async () => {
+        const original = globalThis.fetch;
+        globalThis.fetch = (async () =>
+            new Response(
+                JSON.stringify({
+                    type: "about:blank",
+                    title: "Unauthorized",
+                    status: 401,
+                    detail: "Invalid credentials",
+                }),
+                { status: 401, headers: { "Content-Type": "application/json" } },
+            )) as typeof fetch;
+
+        try {
+            const { createClient } = await import("../index");
+            const client = createClient({
+                baseUrl: "https://api.example.test",
+                apiKey: "ocv_notarealkey0000000000",
+            });
+            await expect(
+                client.secrets.get("vault-id", "some/path"),
+            ).rejects.toThrow(/Invalid credentials/);
+        } finally {
+            globalThis.fetch = original;
+        }
+    });
+
+    it("still reports the status when the body is not JSON", async () => {
+        const original = globalThis.fetch;
+        globalThis.fetch = (async () =>
+            new Response("<html>502</html>", { status: 502 })) as typeof fetch;
+        try {
+            const { createClient } = await import("../index");
+            const client = createClient({
+                baseUrl: "https://api.example.test",
+                apiKey: "ocv_notarealkey0000000000",
+            });
+            await expect(
+                client.secrets.get("vault-id", "some/path"),
+            ).rejects.toThrow(/HTTP 502/);
+        } finally {
+            globalThis.fetch = original;
+        }
+    });
+});

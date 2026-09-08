@@ -146,8 +146,30 @@ export class HttpClient {
             });
 
             if (!res.ok) {
+                // The server distinguishes four reasons here — an unmatched or
+                // rotated key, a deactivated agent, an expired agent, and an
+                // expired key — and they need different fixes. Reporting only
+                // the status turns all four into the same dead end.
+                let detail = "";
+                try {
+                    const body = (await res.json()) as {
+                        message?: string;
+                        detail?: string;
+                        title?: string;
+                    };
+                    detail = body.message ?? body.detail ?? body.title ?? "";
+                } catch {
+                    // A non-JSON body is not worth failing over; the status
+                    // still gets reported below.
+                }
                 throw new Error(
-                    `Agent token refresh failed: HTTP ${res.status}`,
+                    `Agent token refresh failed: HTTP ${res.status}` +
+                        (detail ? ` — ${detail}` : "") +
+                        (res.status === 401
+                            ? "\nThe API key did not authenticate. Check it has not been" +
+                              " rotated, that the agent is still active, and that the key" +
+                              " belongs to this baseUrl's environment."
+                            : ""),
                 );
             }
 
