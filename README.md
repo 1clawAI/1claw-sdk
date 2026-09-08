@@ -35,9 +35,15 @@ await client.secrets.set("vault-id", "OPENAI_KEY", "sk-...", {
     type: "api_key",
 });
 
-// Retrieve a secret
-const secret = await client.secrets.get("vault-id", "OPENAI_KEY");
-console.log(secret.data?.value);
+// Retrieve a secret.
+// Every call returns { data, error }. `data` is null whenever `error` is set,
+// so `data?.value` alone turns a 403 into a silent undefined — check `error`.
+const { data, error, meta } = await client.secrets.get("vault-id", "OPENAI_KEY");
+if (error) {
+    console.error(meta?.status, error.type, error.message, meta?.requestId);
+} else {
+    console.log(data?.value);
+}
 ```
 
 **API contract:** This SDK is built from the **OpenAPI 3.1** spec. The canonical spec is published as [@1claw/openapi-spec](https://www.npmjs.com/package/@1claw/openapi-spec) (YAML/JSON). Types are generated with `npm run generate` (`openapi-typescript ../openapi-spec/openapi.yaml`). Run `generate` after spec changes, then `npm run build`. Shapes such as `LlmTokenBillingStatus` (including optional `credit_balance` and `billing_cycle_usage.metered_lines`) come from the generated `api-types.ts`. For a full endpoint list, see the [API reference](https://docs.1claw.co/docs/reference/api-reference) or the spec.
