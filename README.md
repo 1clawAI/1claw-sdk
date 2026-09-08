@@ -121,6 +121,7 @@ await client.auth.verifyEmailChange({ code: "123456" });
 | `client.subOrgs`   | `create`, `list`, `get`, `delete`, `grantPermission`, `revokePermission`, `addUser`, `generateWallets` |
 | `client.portfolio` | `get` |
 | `client.cards`     | `order`, `orderGiftCard`, `searchGiftCards`, `list`, `get`, `reveal`, `update`, `void`, `refresh`, `import` |
+| `client.pay`       | `prepare`, `sign`, `reportResult`, `get`, `getSession`, `createGrant`, `revokeGrant`, `updateSettings` — x402 paywalls. Send the 402 bytes verbatim; the vault computes the digest and decides authorization. Limits are charged at signing, so `reportResult` releases nothing |
 | `client.devices`   | `register`, `list`, `delete`, `challenge`, `attest`, `setPushToken`                                                 |
 | `client.passkeys`  | `list`, `registerBegin`, `registerComplete`, `assertBegin`, `assertComplete`, `delete`                               |
 | `client.risk`      | `listEvents`, `getVerdict`, `listVerdicts`, `createHoneytoken`, `listHoneytokens`, `deleteHoneytoken`                |
