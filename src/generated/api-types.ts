@@ -4272,6 +4272,103 @@ export interface paths {
         patch: operations["updatePlatformTemplate"];
         trace?: never;
     };
+    "/v1/platform/apps/{appId}/fleets/{template_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Fleet summary for a template
+         * @description Every agent this template provisioned, as one cohort: how many there are, how they split across the template versions they were built from, and how many a previous rollout declined to touch. plt_ or user JWT.
+         */
+        get: operations["getFleet"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/apps/{appId}/fleets/{template_id}/agents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the agents in a fleet */
+        get: operations["listFleetAgents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/apps/{appId}/fleets/{template_id}/bulk-patch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Patch every agent in a fleet
+         * @description Applies one patch to every agent in the cohort. The field allowlist is deliberately narrower than a single-agent PATCH: guardrails and capability flags (intents_api_enabled, execution_intents_enabled) cannot be changed here, because at cohort scale nobody reviews the change per agent. Read the allowlist from bulk_patchable_fields on the fleet summary rather than hard-coding it. A field outside it returns 400 naming the field.
+         */
+        post: operations["bulkPatchFleet"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/apps/{appId}/fleets/{template_id}/rollout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Roll the current template version out to its fleet
+         * @description Brings every agent in the cohort up to the template's current version. An agent changed outside fleet control is skipped rather than corrected, and the fields that caused the skip are recorded on it. force=true overrides that skip but still cannot carry a guardrail or a capability flag. dry_run=true reports what would happen and claims nothing, so it never blocks a real rollout. Only one rollout may run per template at a time; a second returns 409.
+         */
+        post: operations["rolloutFleet"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/apps/{appId}/fleets/{template_id}/pause": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Deactivate every agent in a fleet
+         * @description Sets is_active=false on the whole cohort. The blast radius is the point: this exists for the moment an operator needs a thousand agents to stop at once.
+         */
+        post: operations["pauseFleet"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/platform/apps/{appId}/templates/{template_id}/preview": {
         parameters: {
             query?: never;
@@ -6401,6 +6498,180 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/agents/{agent_id}/pay/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Set an agent's payment guardrails
+         * @description Human callers only. These are the numbers every payment decision is measured against — the per-payment cap, the daily limit, the recipient allowlist, whether a passkey is required at all, and whether the agent may hold a spending grant. An agent that could set them would be setting its own ceiling. Omitted fields are left alone; values can currently be set but not cleared.
+         */
+        patch: operations["updatePaySettings"];
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/pay/prepare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Prepare an x402 payment from a 402 challenge
+         * @description Send the exact bytes the paywall served. The vault parses them, pins the amount that will actually be signed (not the `maxAmountRequired` ceiling), computes the digest a person will authorize, and stores the preimage so the authorize page renders from what the vault saw rather than what the caller claims. `authorization` in the response says what the payment needs next: `allow`, `require_passkey`, `require_grant`, or `deny: <reason>`.
+         */
+        post: operations["preparePayment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/pay/sign": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Sign a prepared x402 payment
+         * @description Evaluates the agent's payment policy, redeems a passkey assertion or consumes a spending grant, then signs. The daily limit is charged at signing time: a payment that is signed and then lost still consumed authority, and only a vault-verified reconciliation returns it. Returns the `X-PAYMENT` header value, never a key.
+         */
+        post: operations["signPayment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/pay/grants": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create a spending grant
+         * @description Human callers only. Requires a passkey assertion over the digest of exactly these terms, and stays within the agent's own maximum cap and window — a grant is a delegation inside the limits already set, not a way around them.
+         */
+        post: operations["createPayGrant"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/pay/{payment_id}/result": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Report the outcome of a payment
+         * @description Best-effort reporting. Moves the audit trail forward and nothing else — `settled: false` does **not** release daily-limit headroom, and the response says `limit_released: false` so the caller need not infer it.
+         */
+        post: operations["reportPaymentResult"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/pay/{payment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Payment status */
+        get: operations["getPayment"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/pay-sessions/{session_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read a pay session (authorize page and CLI poll)
+         * @description Requires the token of the human the session was raised for, not an agent token and not merely a member of the same org. A session UUID is not authorization once the response can carry signing credentials.
+         */
+        get: operations["getPaySession"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/pay-sessions/{session_id}/authorize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Authorize a pay session with a passkey assertion
+         * @description Called by the authorize page after the person touches their authenticator. The assertion is redeemed here against this session's own payment digest and the session is marked authorized; no token is handed back to be polled for, so nothing worth stealing is left in the row. Requires the token of the human the session was raised for.
+         */
+        post: operations["authorizePaySession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/pay-grants/{grant_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Revoke a spending grant */
+        delete: operations["revokePayGrant"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/agents/{agent_id}/cards/order": {
         parameters: {
             query?: never;
@@ -7407,6 +7678,759 @@ export interface paths {
         get: operations["exportAppUsage"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/org/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Apply a chart
+         * @description Create what the chart describes. Human users only.
+         *
+         *     **Apply calls the same handlers the HTTP routes call.** Creating a vault
+         *     runs five gates before anything is written — the delegation scope, a name
+         *     check, control-plane consensus, a creation rate limit and the tier quota
+         *     — and creating an agent runs its own. A reconciler that wrote through the
+         *     repositories would skip all of them and would look, in review, exactly
+         *     like one that did not.
+         *
+         *     So if your org has consensus configured on `vault.create`, applying a
+         *     chart queues an approval exactly as a dashboard click would. That resource
+         *     comes back as `awaiting_approval` rather than failing the whole chart.
+         *
+         *     Per-resource results: `created`, `unchanged`, `skipped`, `refused`,
+         *     `awaiting_approval`, `failed`. `needs_attention` is true when the chart is
+         *     not fully applied — something is waiting on a person, whether an approval,
+         *     an OAuth sign-in, or a resource that drifted and was left alone.
+         *
+         *     Save `applied_state` to `.1claw/apply-state.json`. It records what apply
+         *     set, which is what lets the next run tell drift from a first apply.
+         *
+         *     v1 creates and reports; it does not delete, prune, or patch in place. An
+         *     apply that silently deletes is an apply nobody runs twice.
+         */
+        post: operations["applyChart"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/org/approval-learning/shadow-report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What would have been approved automatically
+         * @description Every approval decision is observed, per **fingerprint bucket** — the
+         *     action, the amount band, whether the recipient was new, and who they
+         *     were. This reports the buckets a person has approved without exception,
+         *     and what promoting one would write into an agent's policy.
+         *
+         *     Observing is not acting. In the default `shadow` mode nothing changes who
+         *     gets asked; `can_promote` is false and the promote endpoint refuses.
+         *
+         *     Each suggestion carries `would_write_rule` — the actual rule, built by the
+         *     same function promotion uses, so the report cannot promise something
+         *     promotion would refuse.
+         */
+        get: operations["getApprovalLearningShadowReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/org/approval-learning/{profile_id}/promote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Turn an observed pattern into a policy rule
+         * @description Writes a rule into the named agent's `action_approval_policy`. Human users
+         *     only, and only when the organisation is in `enforce` mode.
+         *
+         *     **The rule covers only what was actually approved.** Five approved $5
+         *     refunds to one customer produce `{ refund.create, asks above $10, that
+         *     recipient }` — a $49 request does not match it and still reaches a human.
+         *
+         *     Refused when: fewer than five consecutive approvals; *any* past rejection
+         *     on the bucket (a long recent run must not hide a history of refusals); the
+         *     bucket is for a recipient never paid before; the amount band has no upper
+         *     edge; or the action grants or destroys authority.
+         *
+         *     `widen_to_action_type` drops the amount and recipient constraints. It is
+         *     never the default and should be an explicit choice in your UI, not a
+         *     checkbox someone skims past.
+         *
+         *     The written rule is marked `promoted_from_learning` so an operator can
+         *     tell it apart from one they wrote, and it replaces any existing rule for
+         *     the same action type — appending would leave two rules where only the
+         *     first ever applies.
+         */
+        post: operations["promoteApprovalLearningProfile"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/policy-presets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Named starting points for an agent's policy
+         * @description Four presets an operator can choose between without reading a policy
+         *     document. Public — a description of what 1Claw offers, not tenant data.
+         *
+         *     Each carries a `headline`: the one-line consequence someone should read
+         *     before choosing it, in the words they would use.
+         */
+        get: operations["listPolicyPresets"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/policy-preset/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * What a preset would change
+         * @description Compiles a preset against this agent and reports which fields it would
+         *     **widen** — loosen relative to what the agent can already do.
+         *
+         *     Widening detection errs toward flagging: a false positive costs one extra
+         *     approval, a false negative is a limit raised without review. Enabling a
+         *     capability widens; disabling does not. Raising a cap widens; setting a
+         *     first cap does not, because absent means unlimited.
+         */
+        post: operations["previewPolicyPreset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/directory/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List directory jobs
+         * @description Open jobs across every org (the board is cross-org by design). Pass `mine=true` to list this org's own jobs in every status instead.
+         */
+        get: operations["listDirectoryJobs"];
+        put?: never;
+        /**
+         * Post a job to the directory board
+         * @description Posts a task other orgs' agents can bid on.
+         *
+         *     **`title` and `description` are inspected before they are stored.** They will be
+         *     read by other parties' language models, which makes this board a prompt-injection
+         *     distribution channel. High-confidence injection is refused with 400 naming the
+         *     field; lower-confidence content is stored with `content_warning: true` and every
+         *     response wraps it in an untrusted-content envelope.
+         *
+         *     Limit: 10 open jobs per org.
+         */
+        post: operations["createDirectoryJob"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/directory/jobs/{job_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get one job
+         * @description Open jobs are public. A job in any other status is visible only to the org that posted it — an awarded or cancelled job is not board content.
+         */
+        get: operations["getDirectoryJob"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/directory/jobs/{job_id}/bids": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List bids on a job (poster only)
+         * @description Bid contents belong to the poster alone — a competing bidder reading this list would learn every rival's price.
+         */
+        get: operations["listDirectoryJobBids"];
+        put?: never;
+        /**
+         * Bid on a job
+         * @description **Agents only** — a human posts work, an agent offers to do it. The agent must be
+         *     `discoverable`: appearing on someone's bid list is a public act.
+         *
+         *     `summary` is inspected exactly as job text is. One bid per agent per job —
+         *     re-bidding replaces the previous bid rather than stacking, because a poster
+         *     reading five bids from one agent cannot tell which is current.
+         *
+         *     Limit: 50 bids per agent per day.
+         */
+        post: operations["createDirectoryJobBid"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/directory/jobs/{job_id}/accept/{bid_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Award a job to a bid (poster only)
+         * @description Awards the job and returns an A2A handoff pointing at the bidder's own `a2a_url`. **1Claw does not execute the task** — it says where to send it. The award is atomic and guarded on the job still being open, so two posters racing to award different bids cannot both succeed; the loser gets 409.
+         */
+        post: operations["acceptDirectoryJobBid"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/directory/jobs/{job_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel a job (poster only) */
+        post: operations["cancelDirectoryJob"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/directory/jobs/{job_id}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark a job complete (poster or awarded agent) */
+        post: operations["completeDirectoryJob"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/policy-preset/cedar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * The Cedar a preset compiles to (Feature 6 Phase B)
+         * @description Returns the Cedar policy text a preset produces for this agent, already
+         *     validated against the deployed Cedar schema. **Read-only — it creates no
+         *     policy.** The wizard's Advanced tab shows this before anything is written.
+         *
+         *     **The text is not the whole policy.** The presets denominate limits in USD
+         *     ("$100 a day", "ask above $25") and the Cedar schema exposes transaction
+         *     value only as `value_gwei`, a native-token amount. Converting needs a live
+         *     price, and a price baked into policy text is wrong the moment it is written
+         *     and stays wrong silently — so the compiler does not convert. The USD limits
+         *     come back in `residual_guardrails`, still enforced by the agent's guardrail
+         *     columns where a live price is applied at evaluation time.
+         *
+         *     A UI must show `residual_guardrails` alongside the text. Presenting the
+         *     Cedar alone would read as complete while permitting every amount.
+         *
+         *     Policies are created in **shadow** mode: they report what they would decide
+         *     without deciding it, until an operator promotes them.
+         */
+        post: operations["exportPolicyPresetCedar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/policy-preset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Apply a policy preset
+         * @description **Applies through the agent update handler**, not by writing guardrail
+         *     columns. A preset that wrote them directly would be a way around the
+         *     guardrail widening approval flow wearing a friendlier interface.
+         *
+         *     So if the preset loosens something and your organisation gates that, you
+         *     get the same **202 with a pending approval** you would get from editing
+         *     the agent by hand — not a quietly applied change. Pass `approval_id`
+         *     once that approval is granted.
+         */
+        post: operations["applyPolicyPreset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/trust": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What a listed agent has earned
+         * @description Everything a publisher writes — name, description, tags — is a claim.
+         *     These are the parts they cannot write: whether a human reviewed the
+         *     listing, how many people installed it, what they rated it.
+         *
+         *     Public, because its purpose is to be read by someone deciding whether to
+         *     install a stranger's agent. Only listed agents have public trust.
+         *
+         *     **A listing with reports shows no badges at all.** "Platform reviewed"
+         *     beside an active complaint tells a reader the opposite of what they need.
+         *     An average rating appears only from three reviews — one rating is not an
+         *     average.
+         */
+        get: operations["getAgentTrust"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Report a listed agent
+         * @description Human users only — an agent reporting another agent is a way to bury a
+         *     competitor's listing at machine speed.
+         *
+         *     The response does not include the report count. Telling a reporter how
+         *     close a listing is to being flagged tells them how many more to file.
+         */
+        post: operations["reportAgent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Rate an agent you have used
+         * @description One review per person per agent; a second replaces the first. You cannot
+         *     review an agent from your own organisation.
+         *
+         *     Comments are shown only once moderated. The rating counts either way — a
+         *     number is harder to abuse than free text.
+         */
+        post: operations["reviewAgent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/peers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create a peer and name its observers
+         * @description Human users only. Creating a peer decides which agents may read a model
+         *     of a person, and an agent that could do that could add itself.
+         *
+         *     Idempotent on `(org, peer_type, peer_ref)`. Observers are **merged**, not
+         *     replaced — a second call adding one agent does not revoke the others
+         *     already watching. Every named observer must be an agent in this
+         *     organisation, so a typo or an id copied from elsewhere is an error rather
+         *     than a silent no-op that leaves an operator believing an agent is
+         *     watching when none is.
+         */
+        post: operations["createPeer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/peers/{peer_id}/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Everything held about this person
+         * @description The whole behavioural profile plus the raw observations behind it. Human
+         *     users only, behind strong-factor re-auth — this is exactly what a stolen
+         *     session would want.
+         *
+         *     Each fact carries `why_we_believe_this`: its provenance, including
+         *     tombstones for observations that have since expired. An export listing
+         *     conclusions without their basis answers only the easy half of the
+         *     question.
+         */
+        get: operations["exportPeerData"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/peers/{peer_id}/data": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Forget this person
+         * @description Deletes the peer, its facts and its observations. Human users only,
+         *     behind strong-factor re-auth, and irreversible.
+         *
+         *     Returns counts of what was removed — "deleted" with no numbers is not
+         *     something anyone can check. The audit entry records that a deletion
+         *     happened and deliberately omits the identifier someone asked to have
+         *     forgotten.
+         */
+        delete: operations["deletePeerData"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/peers/{peer_id}/facts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Correct what the system believes
+         * @description Human users only. A correction **pins** the fact: the background
+         *     processor will not re-derive over it, because someone correcting what a
+         *     system believes about them outranks the inference that got it wrong.
+         *
+         *     The correction is appended to the fact's provenance as a `human` entry,
+         *     so the record shows both what was inferred and that a person disagreed.
+         */
+        patch: operations["editPeerFact"];
+        trace?: never;
+    };
+    "/v1/peers/{peer_id}/context": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A context blob for prompt injection
+         * @description What this person's history suggests, as prose an agent can put in a
+         *     prompt. Best-supported facts first, so a tight budget drops the
+         *     least-supported beliefs rather than an arbitrary tail — and a fact a
+         *     human corrected sorts ahead of everything, because a correction someone
+         *     took the trouble to make is the last thing to cut.
+         *
+         *     Never truncates mid-line: half a sentence about a person is worse than
+         *     one fewer sentence. A peer with no facts returns an empty string rather
+         *     than a header claiming to describe someone.
+         *
+         *     The blob ends by saying these are observations and not instructions,
+         *     because an agent reading it needs to know the difference.
+         */
+        get: operations["getPeerContext"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/peer-context": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * An agent's own peer context
+         * @description Resolves the peer from the agent's platform connection, so an agent does
+         *     not need to know a peer id.
+         *
+         *     An agent may only ask for its own — otherwise this route would be a way
+         *     to read a peer through an agent that observes it, from one that does not.
+         *     The observer check still applies: being the agent named in the path is
+         *     not the same as observing that connection's peer.
+         */
+        get: operations["getAgentPeerContext"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/peers/{peer_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A peer's profile and derived facts
+         * @description A peer is a shared model of one human, across the agents serving them.
+         *
+         *     **An agent reaches a peer only by being named in its observer list.**
+         *     Being in the same organisation, the same platform connection, or holding
+         *     a broad scope grants nothing. A peer with no observers is readable by no
+         *     agent at all — forgetting to set observers must not expose someone's
+         *     behavioural profile to every agent in the org.
+         *
+         *     A peer in another organisation returns 404, the same as an unknown id:
+         *     whether one exists elsewhere is not something a caller should learn.
+         *
+         *     Each fact carries `provenance` — why it is believed. Entries for events
+         *     that have since expired become tombstones keeping the shape of what was
+         *     seen without the content, so a belief about a person always has a
+         *     recoverable basis.
+         */
+        get: operations["getPeer"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/peers/{peer_id}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record something observed about a person */
+        post: operations["recordPeerEvent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/peers/{peer_id}/predict-approval": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * How has this person decided this before?
+         * @description Answers two different questions, and keeps them apart on purpose.
+         *
+         *     `likelihood` is an **observation about a person** — how they have decided
+         *     comparable requests before. Comparable means the same fingerprint bucket,
+         *     not the same action type: three approvals of $5 say nothing about $500.
+         *
+         *     `suggest_auto` is a **statement about a policy**. It is true only where a
+         *     rule the operator already wrote would auto-approve this exact case. It is
+         *     never derived from `likelihood`, and a confident model never becomes new
+         *     authority. It is false, with `blocked_reason`, when:
+         *
+         *     * no rule covers the action (`no_matching_rule`);
+         *     * a rule says a human decides (`rule_requires_approval`);
+         *     * the amount is above the rule's own threshold (`above_configured_threshold`);
+         *     * the derived risk tier is above the lowest (`risk_tier_requires_step_up`);
+         *     * the action grants or destroys authority (`action_is_sensitive`).
+         *
+         *     The policy consulted is the calling agent's own, so a prediction cannot
+         *     inherit authority from another agent that happens to observe the same
+         *     person.
+         */
+        post: operations["predictApproval"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/peers/by-connection/{connection_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Resolve the peer for a platform connection */
+        get: operations["getPeerByConnection"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/org/apply/diff": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * What would this chart change?
+         * @description Reconcile a chart against the org without changing anything. Human users
+         *     only — a chart provisions agents, vaults and access policies, so an agent
+         *     that could apply one could grant itself access to a vault it cannot
+         *     currently read.
+         *
+         *     A POST rather than a GET because the chart is the request body, and a GET
+         *     carrying a body is one many proxies and clients drop or mangle. Read-only
+         *     either way.
+         *
+         *     The plan reports five outcomes per resource:
+         *
+         *     * `create` — not present, would be created.
+         *     * `patch` — present, differs only in fields safe to change in place.
+         *     * `unchanged` — present and matching.
+         *     * `skipped_drifted` — **changed outside this chart**, so left alone.
+         *       Someone edited it by hand for a reason; overwriting that because a file
+         *       says otherwise is how a deployment tool destroys an incident fix.
+         *     * `refused` — the chart asks for a change apply will not make. Guardrail
+         *       fields are never patched here: editing them routes through the guardrail
+         *       approval flow, and a reconciler writing them directly would be a way
+         *       around it.
+         *
+         *     Pass `applied_state` from `.1claw/apply-state.json` so drift can be told
+         *     from a first run — a pre-existing resource is not drifted, it was simply
+         *     not created by this chart.
+         */
+        post: operations["diffChart"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9666,6 +10690,86 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        UpdatePayGuardrailsRequest: {
+            pay_enabled?: boolean;
+            pay_max_usd?: string | null;
+            pay_daily_limit_usd?: string | null;
+            /** @description Recipients an unattended agent may pay. Null is not a wildcard — for an unattended agent it means no one. */
+            pay_payto_allowlist?: string[] | null;
+            /** @description Defaults true. Turning it off is what "unattended" means. */
+            pay_require_passkey?: boolean;
+            pay_require_approval?: boolean;
+            pay_grant_mode_enabled?: boolean;
+            pay_grant_max_usd?: string | null;
+            pay_grant_max_ttl_secs?: number | null;
+        };
+        PayPrepareRequest: {
+            /** @description The exact bytes the paywall served, base64. Sent verbatim rather than parsed by the caller: the digest a person authorizes is computed from this preimage, so anything reinterpreted first would fall outside the binding. */
+            challenge_b64: string;
+            /** @example GET */
+            method: string;
+            /** Format: uri */
+            resource_url: string;
+            /** @description Reused by a caller retrying after a crash so one 402 cannot become two payments. Generated server-side when absent. */
+            idempotency_key?: string;
+            /**
+             * @description A request, not an instruction — the vault decides.
+             * @enum {string}
+             */
+            mode?: "strict" | "session" | "auto";
+        };
+        PayPrepareResponse: {
+            /** Format: uuid */
+            session_id?: string;
+            payment_digest?: string;
+            sign_idempotency_key?: string;
+            quote?: {
+                [key: string]: unknown;
+            };
+            /** Format: date-time */
+            valid_before?: string | null;
+            /** Format: date-time */
+            expires_at?: string;
+            /** @description allow | require_passkey | require_grant | deny: <reason> */
+            authorization?: string;
+            /** @description The paywall's window is under 30 seconds and may expire while a person is reading the authorize page. */
+            short_window?: boolean;
+        };
+        PaySignRequest: {
+            /** Format: uuid */
+            session_id: string;
+            /** @enum {string} */
+            mode?: "strict" | "session" | "auto";
+            /**
+             * Format: uuid
+             * @description Offer a specific grant; absent means the newest live one.
+             */
+            grant_id?: string;
+        };
+        PaySignResponse: {
+            /** Format: uuid */
+            payment_id?: string;
+            /** @description The X-PAYMENT header value. The signature, never the key. */
+            payment_header?: string;
+            amount_usd?: string;
+            pay_to?: string;
+            /** Format: uuid */
+            grant_id?: string | null;
+        };
+        PayResultRequest: {
+            http_status?: number;
+            /** @description Null means the caller could not tell — a timeout after the header was sent, where the payment may or may not have been presented. */
+            settled?: boolean | null;
+            error?: string | null;
+        };
+        CreatePayGrantRequest: {
+            cap_usd: string;
+            ttl_secs: number;
+            /** @description Null means any recipient; an empty list means none. The two stay distinguishable all the way down to the digest. */
+            allowed_paytos?: string[] | null;
+            /** @description The digest the person actually asserted over. Compared against the digest of the terms being stored, so a token obtained for a small, tightly scoped grant cannot create a large open one. */
+            grant_digest: string;
+        };
         OrderCardRequest: {
             /** @enum {string} */
             kind: "prepaid" | "gift_card";
@@ -10277,6 +11381,31 @@ export interface components {
             approval_url?: string;
         };
         CreateAgentRequest: {
+            /** @description Default LLM provider for automations and Shroud. */
+            default_llm_provider?: string;
+            /** @description Default LLM model for automations and Shroud. */
+            default_llm_model?: string;
+            /** @description List this agent in the cross-org agent directory. */
+            discoverable?: boolean;
+            /** @description Description shown on the public directory listing. */
+            public_description?: string;
+            /** @description Tags shown on the public directory listing. */
+            public_tags?: string[];
+            /** @description Skip creating the default access policy for this agent. */
+            skip_default_policy?: boolean;
+            /** @description Address screening policy applied to transaction recipients. */
+            address_screening_policy?: {
+                [key: string]: unknown;
+            };
+            /** @description Enable durable key-value and semantic memory for this agent. Required before PUT /v1/agents/{agent_id}/memory/{namespace}/{key} will accept a write; without it that endpoint returns 403. */
+            memory_enabled?: boolean;
+            /** @description Namespaces this agent may use. Empty or omitted means unrestricted. */
+            memory_namespace_allowlist?: string[];
+            /**
+             * Format: int32
+             * @description Maximum size of a single memory entry value. Null uses the platform default (64 KiB).
+             */
+            memory_max_entry_bytes?: number | null;
             name: string;
             description?: string;
             /**
@@ -10474,6 +11603,50 @@ export interface components {
             approval_id?: string;
         };
         UpdateAgentRequest: {
+            /** @description Smart account address associated with this agent. */
+            smart_account_address?: string;
+            /** @description Chain name for the smart account. */
+            smart_account_chain?: string;
+            /**
+             * Format: int32
+             * @description EVM chain id for the smart account.
+             */
+            smart_account_chain_id?: number;
+            /** @description Smart account deployment nonce. */
+            smart_account_nonce?: string;
+            /** @description Smart account initialisation data. */
+            smart_account_init_data?: {
+                [key: string]: unknown;
+            };
+            /** @description Allow this agent to sign arbitrary messages. */
+            message_signing_enabled?: boolean;
+            /** @description EIP-712 domains this agent may sign under. */
+            eip712_domain_allowlist?: {
+                [key: string]: unknown;
+            };
+            /** @description Default policy applied to EIP-712 signing requests. */
+            eip712_default_policy?: string;
+            /** @description Allow this agent to sign raw digests. */
+            raw_signing_enabled?: boolean;
+            /** @description Default LLM provider for automations and Shroud. */
+            default_llm_provider?: string | null;
+            /** @description Default LLM model for automations and Shroud. */
+            default_llm_model?: string | null;
+            /** @description List this agent in the cross-org agent directory. */
+            discoverable?: boolean;
+            /** @description Description shown on the public directory listing. */
+            public_description?: string | null;
+            /** @description Tags shown on the public directory listing. */
+            public_tags?: string[];
+            /** @description Enable durable key-value and semantic memory for this agent. Required before PUT /v1/agents/{agent_id}/memory/{namespace}/{key} will accept a write; without it that endpoint returns 403. */
+            memory_enabled?: boolean;
+            /** @description Namespaces this agent may use. Empty or omitted means unrestricted. */
+            memory_namespace_allowlist?: string[];
+            /**
+             * Format: int32
+             * @description Maximum size of a single memory entry value. Null uses the platform default (64 KiB).
+             */
+            memory_max_entry_bytes?: number | null;
             name?: string;
             scopes?: string[];
             is_active?: boolean;
@@ -10652,6 +11825,15 @@ export interface components {
             approval_id?: string;
         };
         AgentResponse: {
+            /** @description Whether durable key-value and semantic memory is enabled. Omitted when false: the server skips serializing this field unless it is true, so an absent key means disabled. */
+            memory_enabled?: boolean;
+            /** @description Namespaces this agent may use. Omitted when empty, which means unrestricted. */
+            memory_namespace_allowlist?: string[];
+            /**
+             * Format: int32
+             * @description Maximum size of a single memory entry value. Omitted when unset, which means the platform default (64 KiB).
+             */
+            memory_max_entry_bytes?: number | null;
             /** Format: uuid */
             id: string;
             name: string;
@@ -12736,6 +13918,142 @@ export interface components {
             /** Format: date-time */
             updated_at?: string;
         };
+        DirectoryJob: {
+            /** Format: uuid */
+            id?: string;
+            title?: string | {
+                /** @enum {boolean} */
+                untrusted_content?: true;
+                source?: string;
+                id?: string;
+                field?: string;
+                raw_text?: string;
+                system_prefix?: string;
+            };
+            description?: string | {
+                /** @enum {boolean} */
+                untrusted_content?: true;
+                source?: string;
+                id?: string;
+                field?: string;
+                raw_text?: string;
+                system_prefix?: string;
+            };
+            tags?: string[];
+            required_capabilities?: string[];
+            budget?: Record<string, never>;
+            /** Format: date-time */
+            deadline_at?: string | null;
+            /** @enum {string} */
+            status?: "open" | "awarded" | "completed" | "cancelled" | "expired";
+            /** Format: int64 */
+            bid_count?: number;
+            /** @description Inspection found threats below the blocking threshold. When true, title and description are envelopes rather than strings. */
+            content_warning?: boolean;
+            /** Format: uuid */
+            awarded_agent_id?: string | null;
+            a2a_handoff?: Record<string, never>;
+            /** Format: date-time */
+            expires_at?: string;
+            /** Format: date-time */
+            created_at?: string;
+        };
+        DirectoryJobBid: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            job_id?: string;
+            /** Format: uuid */
+            bidder_agent_id?: string;
+            summary?: string | {
+                /** @enum {boolean} */
+                untrusted_content?: true;
+                source?: string;
+                id?: string;
+                field?: string;
+                raw_text?: string;
+                system_prefix?: string;
+            };
+            proposed_cost?: Record<string, never>;
+            estimated_duration_mins?: number | null;
+            /** @enum {string} */
+            status?: "pending" | "accepted" | "rejected" | "withdrawn";
+            content_warning?: boolean;
+            /** Format: date-time */
+            created_at?: string;
+        };
+        FleetSummaryResponse: {
+            /** Format: uuid */
+            template_id?: string;
+            template_name?: string;
+            current_version?: number;
+            /** @description SHA-256 of the template spec. Lets a caller tell a version bump that changed nothing from one that did. Null on templates written before migration 245. */
+            spec_hash?: string | null;
+            /** Format: int64 */
+            total_agents?: number;
+            /** @description How the cohort splits across the versions it was provisioned from. */
+            version_skew?: {
+                template_version?: number | null;
+                /** Format: int64 */
+                agents?: number;
+            }[];
+            /** Format: int64 */
+            agents_on_current_version?: number;
+            /** Format: int64 */
+            agents_behind?: number;
+            /**
+             * Format: int64
+             * @description Agents a previous rollout declined to touch.
+             */
+            drifted_agents?: number;
+            /** @description The fields bulk-patch and rollout will carry. Read this rather than hard-coding the list; it is deliberately narrower than a single-agent PATCH and may narrow further. */
+            bulk_patchable_fields?: string[];
+        };
+        ListFleetAgentsResponse: {
+            agents?: components["schemas"]["FleetAgent"][];
+            limit?: number;
+            offset?: number;
+            current_version?: number;
+        };
+        FleetAgent: {
+            /** Format: uuid */
+            agent_id?: string;
+            name?: string;
+            /** Format: uuid */
+            org_id?: string;
+            /** Format: uuid */
+            platform_connection_id?: string | null;
+            provisioned_from_version?: number | null;
+            /** Format: date-time */
+            last_fleet_sync_at?: string | null;
+            /** @description Fields a rollout skipped because they were changed outside fleet control. The standing answer to "why is this agent behind?". */
+            drift_fields?: string[];
+            is_active?: boolean;
+            is_current?: boolean;
+        };
+        FleetRolloutResponse: {
+            /**
+             * Format: uuid
+             * @description Null for a dry run, which claims no job.
+             */
+            job_id?: string | null;
+            to_version?: number;
+            dry_run?: boolean;
+            forced?: boolean;
+            /** Format: int64 */
+            total_agents?: number;
+            synced?: number;
+            already_current?: number;
+            skipped_drifted?: number;
+            outcomes?: {
+                /** @enum {string} */
+                outcome?: "already_current" | "synced" | "skipped_drifted";
+                /** Format: uuid */
+                agent_id?: string;
+                fields?: string[];
+                drift_fields?: string[];
+            }[];
+        };
         UpsertPlatformUserRequest: {
             /** @description OIDC JWT from the platform's IdP (verified against JWKS) */
             subject_token?: string;
@@ -13085,6 +14403,45 @@ export interface components {
             totals: components["schemas"]["UsageCounts"];
             /** @description Some usage this period belongs to an end-user who cannot be identified. */
             has_ambiguous_usage: boolean;
+        };
+        Peer: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            peer_type: "user" | "platform_connection" | "external";
+            peer_ref: string;
+            display_name?: string | null;
+            profile: {
+                [key: string]: unknown;
+            };
+            /**
+             * @description Archived when a connection is disconnected. Agents lose observation;
+             *     the person keeps export and delete.
+             * @enum {string}
+             */
+            status: "active" | "archived";
+            /** @description How many agents observe this peer. The list itself is not returned here. */
+            observer_count: number;
+            /** Format: date-time */
+            created_at: string;
+        };
+        PeerFact: {
+            /** @example approval_tendency:refund.create|0-10|known|a@b.co */
+            fact_key: string;
+            fact_value: {
+                [key: string]: unknown;
+            };
+            /** @description 0..1, capped below certainty — no history makes the next decision certain. */
+            confidence?: string | null;
+            /**
+             * @description Why this is believed. Entries are `event`, `tombstone` (the event has
+             *     expired; kind and decision are kept, content is not) or `human`.
+             */
+            provenance: Record<string, never>[];
+            /** @description A person corrected this. The processor will not overwrite it. */
+            edited_by_human: boolean;
+            /** Format: date-time */
+            updated_at: string;
         };
         NotificationTarget: {
             /** Format: uuid */
@@ -21999,6 +23356,182 @@ export interface operations {
             404: components["responses"]["NotFound"];
         };
     };
+    getFleet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appId: string;
+                template_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Fleet summary */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FleetSummaryResponse"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listFleetAgents: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                appId: string;
+                template_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Agents in the fleet */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListFleetAgentsResponse"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    bulkPatchFleet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appId: string;
+                template_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description Fields to set on every agent in the cohort. */
+                    patch: {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+        responses: {
+            /** @description Patch applied */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        fields_applied?: string[];
+                        /**
+                         * Format: int64
+                         * @description Agents in the cohort the patch applied to.
+                         */
+                        agents_matched?: number;
+                        /**
+                         * Format: int64
+                         * @description Distinct agents written, not writes performed. Every field in one patch targets the same cohort, so this is the cohort size rather than fields x agents.
+                         */
+                        agents_updated?: number;
+                    };
+                };
+            };
+            /** @description A field outside the bulk-patch allowlist, or an empty patch */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    rolloutFleet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appId: string;
+                template_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /**
+                     * @description Overwrite hand edits. Cannot carry guardrails.
+                     * @default false
+                     */
+                    force?: boolean;
+                    /**
+                     * @description Report the plan without applying it.
+                     * @default false
+                     */
+                    dry_run?: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Rollout result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FleetRolloutResponse"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+            /** @description A rollout is already running for this template */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    pauseFleet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appId: string;
+                template_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Agents paused */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: int64 */
+                        agents_paused?: number;
+                    };
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
     updateConnectionDelegation: {
         parameters: {
             query?: never;
@@ -24182,6 +25715,282 @@ export interface operations {
             403: components["responses"]["Forbidden"];
         };
     };
+    updatePaySettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePayGuardrailsRequest"];
+            };
+        };
+        responses: {
+            /** @description Updated guardrails */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not a human caller */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    preparePayment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PayPrepareRequest"];
+            };
+        };
+        responses: {
+            /** @description Session created; digest and quote returned */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PayPrepareResponse"];
+                };
+            };
+            /** @description Not a usable 402 challenge */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description pay is not enabled for this agent */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    signPayment: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description A passkey assertion bound to this payment's digest, when required. */
+                "X-Passkey-Token"?: string;
+            };
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PaySignRequest"];
+            };
+        };
+        responses: {
+            /** @description Signed; payment header returned */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaySignResponse"];
+                };
+            };
+            /** @description Policy refused */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description ChallengeExpired. Re-fetch the resource for a fresh 402 and prepare again — re-preparing from the stored bytes would reproduce the same expired window. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    createPayGrant: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Passkey-Token": string;
+            };
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePayGrantRequest"];
+            };
+        };
+        responses: {
+            /** @description Grant created */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not a human caller */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    reportPaymentResult: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+                payment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PayResultRequest"];
+            };
+        };
+        responses: {
+            /** @description Outcome recorded */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getPayment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+                payment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Payment status */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getPaySession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Quote and status */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not a human caller */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    authorizePaySession: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Passkey-Token": string;
+            };
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Session authorized */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not a human caller, the session belongs to someone else, or the assertion does not authorize this payment. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    revokePayGrant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                grant_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Revoked */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     orderCard: {
         parameters: {
             query?: never;
@@ -25879,6 +27688,1014 @@ export interface operations {
                 };
             };
             404: components["responses"]["NotFound"];
+        };
+    };
+    applyChart: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description A chart document — `apiVersion`, `kind`, `metadata`, `spec`. */
+                    chart: Record<string, never>;
+                    applied_state?: {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+        responses: {
+            /** @description What happened to each resource */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        chart_name?: string;
+                        resources?: {
+                            kind?: string;
+                            name?: string;
+                            /** @enum {string} */
+                            result?: "created" | "unchanged" | "skipped" | "refused" | "awaiting_approval" | "failed";
+                            /** Format: uuid */
+                            id?: string;
+                            detail?: string;
+                        }[];
+                        warnings?: string[];
+                        /** @description Save to `.1claw/apply-state.json`. */
+                        applied_state?: {
+                            [key: string]: unknown;
+                        };
+                        /** @description The chart is not fully applied — something is waiting on a person. */
+                        needs_attention?: boolean;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    getApprovalLearningShadowReport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Report */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        mode?: "shadow" | "enforce";
+                        /** @description Consecutive approvals in one bucket before it appears here. */
+                        threshold?: number;
+                        can_promote?: boolean;
+                        observed_buckets?: number;
+                        total_decisions?: number;
+                        suggestions?: {
+                            /** Format: uuid */
+                            profile_id?: string;
+                            action_type?: string;
+                            /** @example refund.create|0-10|known|a@b.co */
+                            fingerprint_bucket?: string;
+                            consecutive_approvals?: number;
+                            total_requests?: number;
+                            would_write_rule?: Record<string, never> | null;
+                            /** @description Present when a bound prevents promotion, saying which. */
+                            blocked?: string;
+                            /** Format: date-time */
+                            last_decision_at?: string;
+                        }[];
+                    };
+                };
+            };
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    promoteApprovalLearningProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                profile_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    agent_id: string;
+                    /** @default false */
+                    widen_to_action_type?: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Promoted */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        profile_id?: string;
+                        /** Format: uuid */
+                        agent_id?: string;
+                        rule?: Record<string, never>;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    listPolicyPresets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Catalogue */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        presets?: Record<string, never>[];
+                    };
+                };
+            };
+        };
+    };
+    previewPolicyPreset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @example small-business-spender */
+                    preset: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Proposal */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        preset_slug?: string;
+                        guardrails?: Record<string, never>;
+                        action_approval_policy?: Record<string, never>;
+                        access_policy?: Record<string, never>;
+                        /** @description Fields this preset would loosen. Show these, not a generic warning. */
+                        widens?: string[];
+                        requires_guardrail_approval?: boolean;
+                        explanation?: string;
+                    };
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listDirectoryJobs: {
+        parameters: {
+            query?: {
+                /** @description Comma-separated. */
+                tags?: string;
+                q?: string;
+                limit?: number;
+                offset?: number;
+                mine?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Jobs */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        jobs?: components["schemas"]["DirectoryJob"][];
+                        count?: number;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    createDirectoryJob: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    title: string;
+                    description: string;
+                    tags?: string[];
+                    required_capabilities?: string[];
+                    /** @description { "amount": "10", "currency": "USD" } — optional. */
+                    budget?: Record<string, never>;
+                    /** Format: date-time */
+                    deadline_at?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Job posted */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DirectoryJob"];
+                };
+            };
+            /** @description Content refused by inspection, or the open-job limit reached */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getDirectoryJob: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Job */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DirectoryJob"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listDirectoryJobBids: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bids */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        bids?: components["schemas"]["DirectoryJobBid"][];
+                        count?: number;
+                    };
+                };
+            };
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    createDirectoryJobBid: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    summary: string;
+                    proposed_cost?: Record<string, never>;
+                    estimated_duration_mins?: number;
+                    a2a_task_ref?: Record<string, never>;
+                };
+            };
+        };
+        responses: {
+            /** @description Bid placed */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DirectoryJobBid"];
+                };
+            };
+            /** @description Not an agent, or the agent is not discoverable */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The job is not open */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    acceptDirectoryJobBid: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+                bid_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Awarded */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        job_id?: string;
+                        /** Format: uuid */
+                        awarded_bid_id?: string;
+                        /** Format: uuid */
+                        awarded_agent_id?: string;
+                        a2a_handoff?: Record<string, never>;
+                        next_step?: string;
+                    };
+                };
+            };
+            /** @description The job is no longer open */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    cancelDirectoryJob: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Cancelled */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A job in this status cannot be cancelled */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    completeDirectoryJob: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Completed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Only an awarded job can be completed */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    exportPolicyPresetCedar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @example treasury-operator */
+                    preset: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Generated Cedar plus the limits it cannot carry */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        preset?: string;
+                        /** Format: uuid */
+                        agent_id?: string;
+                        /** @description Cedar text, validated against the deployed schema. */
+                        cedar?: string;
+                        /** @description Limits Cedar cannot express, still enforced by guardrails. Show these next to the text. */
+                        residual_guardrails?: string[];
+                        /** @enum {string} */
+                        enforcement_mode?: "shadow";
+                        /** @description Intermediate representation, so a caller can render a different policy backend without re-deriving the preset. */
+                        ir?: {
+                            preset_slug?: string;
+                            permit_actions?: string[];
+                            forbid_actions?: string[];
+                            secret_paths?: string[];
+                            residual_guardrails?: string[];
+                        };
+                    };
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    applyPolicyPreset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    preset: string;
+                    /** Format: uuid */
+                    approval_id?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Applied */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Queued behind a guardrail approval */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getAgentTrust: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Trust signals */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        trust?: {
+                            /** @enum {string} */
+                            tier?: "unverified" | "platform_reviewed" | "identity_verified" | "enterprise";
+                            install_count?: number;
+                            avg_rating?: number | null;
+                            review_count?: number;
+                            badges?: string[];
+                            flagged_for_review?: boolean;
+                        };
+                    };
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    reportAgent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    reason?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Received */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    reviewAgent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    rating: number;
+                    comment?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Recorded */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createPeer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    peer_type: "user" | "platform_connection" | "external";
+                    peer_ref: string;
+                    display_name?: string;
+                    /** Format: uuid */
+                    platform_connection_id?: string;
+                    /** @description Empty means nobody. A peer with no observers is readable by no agent. */
+                    observer_agent_ids?: string[];
+                };
+            };
+        };
+        responses: {
+            /** @description Peer created or updated */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        peer?: components["schemas"]["Peer"];
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    exportPeerData: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                peer_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Export */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        peer?: Record<string, never>;
+                        facts?: {
+                            fact_key?: string;
+                            fact_value?: Record<string, never>;
+                            confidence?: string | null;
+                            why_we_believe_this?: Record<string, never>[];
+                            corrected_by_a_human?: boolean;
+                        }[];
+                        raw_observations?: Record<string, never>[];
+                        note?: string;
+                    };
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deletePeerData: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                peer_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        deleted?: boolean;
+                        facts_deleted?: number;
+                        observations_deleted?: number;
+                    };
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    editPeerFact: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                peer_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    fact_key: string;
+                    fact_value: Record<string, never>;
+                };
+            };
+        };
+        responses: {
+            /** @description Corrected */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        fact_key?: string;
+                        edited_by_human?: boolean;
+                        note?: string;
+                    };
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getPeerContext: {
+        parameters: {
+            query?: {
+                /** @description Characters. Default 2000, capped at 8000. */
+                budget?: number;
+            };
+            header?: never;
+            path: {
+                peer_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Context */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        context?: string;
+                        characters?: number;
+                        budget?: number;
+                        facts_available?: number;
+                    };
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getAgentPeerContext: {
+        parameters: {
+            query?: {
+                budget?: number;
+            };
+            header?: never;
+            path: {
+                agent_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Context */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        peer_id?: string;
+                        context?: string;
+                        characters?: number;
+                    };
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getPeer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                peer_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Peer and facts */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        peer?: components["schemas"]["Peer"];
+                        facts?: components["schemas"]["PeerFact"][];
+                    };
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    recordPeerEvent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                peer_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    event_type: "message" | "approval" | "action" | "observation";
+                    content: {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+        responses: {
+            /** @description Recorded */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        event_id?: string;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    predictApproval: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                peer_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @example refund.create */
+                    action_type: string;
+                    payload?: {
+                        [key: string]: unknown;
+                    };
+                    effective_risk_tier: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Prediction */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description Absent when there is no comparable history. */
+                        likelihood?: number | null;
+                        reasoning: string;
+                        /** @description Whether the operator's own policy already permits this. */
+                        suggest_auto: boolean;
+                        /** @enum {string} */
+                        blocked_reason?: "no_matching_rule" | "rule_requires_approval" | "above_configured_threshold" | "risk_tier_requires_step_up" | "action_is_sensitive";
+                    };
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getPeerByConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Peer */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        peer?: components["schemas"]["Peer"];
+                    };
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    diffChart: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description A chart document — `apiVersion`, `kind`, `metadata`, `spec`. */
+                    chart: Record<string, never>;
+                    /** @description What a previous apply recorded, keyed `kind/name`. */
+                    applied_state?: {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+        responses: {
+            /** @description The plan */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        chart_name?: string;
+                        actions?: Record<string, never>[];
+                        warnings?: string[];
+                        summary?: {
+                            create?: number;
+                            patch?: number;
+                            skipped_drifted?: number;
+                            unchanged?: number;
+                            refused?: number;
+                            no_changes?: boolean;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
         };
     };
     listNotificationTargets: {
