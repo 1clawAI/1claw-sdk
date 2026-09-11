@@ -10918,13 +10918,21 @@ export interface components {
             /** @enum {string} */
             mfa_method?: "totp" | "passkey";
         };
+        /** @description Exactly one credential, decided by the agent's auth_method: api_key for api_key agents, oidc_token for oidc_client_credentials agents. mTLS agents send neither and present a client certificate through the TLS terminator. */
         AgentTokenRequest: {
             /**
              * Format: uuid
-             * @description Optional when using key-only auth (ocv_ keys auto-resolve agent)
+             * @description Optional for api_key agents (ocv_ keys auto-resolve from their prefix). Required for OIDC and mTLS agents, which have no key to look up by.
              */
             agent_id?: string;
-            api_key: string;
+            /** @description The ocv_ key, for auth_method api_key. */
+            api_key?: string;
+            /** @description Token minted by the agent's OIDC provider, for auth_method oidc_client_credentials. Verified against the issuer and audience on the agent record, so nothing long-lived is stored where the agent runs. */
+            oidc_token?: string;
+            /** @description Optional DPoP public key (JWK) binding the issued JWT to a client keypair. */
+            dpop_jwk?: {
+                [key: string]: unknown;
+            };
         };
         UserApiKeyTokenRequest: {
             api_key: string;
