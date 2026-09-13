@@ -1,4 +1,13 @@
 import type { HttpClient } from "../core/http";
+import {
+    openSse,
+    readSseEvents,
+    type OtelStreamEvent,
+    type OtelStreamOptions,
+    type OtelSummary,
+    type OtelThreat,
+    type OtelTopology,
+} from "./otel";
 import type {
     ApprovalListResponse,
     CreatePlatformAppRequest,
@@ -832,6 +841,55 @@ export class PlatformResource {
             "GET",
             `/v1/platform/connections/${connectionId}/runtimes/${runtimeId}`,
         );
+    }
+
+    // -----------------------------------------------------------------------
+    // Control-plane telemetry for one connection's agents (`plt_` auth)
+    // -----------------------------------------------------------------------
+
+    /** Topology restricted to what the connection's agents reach (`plt_` auth). */
+    async getConnectionOtelTopology(connectionId: string): Promise<OneclawResponse<OtelTopology>> {
+        return this.http.request<OtelTopology>(
+            "GET",
+            `/v1/platform/connections/${connectionId}/otel/topology`,
+        );
+    }
+
+    /** Threats on the connection's agents, highest blast radius first (`plt_` auth). */
+    async getConnectionOtelThreats(
+        connectionId: string,
+        state: "open" | "all" = "open",
+    ): Promise<OneclawResponse<OtelThreat[]>> {
+        return this.http.request<OtelThreat[]>(
+            "GET",
+            `/v1/platform/connections/${connectionId}/otel/threats`,
+            { query: { state } },
+        );
+    }
+
+    /** Posture score and counts over the connection's agents (`plt_` auth). */
+    async getConnectionOtelSummary(connectionId: string): Promise<OneclawResponse<OtelSummary>> {
+        return this.http.request<OtelSummary>(
+            "GET",
+            `/v1/platform/connections/${connectionId}/otel/summary`,
+        );
+    }
+
+    /**
+     * Live signals for the connection's agents as an async iterator (`plt_`
+     * auth). Same protocol as `client.otel.stream()`; signals with no agent
+     * are never emitted here. Slots are counted per platform app (five).
+     */
+    async *connectionOtelStream(
+        connectionId: string,
+        opts: OtelStreamOptions = {},
+    ): AsyncGenerator<OtelStreamEvent> {
+        const res = await openSse(
+            this.http,
+            `/v1/platform/connections/${connectionId}/otel/stream`,
+            opts,
+        );
+        yield* readSseEvents(res);
     }
 
     /** Begin WebAuthn passkey enrollment for a connected end-user (`plt_` auth). */

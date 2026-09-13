@@ -10186,6 +10186,96 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/platform/connections/{connection_id}/otel/topology": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Topology for one connection's agents
+         * @description The same graph as `/v1/otel/topology`, restricted to what this connection's agents reach: the agents, the policies they hold, the vaults those grant, the chains they sign on and the systems they call. Restricted before the 500-node cap, so a large org's cap cannot cut the connection's own agents out. Walking is directed (agent → policy → vault), so a vault shared with another tenant's agent does not reveal that agent.
+         *
+         *     A `plt_` key sees one connection's agents, never the end-user's org: that org may hold agents from other platforms or the user's own. The set is agents attributed to the connection plus the ones listed on it, constrained to the connection's org. A connection that does not belong to the calling app is a 404.
+         */
+        get: operations["get_platform_connection_otel_topology"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/connections/{connection_id}/otel/threats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Open threats on one connection's agents
+         * @description `/v1/otel/threats` filtered to the connection's agents, same ranking (blast radius, then recency).
+         *
+         *     A `plt_` key sees one connection's agents, never the end-user's org: that org may hold agents from other platforms or the user's own. The set is agents attributed to the connection plus the ones listed on it, constrained to the connection's org. A connection that does not belong to the calling app is a 404.
+         */
+        get: operations["get_platform_connection_otel_threats"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/connections/{connection_id}/otel/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Posture score and counts for one connection's agents
+         * @description `/v1/otel/summary` over a smaller world: the posture score uses the connection's agents' trust scores and the resources they reach; threat and pending-approval counts are the connection's agents' only.
+         *
+         *     A `plt_` key sees one connection's agents, never the end-user's org: that org may hold agents from other platforms or the user's own. The set is agents attributed to the connection plus the ones listed on it, constrained to the connection's org. A connection that does not belong to the calling app is a 404.
+         */
+        get: operations["get_platform_connection_otel_summary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/connections/{connection_id}/otel/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Live signal stream for one connection's agents (SSE)
+         * @description The same protocol as `/v1/otel/stream` — `Last-Event-ID` resume, `event: gap` on a stale cursor or a lagged subscriber — filtered to signals whose agent is one of the connection's. Signals with no agent (a human's own dashboard actions) are never emitted here. The agent set is fixed at connect time; an agent added later appears on the next connect.
+         *
+         *     Stream slots are counted per platform app (five), not per connection.
+         *
+         *     A `plt_` key sees one connection's agents, never the end-user's org: that org may hold agents from other platforms or the user's own. The set is agents attributed to the connection plus the ones listed on it, constrained to the connection's org. A connection that does not belong to the calling app is a 404.
+         */
+        get: operations["get_platform_connection_otel_stream"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/platform/connections/{connection_id}/resources": {
         parameters: {
             query?: never;
@@ -10329,6 +10419,218 @@ export interface paths {
         put?: never;
         /** Step-up (password or passkey reauth token, purpose=`runtime_chat`) unlocks dashboard runtime chat for 15 minutes — same trust bar as Shell/Logs. */
         post: operations["unlock_runtime_chat"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/otel/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * SSE stream of this org's telemetry signals
+         * @description Server-sent events carrying spans, metrics and events for the caller's organization. Human users only: an agent must not be able to subscribe to org-wide telemetry.
+         *
+         *     Every message carries an `id:` field. On reconnect, send the last one back as the `Last-Event-ID` header to resume. If that id has fallen out of the server's buffer, or came from another replica, the stream opens with an `event: gap` message and the client must refetch topology rather than assume continuity. A `gap` is also emitted, without closing the connection, when a subscriber falls behind.
+         */
+        get: operations["stream_otel_signals"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/otel/threats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Durable threat register for the org, worst reach first
+         * @description Threats are ranked by blast radius — the size of the affected agent's topology neighbourhood (vaults + connectors + chains) — not by recency or severity alone, so the row an operator should look at first is first. Ties fall back to recency.
+         *
+         *     `shadow: true` marks a threat the trust engine produced while running in recommend-only mode. Those are shown with a badge and never acted on automatically.
+         *
+         *     Evidence carries trace and span ids and a note. It never contains secret values or HTTP bodies.
+         */
+        get: operations["list_otel_threats"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/org/settings/otel-export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read the org's OTLP export configuration
+         * @description Owner or admin, Team tier and above. Returns header *names* only — the values are the customer's collector credentials and never round-trip through the browser.
+         */
+        get: operations["get_otel_export_config"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update the org's OTLP export configuration
+         * @description Every field is optional and only present fields change. The endpoint is validated *and DNS-resolved* on save: HTTPS only, no embedded credentials, and refused if any resolved address is private, loopback, link-local, metadata or ULA. A URL that resolves to a private address is the SSRF, and it is refused here rather than left in the database looking configured.
+         *
+         *     `headers` replaces the whole map when present and is encrypted at rest under the org's key. Omit it to change other fields without touching stored header values you cannot read back.
+         *
+         *     Transport is OTLP over HTTP with JSON encoding, posted to `<endpoint>/v1/traces`, `/v1/metrics` and `/v1/logs`. What leaves is exactly what the org's own dashboard stream carries — signals already through the collector's redaction pass.
+         */
+        patch: operations["patch_otel_export_config"];
+        trace?: never;
+    };
+    "/v1/org/settings/otel-export/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send one synthetic span to the configured endpoint
+         * @description Re-resolves the endpoint at send time and pins the connection to the resolved address, with redirects disabled. Rate-limited to 5 per minute per org: even a validated endpoint is an outbound request the caller chose the target of.
+         */
+        post: operations["test_otel_export"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/otel/metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Time-bucketed rollups from durable tables
+         * @description Volume, denials and latency over a window. Sourced from durable tables, never from in-process counters: an in-memory histogram is per-replica and resets on deploy, so a 24h chart drawn from one disagrees between instances and is wrong after every release.
+         *
+         *     Every bucket in the range is returned, including empty ones. A quiet hour is a zero, not a missing point — a line chart given a hole joins across it as though nothing happened.
+         *
+         *     `step` may be widened from what was requested when the window would otherwise produce more than 500 buckets. The response echoes the window and step actually used, so a chart can label its own resolution rather than the one it asked for.
+         */
+        get: operations["get_otel_metrics"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/otel/agents/{agent_id}/trust": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The breakdown behind one agent's trust score
+         * @description The topology carries a single 0-100 trust number per agent. This is what it is made of: each weighted component (`null` when this deployment has no source for it — not measured, not zero), a 24-hour history for a sparkline, and the agent's last audit actions. Actions and resource types only; audit `metadata` is where secret paths live and it is not returned.
+         *
+         *     Scores are `shadow` until the engine is promoted out of recommend-only mode; an agent the engine has not yet reached returns `score: null` and `shadow: true`.
+         *
+         *     Human users only. An agent id outside the caller's org is a 404, not a 403, so the response does not confirm the id exists.
+         */
+        get: operations["get_otel_agent_trust"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/otel/flows": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Who actually read from which vault
+         * @description Reachability (the topology's policy edges) says who *could* read a vault. This says who *did*, counted from `audit_events.action = 'secret.read'` — the durable record every read already writes — grouped by agent and vault. That is what lets a Sankey ribbon's width be a count of real reads rather than a guess.
+         *
+         *     Agent actors only; a human reading a secret through the dashboard is not an agent flow. Deleted agents and vaults are kept and labelled as such — a read that happened is still a read.
+         */
+        get: operations["get_otel_flows"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/otel/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Posture score and the counts behind it
+         * @description `posture_score` is the mean agent trust score, less a penalty per open critical threat scaled by the fraction of the organization that threat can reach. Scaling by fraction rather than count is what makes the number comparable between a seven-agent org and a fifty-agent one.
+         *
+         *     It returns 100 when there are no agents, and also while the trust engine is still in shadow mode and no scores exist yet — absence of data is not evidence of compromise. It never goes below 0.
+         *
+         *     `top_threats` uses the same ranking as `/v1/otel/threats`, so clicking through from the summary lands on the same first row.
+         */
+        get: operations["get_otel_summary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/otel/topology": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Agent, vault, policy, connector and chain graph for the org
+         * @description A snapshot of the organization's resources and how they connect. Human users only.
+         *
+         *     Capped at 500 nodes. When the cap applies, `truncated` is true and `total_nodes` reports the count before capping — a client must not present a truncated graph as complete. Agents are kept in preference to everything else, and edges that lose an endpoint to the cap are removed.
+         *
+         *     Agent `status` is derived at request time, never stored, so it cannot go stale.
+         */
+        get: operations["get_otel_topology"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -32314,6 +32616,189 @@ export interface operations {
             };
         };
     };
+    get_platform_connection_otel_topology: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Nodes and edges reachable from the connection's agents */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": paths["/v1/otel/topology"]["get"]["responses"]["200"]["content"]["application/json"]["schema"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not a plt_ key */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Connection not found for this app */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_platform_connection_otel_threats: {
+        parameters: {
+            query?: {
+                state?: "open" | "all";
+            };
+            header?: never;
+            path: {
+                connection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Threats on the connection's agents, highest blast radius first */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": paths["/v1/otel/threats"]["get"]["responses"]["200"]["content"]["application/json"]["schema"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not a plt_ key */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Connection not found for this app */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_platform_connection_otel_summary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Posture and counts for the connection */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": paths["/v1/otel/summary"]["get"]["responses"]["200"]["content"]["application/json"]["schema"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not a plt_ key */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Connection not found for this app */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_platform_connection_otel_stream: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Last-Event-ID"?: string;
+            };
+            path: {
+                connection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description text/event-stream */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": string;
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not a plt_ key */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Connection not found for this app */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Stream slot cap for this app reached */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     list_connection_resources: {
         parameters: {
             query?: never;
@@ -32733,6 +33218,594 @@ export interface operations {
             };
             /** @description Not found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    stream_otel_signals: {
+        parameters: {
+            query?: {
+                /** @description Set to `1` to request synthetic data. Available only on deployments with fixtures enabled, or to callers in the platform organization; refused with 403 otherwise. */
+                fixture?: "1" | "true";
+            };
+            header?: {
+                /** @description Resume after this event id. */
+                "Last-Event-ID"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description An event stream */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": string;
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not a human user, or fixtures are not available here */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Too many concurrent streams for this user */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_otel_threats: {
+        parameters: {
+            query?: {
+                /** @description `open` (default) returns anything not yet resolved; `all` includes resolved. */
+                state?: "open" | "all";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Threats, highest blast radius first */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        id: string;
+                        /** Format: uuid */
+                        agent_id: string;
+                        /** @enum {string} */
+                        class: "prompt_injection" | "policy_breach" | "spend_anomaly" | "key_exfil" | "off_hours" | "consensus_bypass" | "trust_breach";
+                        /** @enum {string} */
+                        severity: "critical" | "warn";
+                        detected_by: string;
+                        /** @enum {string} */
+                        status: "open" | "acknowledged" | "resolved";
+                        shadow: boolean;
+                        evidence?: Record<string, never>[];
+                        blast_radius: {
+                            vaults?: number;
+                            connectors?: number;
+                            chains?: number;
+                        };
+                        /** @description Sum of the blast radius. The sort key. */
+                        blast_radius_size: number;
+                        resolved_by?: string | null;
+                        /** Format: date-time */
+                        created_at?: string;
+                        /** Format: date-time */
+                        updated_at?: string;
+                    }[];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not a human user */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_otel_export_config: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current config, or null when unconfigured */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        enabled?: boolean;
+                        endpoint?: string;
+                        header_names?: string[];
+                        resource_attributes?: {
+                            [key: string]: string;
+                        };
+                        signal_filter?: ("spans" | "metrics" | "logs")[];
+                    } | null;
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Requires the Team plan or higher */
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not an owner or admin */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    patch_otel_export_config: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    enabled?: boolean;
+                    /**
+                     * Format: uri
+                     * @description HTTPS only.
+                     */
+                    endpoint?: string;
+                    /** @description Sent on every export request, e.g. an Authorization header. Reserved hop-by-hop names are refused. */
+                    headers?: {
+                        [key: string]: string;
+                    };
+                    resource_attributes?: {
+                        [key: string]: string;
+                    };
+                    signal_filter?: ("spans" | "metrics" | "logs")[];
+                };
+            };
+        };
+        responses: {
+            /** @description The updated config, header names only */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Endpoint refused (scheme */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Requires the Team plan or higher */
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not an owner or admin */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    test_otel_export: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The collector's HTTP status for the probe */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        endpoint?: string;
+                        status?: number;
+                        ok?: boolean;
+                    };
+                };
+            };
+            /** @description Not configured */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Requires the Team plan or higher */
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not an owner or admin */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description More than 5 test sends this minute */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_otel_metrics: {
+        parameters: {
+            query?: {
+                /** @description Lookback, e.g. `30m`, `24h`, `7d`. Default 24h, maximum 30d. */
+                window?: string;
+                /** @description Bucket width. Defaults to a twenty-fourth of the window, minimum 60s. */
+                step?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bucketed metrics */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description The window and step actually used. */
+                        window: {
+                            window_secs?: number;
+                            step_secs?: number;
+                        };
+                        buckets: {
+                            /** Format: date-time */
+                            t: string;
+                            executions: number;
+                            denials: number;
+                            transactions: number;
+                            llm_calls: number;
+                        }[];
+                        /** @description Null when nothing in the window recorded a duration. */
+                        latency_p50_ms?: number | null;
+                        latency_p95_ms?: number | null;
+                        total_executions: number;
+                        total_denials: number;
+                    };
+                };
+            };
+            /** @description Unparseable window or step, window over 30d, or step larger than window */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not a human user */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_otel_agent_trust: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current score, components, history, recent actions */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        agent_id: string;
+                        score?: number | null;
+                        /** @description True while the engine is recommend-only or the agent is unscored. */
+                        shadow: boolean;
+                        /** Format: date-time */
+                        updated_at?: string | null;
+                        /** @description 0-100 per component; null means no source in this deployment. */
+                        components: {
+                            denial_rate?: number | null;
+                            threat_hits?: number | null;
+                            egress_blocks?: number | null;
+                            spend_velocity?: number | null;
+                            off_hours?: number | null;
+                            consensus_bypass?: number | null;
+                        };
+                        /** @description Oldest first, last 24 hours. */
+                        history: {
+                            /** Format: date-time */
+                            at: string;
+                            score: number;
+                        }[];
+                        /** @description Newest first. */
+                        recent: {
+                            /** Format: date-time */
+                            at: string;
+                            action: string;
+                            resource_type?: string | null;
+                        }[];
+                    };
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not a human user */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such agent in the caller's organization */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_otel_flows: {
+        parameters: {
+            query?: {
+                /** @description Lookback, e.g. `1h`, `24h`, `7d`. Default 24h, maximum 30d. */
+                window?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Read flows, highest first */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        window: {
+                            window_secs?: number;
+                            step_secs?: number;
+                        };
+                        edges: {
+                            /** Format: uuid */
+                            agent_id: string;
+                            agent_name: string;
+                            /** Format: uuid */
+                            vault_id: string;
+                            vault_name: string;
+                            /** @description secret.read events in the window. */
+                            reads: number;
+                            /** @description Distinct secret paths touched. */
+                            distinct_paths: number;
+                        }[];
+                        total_reads: number;
+                    };
+                };
+            };
+            /** @description Unparseable window or window over 30d */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not a human user */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_otel_summary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Posture summary */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        posture_score: number;
+                        open_threats: number;
+                        open_critical: number;
+                        pending_approvals: number;
+                        agent_count: number;
+                        /** @description At most five, same ranking as /v1/otel/threats. */
+                        top_threats: Record<string, never>[];
+                    };
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not a human user */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_otel_topology: {
+        parameters: {
+            query?: {
+                /** @description Set to `1` to request a synthetic graph. Same gating as the stream endpoint. A fixture response carries `fixture: true`. */
+                fixture?: "1" | "true";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Topology snapshot */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        nodes: {
+                            /** @description Namespaced by kind, e.g. `agent:<uuid>`. */
+                            id: string;
+                            /** @enum {string} */
+                            kind: "agent" | "vault" | "policy" | "connector" | "chain";
+                            label: string;
+                            /**
+                             * @description Agents only. Derived, not stored.
+                             * @enum {string}
+                             */
+                            status?: "compromised" | "warn" | "suspended" | "ok";
+                            /** @description Agents only. Absent until the trust engine has scored the agent. */
+                            trust?: number;
+                        }[];
+                        edges: {
+                            from: string;
+                            to: string;
+                            /** @enum {string} */
+                            kind: "calls" | "grants" | "holds" | "signs";
+                        }[];
+                        truncated: boolean;
+                        /** @description Node count before the cap. */
+                        total_nodes: number;
+                        /** @description Present and true only for synthetic data. */
+                        fixture?: boolean;
+                    };
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not a human user, or fixtures are not available here */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

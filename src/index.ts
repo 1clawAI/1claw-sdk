@@ -64,6 +64,26 @@ export type {
     TreasuryWalletExportResponse,
 } from "./resources/treasury-wallets";
 export { RiskResource } from "./resources/risk";
+export { OtelResource, parseSseFrames, frameToEvent } from "./resources/otel";
+export type {
+    OtelTopology,
+    OtelTopologyNode,
+    OtelTopologyEdge,
+    OtelNodeKind,
+    OtelAgentStatus,
+    OtelThreat,
+    OtelBlastRadius,
+    OtelSummary,
+    OtelMetrics,
+    OtelMetricBucket,
+    OtelFlows,
+    OtelFlowEdge,
+    OtelAgentTrust,
+    OtelTrustComponents,
+    OtelSignal,
+    OtelStreamEvent,
+    OtelStreamOptions,
+} from "./resources/otel";
 export type {
     RiskEvent,
     RiskVerdict,

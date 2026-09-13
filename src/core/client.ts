@@ -17,6 +17,7 @@ import { TreasuryResource } from "../resources/treasury";
 import { SigningKeysResource } from "../resources/signing-keys";
 import { TreasuryWalletsResource } from "../resources/treasury-wallets";
 import { PlatformResource, type InspectContentRequest, type InspectContentResponse } from "../resources/platform";
+import { OtelResource } from "../resources/otel";
 import { DevicesResource } from "../resources/devices";
 import { PasskeysResource } from "../resources/passkeys";
 import { DepositDestinationsResource } from "../resources/deposit-destinations";
@@ -106,6 +107,8 @@ export class OneclawClient {
     readonly treasuryWallets: TreasuryWalletsResource;
     /** Platform API — build multi-tenant apps on top of 1Claw. */
     readonly platform: PlatformResource;
+    /** Control-plane telemetry — topology, threats, posture, metrics, flows, live stream. Human users only. */
+    readonly otel: OtelResource;
     /** Mobile device attestation — register devices, step-up auth. */
     readonly devices: DevicesResource;
     /** WebAuthn passkeys — register and assert FIDO2 credentials. */
@@ -190,6 +193,7 @@ export class OneclawClient {
         this.bindings = new BindingsResource(this.http);
         this.treasuryWallets = new TreasuryWalletsResource(this.http);
         this.platform = new PlatformResource(this.http);
+        this.otel = new OtelResource(this.http);
         this.devices = new DevicesResource(this.http);
         this.passkeys = new PasskeysResource(this.http);
         this.depositDestinations = new DepositDestinationsResource(this.http);
