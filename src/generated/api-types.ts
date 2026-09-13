@@ -10992,6 +10992,69 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        OtelTopology: {
+            nodes: {
+                /** @description Namespaced by kind, e.g. `agent:<uuid>`. */
+                id: string;
+                /** @enum {string} */
+                kind: "agent" | "vault" | "policy" | "connector" | "chain";
+                label: string;
+                /**
+                 * @description Agents only. Derived, not stored.
+                 * @enum {string}
+                 */
+                status?: "compromised" | "warn" | "suspended" | "ok";
+                /** @description Agents only. Absent until the trust engine has scored the agent. */
+                trust?: number;
+            }[];
+            edges: {
+                from: string;
+                to: string;
+                /** @enum {string} */
+                kind: "calls" | "grants" | "holds" | "signs";
+            }[];
+            truncated: boolean;
+            /** @description Node count before the cap. */
+            total_nodes: number;
+            /** @description Present and true only for synthetic data. */
+            fixture?: boolean;
+        };
+        OtelThreatList: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            agent_id: string;
+            /** @enum {string} */
+            class: "prompt_injection" | "policy_breach" | "spend_anomaly" | "key_exfil" | "off_hours" | "consensus_bypass" | "trust_breach";
+            /** @enum {string} */
+            severity: "critical" | "warn";
+            detected_by: string;
+            /** @enum {string} */
+            status: "open" | "acknowledged" | "resolved";
+            shadow: boolean;
+            evidence?: Record<string, never>[];
+            blast_radius: {
+                vaults?: number;
+                connectors?: number;
+                chains?: number;
+            };
+            /** @description Sum of the blast radius. The sort key. */
+            blast_radius_size: number;
+            resolved_by?: string | null;
+            /** Format: date-time */
+            created_at?: string;
+            /** Format: date-time */
+            updated_at?: string;
+        }[];
+        OtelSummary: {
+            posture_score: number;
+            open_threats: number;
+            open_critical: number;
+            pending_approvals: number;
+            agent_count: number;
+            /** @description At most five, same ranking as /v1/otel/threats. */
+            top_threats: Record<string, never>[];
+        };
         UpdatePayGuardrailsRequest: {
             pay_enabled?: boolean;
             pay_max_usd?: string | null;
@@ -32633,7 +32696,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": paths["/v1/otel/topology"]["get"]["responses"]["200"]["content"]["application/json"]["schema"];
+                    "application/json": components["schemas"]["OtelTopology"];
                 };
             };
             /** @description Unauthenticated */
@@ -32678,7 +32741,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": paths["/v1/otel/threats"]["get"]["responses"]["200"]["content"]["application/json"]["schema"];
+                    "application/json": components["schemas"]["OtelThreatList"];
                 };
             };
             /** @description Unauthenticated */
@@ -32721,7 +32784,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": paths["/v1/otel/summary"]["get"]["responses"]["200"]["content"]["application/json"]["schema"];
+                    "application/json": components["schemas"]["OtelSummary"];
                 };
             };
             /** @description Unauthenticated */
@@ -33290,33 +33353,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        /** Format: uuid */
-                        id: string;
-                        /** Format: uuid */
-                        agent_id: string;
-                        /** @enum {string} */
-                        class: "prompt_injection" | "policy_breach" | "spend_anomaly" | "key_exfil" | "off_hours" | "consensus_bypass" | "trust_breach";
-                        /** @enum {string} */
-                        severity: "critical" | "warn";
-                        detected_by: string;
-                        /** @enum {string} */
-                        status: "open" | "acknowledged" | "resolved";
-                        shadow: boolean;
-                        evidence?: Record<string, never>[];
-                        blast_radius: {
-                            vaults?: number;
-                            connectors?: number;
-                            chains?: number;
-                        };
-                        /** @description Sum of the blast radius. The sort key. */
-                        blast_radius_size: number;
-                        resolved_by?: string | null;
-                        /** Format: date-time */
-                        created_at?: string;
-                        /** Format: date-time */
-                        updated_at?: string;
-                    }[];
+                    "application/json": components["schemas"]["OtelThreatList"];
                 };
             };
             /** @description Unauthenticated */
@@ -33723,15 +33760,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        posture_score: number;
-                        open_threats: number;
-                        open_critical: number;
-                        pending_approvals: number;
-                        agent_count: number;
-                        /** @description At most five, same ranking as /v1/otel/threats. */
-                        top_threats: Record<string, never>[];
-                    };
+                    "application/json": components["schemas"]["OtelSummary"];
                 };
             };
             /** @description Unauthenticated */
@@ -33768,33 +33797,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        nodes: {
-                            /** @description Namespaced by kind, e.g. `agent:<uuid>`. */
-                            id: string;
-                            /** @enum {string} */
-                            kind: "agent" | "vault" | "policy" | "connector" | "chain";
-                            label: string;
-                            /**
-                             * @description Agents only. Derived, not stored.
-                             * @enum {string}
-                             */
-                            status?: "compromised" | "warn" | "suspended" | "ok";
-                            /** @description Agents only. Absent until the trust engine has scored the agent. */
-                            trust?: number;
-                        }[];
-                        edges: {
-                            from: string;
-                            to: string;
-                            /** @enum {string} */
-                            kind: "calls" | "grants" | "holds" | "signs";
-                        }[];
-                        truncated: boolean;
-                        /** @description Node count before the cap. */
-                        total_nodes: number;
-                        /** @description Present and true only for synthetic data. */
-                        fixture?: boolean;
-                    };
+                    "application/json": components["schemas"]["OtelTopology"];
                 };
             };
             /** @description Unauthenticated */
