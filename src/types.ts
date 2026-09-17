@@ -115,6 +115,31 @@ export interface TokenResponse {
     token_type: string;
     expires_in: number;
     refresh_token?: string;
+    /** Agent token exchange only — the resolved agent id. */
+    agent_id?: string;
+    /** Agent token exchange only — vaults the agent is bound to. */
+    vault_ids?: string[];
+    /** Agent token exchange only (vault ≥ 0.61.17) — what the agent is entitled to. */
+    entitlements?: AgentEntitlements;
+}
+
+/**
+ * Returned on agent token exchange: the flags a client needs to decide
+ * which capabilities to offer, as of the moment the token was minted.
+ * `treasury_signer` and `has_delegations` are derived facts the agent
+ * profile cannot express.
+ */
+export interface AgentEntitlements {
+    intents_api: boolean;
+    execution_intents: boolean;
+    execution_require_tee: boolean;
+    intents_require_tee: boolean;
+    cards: boolean;
+    memory: boolean;
+    shroud: boolean;
+    discoverable: boolean;
+    treasury_signer: boolean;
+    has_delegations: boolean;
 }
 
 // RFC 8693 token-exchange (OIDC federation, e.g. Anthropic WIF).
