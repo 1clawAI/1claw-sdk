@@ -419,7 +419,7 @@ Key properties:
 
 ### TEE Enforcement (Pro+)
 
-Lock down agents so signing and execution requests **must** route through the hardware enclave (Shroud TEE). Direct Vault API calls are rejected with 403.
+Lock down agents so signing and execution **must** happen in the hardware enclave (Shroud TEE). The vault enforces it by forwarding to Shroud, not by rejecting you.
 
 ```typescript
 await client.agents.update(agentId, {
@@ -429,13 +429,12 @@ await client.agents.update(agentId, {
 ```
 
 When `intents_require_tee` is true:
-- Transaction submit/sign requests to `api.1claw.co` are rejected (403)
-- Agents must route through `shroud.1claw.co` where signing happens inside TEE memory
+- Transaction submit/sign requests are signed inside Shroud's TEE whichever host you call — the vault forwards a request that arrives at `api.1claw.co` to Shroud on the agent's behalf (vault ≥ 0.61.19), so the SDK needs no special `baseUrl`
+- Direct calls to `shroud.1claw.co` still work and are required for DPoP-bound tokens
 
 When `execution_require_tee` is true:
-- Execute requests to `api.1claw.co` are rejected (403)
+- Execute requests run on Shroud's TEE execution surface — forced by the vault, no client routing needed
 - All direct secret reads by the agent are blocked — forces use of Execution Intent bindings
-- Agents must route through `shroud.1claw.co`
 
 Both require `intents_api_enabled` / `execution_intents_enabled` to be on first.
 
