@@ -636,6 +636,17 @@ const client = createClient({
 // Tokens refresh transparently — just make API calls
 ```
 
+The exchange response also says what the agent is entitled to (vault ≥ 0.61.17), so a tool host can shape its surface without a second call:
+
+```typescript
+const res = await client.auth.agentToken({ api_key: "ocv_..." });
+res.data?.entitlements;
+// { intents_api: true, execution_intents: false, execution_require_tee: false, intents_require_tee: false,
+//   cards: false, memory: true, shroud: false, discoverable: false, treasury_signer: false, has_delegations: false }
+```
+
+Changing a claim-bearing agent field (`scopes`, `vault_ids`, `is_active`, `intents_api_enabled`, `shroud_enabled`, `execution_intents_enabled`, `*_require_tee`, `environment`) via `client.agents.update()` revokes the agent's outstanding JWTs; the SDK's next request re-exchanges automatically.
+
 ## DPoP (Proof-of-Possession)
 
 Enable [DPoP (RFC 9449)](https://datatracker.ietf.org/doc/html/rfc9449) to bind tokens to the client's ephemeral keypair. When enabled, the SDK generates a P-256 ECDSA keypair at startup and attaches a `DPoP` proof JWT to every request — stolen tokens are unusable without the matching private key.
