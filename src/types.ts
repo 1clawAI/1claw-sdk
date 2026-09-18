@@ -1237,6 +1237,12 @@ export interface SigningKeyResponse {
     is_active: boolean;
     created_at: string;
     rotated_at?: string;
+    /**
+     * `server` — 1Claw holds the whole private key and can sign alone.
+     * `client_tss` — 2-party threshold key; the owner's passkey share is required.
+     * Absent on responses from a vault older than 0.61.20.
+     */
+    custody?: "server" | "client_tss";
 }
 
 export interface SigningKeyListResponse {
