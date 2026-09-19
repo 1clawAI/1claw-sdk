@@ -1046,6 +1046,40 @@ export interface CreateChildAgentRequest {
     approval_id?: string;
 }
 
+/** `POST /v1/agents/{id}/router-keys` body (vault ≥ 0.61.31). */
+export interface CreateRouterKeyRequest {
+    /** Shown in lists; defaults to `default`. */
+    name?: string;
+    /** Open streaming responses this key may hold at once (1–1000; gateway default 20). */
+    max_concurrent_streams?: number;
+    /** Optional spend cap in USD, metered by the gateway. */
+    spend_cap_usd?: number;
+}
+
+/** An `sk-shroud-v1` router key for the Shroud gateway, without its secret. */
+export interface RouterKey {
+    id: string;
+    agent_id: string;
+    name: string;
+    /** First 20 characters — enough to recognise, not to use. */
+    key_prefix: string;
+    max_concurrent_streams?: number | null;
+    spend_cap_usd?: number | null;
+    created_at: string;
+    last_used_at?: string | null;
+    revoked_at?: string | null;
+}
+
+/** Returned once at creation: the plaintext key and the gateway to point the SDK at. */
+export interface RouterKeyCreatedResponse extends RouterKey {
+    router_key: string;
+    base_url: string;
+}
+
+export interface RouterKeyListResponse {
+    keys: RouterKey[];
+}
+
 export interface PasskeySafeSpendRequest {
     to: string;
     /** Base units (wei / token minor units), decimal string. */

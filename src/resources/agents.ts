@@ -12,6 +12,10 @@ import type {
     EnrollmentStatusResponse,
     PasskeySafeSpendRequest,
     CreateChildAgentRequest,
+    CreateRouterKeyRequest,
+    RouterKeyCreatedResponse,
+    RouterKey,
+    RouterKeyListResponse,
     PasskeySafeSpendResponse,
     BatchDeleteAgentsRequest,
     BatchDeleteAgentsResponse,
@@ -230,6 +234,35 @@ export class AgentsResource {
     /** List an agent's child agents. */
     async listChildren(parentId: string): Promise<OneclawResponse<AgentListResponse>> {
         return this.http.request<AgentListResponse>("GET", `/v1/agents/${parentId}/children`);
+    }
+
+    // ── Router keys (sk-shroud-v1, Shroud gateway) ──────────────────
+
+    /**
+     * Mint an `sk-shroud-v1-<32>` router key for a Shroud-enabled agent
+     * (vault ≥ 0.61.31, human-only). A stock OpenAI/Anthropic SDK sends it as
+     * `Authorization: Bearer` with `base_url` set to the gateway; the plaintext
+     * is returned once. Up to 20 live keys per agent.
+     */
+    async createRouterKey(
+        agentId: string,
+        req: CreateRouterKeyRequest = {},
+    ): Promise<OneclawResponse<RouterKeyCreatedResponse>> {
+        return this.http.request<RouterKeyCreatedResponse>(
+            "POST",
+            `/v1/agents/${agentId}/router-keys`,
+            { body: req },
+        );
+    }
+
+    /** List an agent's router keys (live and revoked; prefix only). */
+    async listRouterKeys(agentId: string): Promise<OneclawResponse<RouterKeyListResponse>> {
+        return this.http.request<RouterKeyListResponse>("GET", `/v1/agents/${agentId}/router-keys`);
+    }
+
+    /** Revoke a router key; the gateway refuses it within 60 s. Idempotent. Human-only. */
+    async revokeRouterKey(agentId: string, keyId: string): Promise<OneclawResponse<RouterKey>> {
+        return this.http.request<RouterKey>("DELETE", `/v1/agents/${agentId}/router-keys/${keyId}`);
     }
 
     // ── Passkey-owned Safes (custody: passkey_owner) ────────────────
