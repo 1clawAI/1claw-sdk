@@ -109,6 +109,22 @@ export class ApprovalsResource {
     }
 
     /**
+     * Withdraw a pending approval (vault ≥ 0.61.28). Callable by the agent that
+     * requested it or the human it was addressed to. First answer wins: if it was
+     * already decided, the existing decision is returned unchanged.
+     */
+    async cancel(
+        requestId: string,
+        reason?: string,
+    ): Promise<OneclawResponse<ApprovalRequest>> {
+        return this.http.request<ApprovalRequest>(
+            "POST",
+            `/v1/approvals/${requestId}/cancel`,
+            { body: reason ? { reason } : {} },
+        );
+    }
+
+    /**
      * Poll for the status of a specific approval request (full details, human or agent).
      * Prefer {@link getStatus} for agent polling — it uses the lightweight status endpoint.
      */

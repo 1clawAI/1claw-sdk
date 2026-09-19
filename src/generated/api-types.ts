@@ -16786,6 +16786,15 @@ export interface components {
             shell_auth_policy?: string;
             shell_max_session_minutes?: number;
             monthly_hours_used?: number | null;
+            /** @description Whether this runtime has a paid Stripe add-on (unlimited hours). */
+            has_paid_addon?: boolean;
+            /**
+             * @description `pool` — counts against the plan's monthly runtime hours. `included` — the plan's
+             *     free runtime (every plan from Pro up includes one small or medium runtime, no hour
+             *     cap, no charge). `addon` — paid Stripe subscription item (no hour cap).
+             * @enum {string}
+             */
+            billing_kind?: "pool" | "included" | "addon";
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
@@ -16793,6 +16802,15 @@ export interface components {
         };
         RuntimeListResponse: {
             runtimes: components["schemas"]["RuntimeResponse"][];
+            /** @description The plan's included-runtime allowance (human callers only). */
+            included_runtime?: {
+                /** @description Runtimes the plan includes at no charge. */
+                allowance?: number;
+                /** @description Included slots currently in use. */
+                used?: number;
+                /** @description Presets an included runtime may use (up to 1 vCPU / 2 GB). */
+                presets?: string[];
+            };
         };
         SlugCheckResponse: {
             available: boolean;
