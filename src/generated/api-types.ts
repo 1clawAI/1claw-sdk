@@ -14592,6 +14592,13 @@ export interface components {
              * @enum {string}
              */
             custody?: "server" | "client_tss";
+            /**
+             * @description `client_tss` only (list responses). Wraps of the customer's share under
+             *     their own credentials — passkey PRF or recovery code; runtime holder
+             *     wraps are not counted. Below 2 the wallet should not be funded: one
+             *     lost credential would lose the share.
+             */
+            owner_wraps?: number;
         };
         TreasuryWalletListResponse: {
             wallets?: components["schemas"]["TreasuryWalletResponse"][];
