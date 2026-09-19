@@ -9,6 +9,7 @@ import type {
     AgentSelfResponse,
     EnrollAgentRequest,
     EnrollAgentResponse,
+    EnrollmentStatusResponse,
     BatchDeleteAgentsRequest,
     BatchDeleteAgentsResponse,
     SubmitTransactionRequest,
@@ -95,6 +96,51 @@ export class AgentsResource {
             );
         }
         return res.json();
+    }
+
+    /**
+     * Pairing status (public). After `enroll({ public_key })`, poll this with the
+     * `poll_token` until `status` leaves `pending`; on the first `approved`
+     * response `api_key` is present, once.
+     */
+    static async enrollmentStatus(
+        baseUrl: string,
+        pairingId: string,
+        pollToken: string,
+    ): Promise<EnrollmentStatusResponse> {
+        const res = await fetch(
+            `${baseUrl}/v1/agents/enroll/${encodeURIComponent(pairingId)}/status?poll=${encodeURIComponent(pollToken)}`,
+        );
+        if (!res.ok) {
+            const body = await res.json().catch(() => ({}));
+            throw new Error(body.detail || body.message || `Pairing status failed (${res.status})`);
+        }
+        return res.json();
+    }
+
+    /**
+     * Full pairing ceremony: enrol with `public_key`, hand the fingerprint to
+     * `onFingerprint` (print it — the human compares it on the approval page),
+     * then wait for the decision. Resolves with the API key on approval.
+     */
+    static async pair(
+        baseUrl: string,
+        options: EnrollAgentRequest & { public_key: string },
+        onFingerprint: (fingerprint: string, approvalUrl?: string) => void,
+        opts?: { intervalMs?: number; timeoutMs?: number },
+    ): Promise<EnrollmentStatusResponse> {
+        const enrolled = await AgentsResource.enroll(baseUrl, options);
+        if (!enrolled.pairing_id || !enrolled.poll_token || !enrolled.fingerprint) {
+            throw new Error("Server did not open a pairing (is public_key set?)");
+        }
+        onFingerprint(enrolled.fingerprint, enrolled.approval_url);
+        const deadline = Date.now() + (opts?.timeoutMs ?? 15 * 60_000);
+        while (Date.now() < deadline) {
+            await new Promise((r) => setTimeout(r, opts?.intervalMs ?? 3000));
+            const st = await AgentsResource.enrollmentStatus(baseUrl, enrolled.pairing_id, enrolled.poll_token);
+            if (st.status !== "pending") return st;
+        }
+        throw new Error("Timed out waiting for the pairing decision");
     }
 
     /** Fetch the calling agent's own profile (includes `created_by`). */

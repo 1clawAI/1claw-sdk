@@ -983,6 +983,7 @@ export interface BatchDeleteAgentsResponse {
 }
 
 export type EnrollAgentRequest = ApiSchemas["EnrollAgentRequest"];
+export type EnrollmentStatusResponse = ApiSchemas["EnrollmentStatusResponse"];
 export type EnrollAgentResponse = ApiSchemas["EnrollAgentResponse"];
 
 export interface AgentSelfResponse {

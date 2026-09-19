@@ -202,6 +202,9 @@ export type {
     AgentListResponse,
     AgentKeyRotatedResponse,
     AgentSelfResponse,
+    EnrollAgentRequest,
+    EnrollAgentResponse,
+    EnrollmentStatusResponse,
     BatchDeleteAgentsRequest,
     BatchDeleteAgentsResponse,
     // Chains

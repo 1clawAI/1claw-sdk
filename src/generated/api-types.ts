@@ -511,6 +511,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/auth/feature-quota/consume": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Count one call against a per-user feature quota
+         * @description Atomic fixed-window counter for metered dashboard features (currently
+         *     `voice_brief`, 30 calls per hour). The limit and window are defined
+         *     server-side; the caller only names the feature. Users only.
+         */
+        post: operations["consumeFeatureQuota"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/auth/me": {
         parameters: {
             query?: never;
@@ -2198,6 +2220,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/agents/{agent_id}/reports/dismiss": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Dismiss every open report on a directory listing
+         * @description Platform admins only. Clears the listing's report flag and recounts. The review queue is a platform function — an org dismissing reports against its own agent is the abuse the queue exists to catch.
+         */
+        post: operations["adminDismissAgentReports"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/agents/{agent_id}/verification-tier": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set a directory listing's verification tier
+         * @description Platform admins only. Unknown tiers are refused rather than demoted to `unverified`.
+         */
+        put: operations["adminSetAgentVerificationTier"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/kms/relevel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Move orgs onto the KEK protection level their tier and payment call for
+         * @description Platform admins only. Examines up to `limit` orgs whose stored KEK level disagrees with the target (Pro earns HSM only with an active subscription; Team, Business and Enterprise keep HSM; the platform org is always software) and starts a migration for each: a new key at the right level, every secret and every org-scoped row re-wrapped, the old key released from the keep set 30 days after completion. The nightly consolidation job runs the same pass, 25 orgs at a time.
+         */
+        post: operations["adminKmsRelevel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/chains": {
         parameters: {
             query?: never;
@@ -3154,6 +3236,505 @@ export interface paths {
         put?: never;
         /** Force-execute a proposal if threshold is met (user-only) */
         post: operations["executeTreasuryProposal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/keys/{key_id}/client-share": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A treasury wallet id or an agent signing key id owned by the caller's org */
+                key_id: string;
+            };
+            cookie?: never;
+        };
+        /**
+         * List the caller's wrapped shares for a key
+         * @description Returns every wrap on file for this key, unopened, to the user who
+         *     stored them. `custody` tells you whether the key is `server` (1claw
+         *     holds the whole private key) or `client_tss` (threshold; neither party
+         *     can sign alone). Funding a `client_tss` wallet needs at least two wraps.
+         */
+        get: operations["listClientKeyShares"];
+        /**
+         * Store the customer's wrapped share of a threshold key
+         * @description Stores ciphertext the vault cannot open: the customer's share of a
+         *     2-party threshold signing key, wrapped in the browser under the
+         *     passkey's WebAuthn PRF output (`passkey_prf`, one wrap per credential)
+         *     or under a recovery code (`recovery_code`, one per key). The vault
+         *     keeps the blob and its salt and returns them only to the owning user.
+         *     Human users only; the passkey must have reported PRF support at
+         *     registration. Idempotent per (key, credential).
+         */
+        put: operations["putClientKeyShare"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/keys/{key_id}/client-share/rewrap": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key_id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add a wrap for another credential or the recovery code
+         * @description Same write as `PUT …/client-share`, for a key that already has at
+         *     least one wrap: the browser, holding the share in memory during a
+         *     passkey session, re-wraps it under a newly added passkey's PRF
+         *     output or under the recovery code. 409 if no wrap exists yet.
+         */
+        post: operations["rewrapClientKeyShare"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/keys/{key_id}/client-share/{share_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key_id: string;
+                share_id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove one wrap
+         * @description Deletes a single wrap. Wraps tied to a passkey are also removed when
+         *     that passkey is deleted. Removing the last wrap of a `client_tss` key
+         *     makes the key unrecoverable — the vault holds only its own share.
+         */
+        delete: operations["deleteClientKeyShare"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/keys/tss/keygen/begin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start a 2-party threshold key generation
+         * @description Begins a distributed key generation between the vault (party 1) and the
+         *     caller's browser (party 2, `@1claw/tss-wasm`). The result is a
+         *     `custody: client_tss` treasury wallet whose private key never exists
+         *     anywhere: the vault keeps one FROST share, the caller keeps the other,
+         *     wrapped under their passkey's PRF output. Requires a passkey with
+         *     `prf_supported: true` and no active wallet on the chain. Chains: `solana`
+         *     (Ed25519). Sessions expire after 10 minutes.
+         */
+        post: operations["tssKeygenBegin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/keys/tss/keygen/round2": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Threshold key generation, round 2 */
+        post: operations["tssKeygenRound2"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/keys/tss/keygen/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Threshold key generation, final round
+         * @description Needs `X-Passkey-Token` from a tx-assert with `action: tss_keygen` and
+         *     `tx_digest` = hex SHA-256 of the session id. Creates the `client_tss`
+         *     wallet and returns its address. The browser derives the same public key
+         *     package from the packages it already holds; store your share with
+         *     `PUT /v1/keys/{key_id}/client-share` next.
+         */
+        post: operations["tssKeygenComplete"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/keys/{key_id}/tss/sign/begin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key_id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Threshold signing, round 1
+         * @description Needs `X-Passkey-Token` from a tx-assert with `action: tss_sign` and
+         *     `tx_digest` = hex SHA-256 of `message`. The message must be a decodable
+         *     Solana transaction message; every transfer destination in it is checked
+         *     against the OFAC SDN list before the vault commits. Returns the vault's
+         *     signing commitments; nonces are single-use and expire with the session.
+         */
+        post: operations["tssSignBegin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/keys/{key_id}/tss/sign/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key_id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Threshold signing, round 2 — aggregate and return the signature
+         * @description The vault produces its share, verifies the caller's, aggregates, and
+         *     verifies the result under the group key before returning it. A bad
+         *     share is a `400`, never a published signature.
+         */
+        post: operations["tssSignComplete"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/treasury/wallets/{chain}/tss/prepare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                chain: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Build the unsigned message for a send from a client_tss wallet
+         * @description Runs wallet access, the sanctions screen and spend policies on the
+         *     declared destination, fetches a recent blockhash and returns the
+         *     unsigned transaction message. Sign it with `/v1/keys/{key_id}/tss/sign/*`
+         *     and submit with `…/tss/broadcast`.
+         */
+        post: operations["tssTreasuryPrepare"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/treasury/wallets/{chain}/tss/broadcast": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                chain: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Broadcast a threshold-signed send
+         * @description Verifies the signature under the wallet's public key over exactly this
+         *     message, checks `to` is a transfer destination inside it, assembles the
+         *     transaction and submits it. Audited as `treasury_wallet.send`.
+         */
+        post: operations["tssTreasuryBroadcast"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/runtimes/{runtime_id}/tss/holder": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runtime_id: string;
+            };
+            cookie?: never;
+        };
+        /** The runtime's registered share holder */
+        get: operations["getTssHolder"];
+        put?: never;
+        /**
+         * Register the runtime's sidecar as a share holder
+         * @description Called by the runtime's agent (the Shroud sidecar, at boot) with the P-256
+         *     public key it generated. The owner can then provision a threshold-key
+         *     share to this runtime, letting the agent co-sign below-cap sends
+         *     unattended. Re-registering replaces the key; deleting the runtime revokes
+         *     every share held by it.
+         */
+        post: operations["registerTssHolder"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/keys/{key_id}/client-share/holder": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key_id: string;
+            };
+            cookie?: never;
+        };
+        /**
+         * The sidecar fetches the wrap made for it
+         * @description Agent-only; returns the wrap whose holder was registered by the calling agent.
+         */
+        get: operations["getTssHolderShare"];
+        /**
+         * Provision a threshold-key share to a runtime holder
+         * @description The owner's browser unlocks its share with the passkey PRF and re-wraps
+         *     it to the holder's P-256 key (ECIES: ephemeral point ‖ iv ‖ AES-GCM). The
+         *     vault stores the ciphertext unopened. The wallet must be delegated to the
+         *     holder's agent. Audited as `client_share.provisioned_to_runtime`.
+         */
+        put: operations["provisionTssHolderShare"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/tss/prepare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Agent declares a send from a delegated client_tss wallet
+         * @description Runs the agent's guardrails (chains, allowlists, caps, daily limits,
+         *     approval policy) and the sanctions screen on the declared call, builds
+         *     the unsigned message and records it as a prepared intent. Only a
+         *     prepared message can enter `/tss/sign/begin`. Requires a treasury
+         *     delegation and a share provisioned to the agent's runtime.
+         */
+        post: operations["agentTssPrepare"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/tss/sign/begin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Agent threshold signing, round 1
+         * @description The message must be a live prepared intent for this agent and key; its transfers are screened again.
+         */
+        post: operations["agentTssSignBegin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/tss/sign/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Agent threshold signing, round 2 */
+        post: operations["agentTssSignComplete"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/tss/broadcast": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Broadcast an agent's threshold-signed send
+         * @description Verifies the signature under the wallet key, checks the message is the
+         *     prepared one, re-runs the agent's guardrails, records the transaction
+         *     (daily limits count it) and submits. Audited as `treasury_wallet.send`
+         *     with `via: runtime_share_holder`.
+         */
+        post: operations["agentTssBroadcast"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/treasury/passkey-safes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List your passkey-owned Safes */
+        get: operations["listPasskeySafes"];
+        put?: never;
+        /**
+         * Create a Safe owned by your passkey
+         * @description An EVM Safe (v1.4.1) whose only owner is Safe's WebAuthn shared signer,
+         *     configured with this passkey's P-256 public key. No private key exists
+         *     anywhere: signing a transaction is a WebAuthn assertion whose challenge
+         *     is the SafeTx hash. The address is counterfactual (CREATE2) until the
+         *     first `execute` deploys it. Chains: base, optimism, arbitrum, polygon
+         *     (RIP-7212 precompile + fallback verifier), ethereum, sepolia, base-sepolia.
+         */
+        post: operations["createPasskeySafe"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/treasury/passkey-safes/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Forget a passkey Safe
+         * @description Deactivates the record only; the Safe and its funds stay on-chain under the passkey.
+         */
+        delete: operations["deactivatePasskeySafe"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/treasury/passkey-safes/{id}/prepare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Compute the SafeTx hash for a call from a passkey Safe
+         * @description Runs the sanctions screen and spend policies on the call, reads the
+         *     Safe's on-chain nonce (0 if not yet deployed), and returns the SafeTx
+         *     hash — the raw 32 bytes are the WebAuthn challenge to sign with
+         *     `userVerification: "required"`.
+         */
+        post: operations["preparePasskeySafeTx"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/treasury/passkey-safes/{id}/execute": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Relay a passkey-signed Safe transaction
+         * @description Recomputes the SafeTx hash, verifies the WebAuthn assertion locally
+         *     (this passkey, this hash, a dashboard origin, UV flag set), wraps it in
+         *     Safe's contract-signature format and relays `execTransaction` — deploying
+         *     the Safe first if needed — from your Ethereum treasury wallet, which pays
+         *     gas and is not an owner. Audited as `passkey_safe.executed`.
+         */
+        post: operations["executePasskeySafeTx"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5678,7 +6259,16 @@ export interface paths {
         get: operations["getConnectionRuntime"];
         put?: never;
         post?: never;
-        delete?: never;
+        /**
+         * Delete a connection runtime (plt_ scoped)
+         * @description Removes a runtime the app provisioned on this connection. A running
+         *     runtime is stopped at the provider first and any runtime add-on
+         *     subscription is cancelled before the record is removed. Scoped like
+         *     the GET: the connection must belong to the app and list the runtime.
+         *     This is the cleanup path for a mis-provisioned runtime;
+         *     `DELETE /v1/runtimes/{id}` does not accept a plt_ key.
+         */
+        delete: operations["deleteConnectionRuntime"];
         options?: never;
         head?: never;
         patch?: never;
@@ -6552,6 +7142,26 @@ export interface paths {
          * @description Evaluates the agent's payment policy, redeems a passkey assertion or consumes a spending grant, then signs. The daily limit is charged at signing time: a payment that is signed and then lost still consumed authority, and only a vault-verified reconciliation returns it. Returns the `X-PAYMENT` header value, never a key.
          */
         post: operations["signPayment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/pay/grants/prepare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Prepare a spending grant (step one of two)
+         * @description Fixes the grant terms and a server-side nonce and returns the `grant_digest` the person must assert over with a passkey (`action=x402_grant`). Then call `POST .../pay/grants` with the same terms, the digest, and the passkey token. Preparations are single-use, bound to the caller and agent, and expire after ten minutes. The nonce never leaves the server, so the digest cannot be recomputed for different terms. Human callers only; terms are validated against the agent's maximum cap and window here as well.
+         */
+        post: operations["preparePayGrant"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9534,6 +10144,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/agents/enroll/{pairing_id}/status": {
+        parameters: {
+            query: {
+                /** @description The `poll_token` from the enrol response. */
+                poll: string;
+            };
+            header?: never;
+            path: {
+                pairing_id: string;
+            };
+            cookie?: never;
+        };
+        /** Public: pairing status — the agent learns the decision and collects its key once */
+        get: operations["getEnrollmentStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/agents/enroll/pending": {
         parameters: {
             query?: never;
@@ -11282,6 +11914,27 @@ export interface components {
             mfa_token?: string;
             /** @enum {string} */
             mfa_method?: "totp" | "passkey";
+            /**
+             * Format: uuid
+             * @description Agent token exchange only — the resolved agent id.
+             */
+            agent_id?: string;
+            /** @description Agent token exchange only — vaults the agent is bound to. */
+            vault_ids?: string[];
+            entitlements?: components["schemas"]["AgentEntitlements"];
+        };
+        /** @description Returned on agent token exchange. The flags a client needs to decide which tools to offer, as of the moment the token was minted. treasury_signer and has_delegations are derived from the agent's treasury signer rows and active delegations and are not present on the agent profile. */
+        AgentEntitlements: {
+            intents_api: boolean;
+            execution_intents: boolean;
+            execution_require_tee: boolean;
+            intents_require_tee: boolean;
+            cards: boolean;
+            memory: boolean;
+            shroud: boolean;
+            discoverable: boolean;
+            treasury_signer: boolean;
+            has_delegations: boolean;
         };
         /** @description Exactly one credential, decided by the agent's auth_method: api_key for api_key agents, oidc_token for oidc_client_credentials agents. mTLS agents send neither and present a client certificate through the TLS terminator. */
         AgentTokenRequest: {
@@ -11737,6 +12390,15 @@ export interface components {
             human_email?: string;
             /** @description Optional agent description */
             description?: string;
+            /**
+             * @description Pairing ceremony. The agent's own Ed25519 public key (`ssh-ed25519 AAAA…`
+             *     or base64 of the raw 32 bytes). Its `SHA256:` fingerprint is shown to the
+             *     human on the approval page for visual verification, and the agent
+             *     collects its API key itself by polling
+             *     `GET /v1/agents/enroll/{pairing_id}/status?poll=<poll_token>` — no key
+             *     in an email, nothing to copy. `1claw agent enroll --pair` does all of this.
+             */
+            public_key?: string;
         };
         EnrollAgentResponse: {
             /**
@@ -11752,6 +12414,30 @@ export interface components {
              *     this link (email flow includes it as a fallback; name-only flow requires it).
              */
             approval_url?: string;
+            /**
+             * Format: uuid
+             * @description Pairing only.
+             */
+            pairing_id?: string;
+            /** @description Pairing only. `SHA256:<base64>` of the key, as `ssh-keygen -lf` prints it. Show it to the human. */
+            fingerprint?: string;
+            /** @description Pairing only. Presented as `?poll=` on the status endpoint. Shown once. */
+            poll_token?: string;
+            /** Format: date-time */
+            expires_at?: string;
+        };
+        EnrollmentStatusResponse: {
+            /** Format: uuid */
+            pairing_id?: string;
+            /** @enum {string} */
+            status?: "pending" | "approved" | "denied" | "expired";
+            agent_name?: string;
+            fingerprint?: string | null;
+            /** Format: uuid */
+            agent_id?: string;
+            /** @description Present exactly once, on the first poll after approval; the pairing is then closed. */
+            api_key?: string;
+            vault_ids?: string[];
         };
         CreateAgentRequest: {
             /** @description Default LLM provider for automations and Shroud. */
@@ -12956,6 +13642,12 @@ export interface components {
             created_at?: string;
             /** Format: date-time */
             rotated_at?: string | null;
+            /**
+             * @description `server` — 1claw holds the whole private key and can sign alone.
+             *     `client_tss` — 2-party threshold key; the customer's passkey share is required.
+             * @enum {string}
+             */
+            custody?: "server" | "client_tss";
         };
         SigningKeyListResponse: {
             keys?: components["schemas"]["SigningKeyResponse"][];
@@ -13513,6 +14205,15 @@ export interface components {
         };
         LlmTokenBillingStatus: {
             enabled: boolean;
+            /**
+             * @description Usage accrues on the Stripe subscription and is invoiced at the end of the
+             *     billing period. `credit_balance` is Stripe's prepaid credit-grant balance,
+             *     which is 0 unless a credit grant was issued; a 0 there does not block inference.
+             * @enum {string}
+             */
+            billing_model: "postpaid_metered";
+            /** @description Enabled and the subscription is not canceled/unpaid/expired. */
+            inference_allowed: boolean;
             /** @enum {string} */
             subscription_status?: "active" | "inactive";
             credit_balance?: components["schemas"]["LlmCreditBalance"];
@@ -13885,6 +14586,12 @@ export interface components {
             is_active?: boolean;
             /** Format: date-time */
             created_at?: string;
+            /**
+             * @description `server` — 1claw holds the whole private key and can sign alone.
+             *     `client_tss` — 2-party threshold key; the customer's passkey share is required.
+             * @enum {string}
+             */
+            custody?: "server" | "client_tss";
         };
         TreasuryWalletListResponse: {
             wallets?: components["schemas"]["TreasuryWalletResponse"][];
@@ -15054,6 +15761,9 @@ export interface components {
             connection_id: string;
             /** Format: uuid */
             user_id: string;
+            /** @description The connected user's email, as returned by the upsert. Use it to recognise a returning user and begin a passkey ceremony from the connection alone. */
+            email?: string;
+            display_name?: string;
             status: string;
             entitlement_status: string;
             /**
@@ -15214,6 +15924,94 @@ export interface components {
             client_data_json: string;
             transports?: string[];
             name?: string;
+            /**
+             * @description `prf.enabled` from `credential.getClientExtensionResults()` —
+             *     whether this authenticator can derive the secret that wraps a
+             *     wallet share. Omit if the client did not request the extension.
+             */
+            prf_supported?: boolean | null;
+        };
+        PutClientShareRequest: {
+            /**
+             * @description Sidecar wraps are stored through `PUT /v1/keys/{key_id}/client-share/holder`.
+             * @enum {string}
+             */
+            wrap_kind: "passkey_prf" | "recovery_code";
+            /**
+             * Format: uuid
+             * @description Required for `passkey_prf`; the passkey id from `GET /v1/auth/passkeys`.
+             */
+            credential_id?: string | null;
+            /** @description Base64 ciphertext (≤ 4 KiB). Opaque to the vault. */
+            wrapped_share: string;
+            /** @description Base64 PRF salt, 16–64 random bytes, one per key. */
+            salt: string;
+        };
+        ClientShareResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            key_id?: string;
+            /** @enum {string} */
+            key_kind?: "agent_signing_key" | "treasury_wallet";
+            /** @enum {string} */
+            wrap_kind?: "passkey_prf" | "recovery_code" | "sidecar";
+            /** Format: uuid */
+            credential_id?: string | null;
+            /** Format: uuid */
+            holder_id?: string | null;
+            /** @description Base64, exactly as stored. */
+            wrapped_share?: string;
+            /** @description Base64. */
+            salt?: string;
+            /** Format: date-time */
+            created_at?: string;
+            /** Format: date-time */
+            updated_at?: string;
+        };
+        TssHolder: {
+            /** Format: uuid */
+            holder_id?: string;
+            /** Format: uuid */
+            runtime_id?: string;
+            /** Format: uuid */
+            agent_id?: string;
+            public_key?: string;
+            /** Format: date-time */
+            registered_at?: string;
+            /** Format: date-time */
+            last_seen_at?: string;
+        };
+        PasskeySafe: {
+            /** Format: uuid */
+            id?: string;
+            chain?: string;
+            chain_id?: number;
+            safe_address?: string;
+            /** Format: uuid */
+            passkey_id?: string;
+            /** @enum {string} */
+            custody?: "passkey_owner";
+            /** @enum {string} */
+            deploy_status?: "pending" | "deployed";
+            deploy_tx_hash?: string | null;
+            /** @description The SafeWebAuthnSharedSigner address listed as the Safe's owner. */
+            owner_signer?: string;
+            /** Format: date-time */
+            created_at?: string;
+        };
+        ClientShareListResponse: {
+            /** Format: uuid */
+            key_id?: string;
+            /** @enum {string} */
+            key_kind?: "agent_signing_key" | "treasury_wallet";
+            /**
+             * @description `server` — 1claw holds the whole private key and can sign alone.
+             *     `client_tss` — 2-party threshold key; the customer's share is required.
+             * @enum {string}
+             */
+            custody?: "server" | "client_tss";
+            shares?: components["schemas"]["ClientShareResponse"][];
         };
         PasskeyRegisterCompleteResponse: {
             /** Format: uuid */
@@ -17965,6 +18763,12 @@ export interface operations {
                             name?: string;
                             last_used_at?: string;
                             created_at?: string;
+                            /**
+                             * @description `true` — can hold a wallet share (WebAuthn PRF).
+                             *     `false` — cannot. `null` — registered before this
+                             *     was captured.
+                             */
+                            prf_supported?: boolean | null;
                         }[];
                     };
                 };
@@ -18059,6 +18863,41 @@ export interface operations {
                     "application/json": components["schemas"]["ApprovalResponse"];
                 };
             };
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    consumeFeatureQuota: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    feature: "voice_brief";
+                };
+            };
+        };
+        responses: {
+            /** @description Whether this call is within the window's limit */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        allowed: boolean;
+                        limit: number;
+                        remaining: number;
+                        /** Format: date-time */
+                        reset_at: string;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
             403: components["responses"]["Forbidden"];
         };
     };
@@ -21172,6 +22011,135 @@ export interface operations {
             404: components["responses"]["NotFound"];
         };
     };
+    adminDismissAgentReports: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Reports dismissed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        agent_id?: string;
+                        dismissed?: number;
+                    };
+                };
+            };
+            /** @description Not a platform admin */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Agent not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminSetAgentVerificationTier: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    tier: "unverified" | "platform_reviewed" | "identity_verified" | "enterprise";
+                    /** @description Internal review notes */
+                    notes?: string | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Tier set */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        agent_id?: string;
+                        tier?: string;
+                    };
+                };
+            };
+            /** @description Unknown tier */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not a platform admin */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Agent not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminKmsRelevel: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Orgs examined and migrations started */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        examined?: number;
+                        migrations_started?: number;
+                        limit?: number;
+                    };
+                };
+            };
+            /** @description Not a platform admin */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     adminListChains: {
         parameters: {
             query?: never;
@@ -22714,6 +23682,853 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+        };
+    };
+    listClientKeyShares: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A treasury wallet id or an agent signing key id owned by the caller's org */
+                key_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Wraps on file */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClientShareListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    putClientKeyShare: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A treasury wallet id or an agent signing key id owned by the caller's org */
+                key_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PutClientShareRequest"];
+            };
+        };
+        responses: {
+            /** @description Share stored */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClientShareResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    rewrapClientKeyShare: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PutClientShareRequest"];
+            };
+        };
+        responses: {
+            /** @description Wrap added */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClientShareResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    deleteClientKeyShare: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key_id: string;
+                share_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Wrap removed */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    tssKeygenBegin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    chain: "solana";
+                    /**
+                     * @description Re-key ceremony: replace the active server-custody wallet on
+                     *     this chain. On `complete` its balance is swept to the new
+                     *     address by the old key's last signature and the old wallet is
+                     *     deactivated (audit `treasury_wallet.rekeyed`).
+                     * @default false
+                     */
+                    replace_existing?: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Session opened; the vault's round-1 package */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        session_id?: string;
+                        chain?: string;
+                        curve?: string;
+                        /** @example 1 */
+                        server_identifier?: number;
+                        /** @example 2 */
+                        client_identifier?: number;
+                        /** @description Base64 FROST DKG round-1 package. */
+                        server_round1?: string;
+                        /** Format: date-time */
+                        expires_at?: string;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    tssKeygenRound2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    session_id: string;
+                    /** @description Base64 FROST DKG round-1 package from the browser. */
+                    client_round1: string;
+                };
+            };
+        };
+        responses: {
+            /** @description The vault's round-2 package, addressed to the caller */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        session_id?: string;
+                        server_round2?: string;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    tssKeygenComplete: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Passkey-Token": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    session_id: string;
+                    /** @description Base64 FROST DKG round-2 package from the browser, addressed to the vault. */
+                    client_round2: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Wallet created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        key_id?: string;
+                        chain?: string;
+                        curve?: string;
+                        /** @enum {string} */
+                        custody?: "client_tss";
+                        address?: string;
+                        public_key_hex?: string;
+                        /** @description Base64 FROST public key package. */
+                        public_key_package?: string;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    tssSignBegin: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Passkey-Token": string;
+            };
+            path: {
+                key_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description Base64 bytes to sign (the serialised transaction message). */
+                    message: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Session opened */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        session_id?: string;
+                        /** Format: uuid */
+                        key_id?: string;
+                        message_digest?: string;
+                        server_commitments?: string;
+                        /** Format: date-time */
+                        expires_at?: string;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    tssSignComplete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    session_id: string;
+                    client_commitments: string;
+                    client_signature_share: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Signature */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        key_id?: string;
+                        message_digest?: string;
+                        /** @description Base64 64-byte Ed25519 signature. */
+                        signature?: string;
+                        signature_hex?: string;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    tssTreasuryPrepare: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                chain: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    to: string;
+                    /** @description Major units */
+                    value: string;
+                    memo?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Unsigned message */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        key_id?: string;
+                        chain?: string;
+                        from?: string;
+                        to?: string;
+                        value_base_units?: string;
+                        recent_blockhash?: string;
+                        message?: string;
+                        message_digest?: string;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    tssTreasuryBroadcast: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                chain: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    message: string;
+                    signature: string;
+                    to: string;
+                    value_base_units: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Broadcast */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TreasuryWalletSendResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getTssHolder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runtime_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Holder */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TssHolder"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    registerTssHolder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runtime_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description Base64 SEC1 uncompressed P-256 point (65 bytes). */
+                    public_key: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Registered */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TssHolder"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getTssHolderShare: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Wrapped share (opaque) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        key_id?: string;
+                        /** Format: uuid */
+                        holder_id?: string;
+                        /** @enum {string} */
+                        wrap_kind?: "sidecar";
+                        wrapped_share?: string;
+                        salt?: string;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    provisionTssHolderShare: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    holder_id: string;
+                    wrapped_share: string;
+                    salt: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Stored */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    agentTssPrepare: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    key_id: string;
+                    to: string;
+                    /** @description Major units. */
+                    value: string;
+                    memo?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Unsigned message */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    agentTssSignBegin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    key_id: string;
+                    message: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Session opened */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    agentTssSignComplete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    session_id: string;
+                    client_commitments: string;
+                    client_signature_share: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Signature */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    agentTssBroadcast: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    key_id: string;
+                    message: string;
+                    signature: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Broadcast */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TreasuryWalletSendResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    listPasskeySafes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Safes */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        safes?: components["schemas"]["PasskeySafe"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    createPasskeySafe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    chain: string;
+                    /** Format: uuid */
+                    passkey_id: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Safe registered (counterfactual) */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PasskeySafe"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    deactivatePasskeySafe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deactivated */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    preparePasskeySafeTx: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    to: string;
+                    value_wei: string;
+                    /** @description Hex calldata */
+                    data?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description What to sign */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        safe_id?: string;
+                        safe_address?: string;
+                        chain?: string;
+                        chain_id?: number;
+                        to?: string;
+                        value_wei?: string;
+                        data?: string;
+                        nonce?: number;
+                        deploy_required?: boolean;
+                        safe_tx_hash?: string;
+                        credential_id?: string;
+                        rp_id?: string;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    executePasskeySafeTx: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    to: string;
+                    value_wei: string;
+                    data?: string;
+                    nonce: number;
+                    /** @description Base64url. */
+                    authenticator_data: string;
+                    /** @description Base64url. */
+                    client_data_json: string;
+                    /** @description Base64url DER ECDSA signature. */
+                    signature: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Relayed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        safe_id?: string;
+                        safe_address?: string;
+                        chain?: string;
+                        safe_tx_hash?: string;
+                        deploy_tx_hash?: string | null;
+                        tx_hash?: string;
+                        status?: string;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
         };
     };
     generateTreasuryWallets: {
@@ -24791,6 +26606,28 @@ export interface operations {
             404: components["responses"]["NotFound"];
         };
     };
+    deleteConnectionRuntime: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connectionId: string;
+                runtimeId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Runtime deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
     connectionPasskeyEnrollBegin: {
         parameters: {
             query?: never;
@@ -26195,6 +28032,55 @@ export interface operations {
             };
             /** @description ChallengeExpired. Re-fetch the resource for a fresh 402 and prepare again — re-preparing from the stored bytes would reproduce the same expired window. */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    preparePayGrant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    cap_usd: string;
+                    ttl_secs: number;
+                    allowed_paytos?: string[] | null;
+                };
+            };
+        };
+        responses: {
+            /** @description The digest to assert over */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        grant_digest: string;
+                        /** @enum {string} */
+                        action: "x402_grant";
+                        expires_in_secs: number;
+                    };
+                };
+            };
+            /** @description Invalid terms */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not a human caller */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -30850,6 +32736,33 @@ export interface operations {
             };
         };
     };
+    getEnrollmentStatus: {
+        parameters: {
+            query: {
+                /** @description The `poll_token` from the enrol response. */
+                poll: string;
+            };
+            header?: never;
+            path: {
+                pairing_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Status */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnrollmentStatusResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            404: components["responses"]["NotFound"];
+        };
+    };
     get_enrollment_pending: {
         parameters: {
             query?: never;
@@ -30864,7 +32777,16 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        agent_name?: string;
+                        /** Format: date-time */
+                        expires_at?: string;
+                        /** @description Pairing only — the agent key's `SHA256:` fingerprint to verify visually. */
+                        fingerprint?: string;
+                        description?: string;
+                    };
+                };
             };
             /** @description Not found */
             404: {
