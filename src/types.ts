@@ -457,6 +457,17 @@ export interface ShroudConfig {
     semantic_policy?: SemanticPolicy;
     /** Number of days to retain flagged request bodies for replay/investigation. */
     flagged_request_retention_days?: number;
+    /**
+     * How streamed LLM responses are inspected before release. `rolling`
+     * (default) releases text behind a tail buffer at least as long as the
+     * org's longest vault secret; `holdback` buffers `streaming_holdback_chars`
+     * for full parity with buffered inspection.
+     */
+    streaming_inspection_mode?: "rolling" | "holdback";
+    /** Characters held back per stream in `holdback` mode (64–65536, default 512). */
+    streaming_holdback_chars?: number;
+    /** Open streaming responses allowed per agent key (1–1000, default 20). */
+    max_concurrent_streams?: number;
 }
 
 export interface CreateAgentRequest {
