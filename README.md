@@ -438,6 +438,34 @@ When `execution_require_tee` is true:
 
 Both require `intents_api_enabled` / `execution_intents_enabled` to be on first.
 
+### Agent pairing with a fingerprint
+
+An agent can enrol itself with its own Ed25519 public key. The vault returns an SSH-style `SHA256:` fingerprint the human compares on the approval page, and the agent collects its API key itself once approved — nothing travels by email.
+
+```typescript
+import { AgentsResource } from "@1claw/sdk";
+
+const result = await AgentsResource.pair(
+    "https://api.1claw.co",
+    { name: "my-agent", public_key: "ssh-ed25519 AAAA…" },
+    (fingerprint, approvalUrl) => console.log(`Show the human: ${fingerprint}\n${approvalUrl}`),
+);
+// result.status === "approved" → result.api_key (shown once)
+```
+
+### Passkey-owned Safes: spend under a grant
+
+When a human owns an EVM Safe with a passkey (`custody: passkey_owner`) and has granted this agent an on-chain allowance (Safe Allowance Module), the agent spends within it without a touch; the module enforces the cap.
+
+```typescript
+const spend = await client.agents.spendFromPasskeySafe(agentId, safeId, {
+    to: "0xRecipient…",
+    amount: "10000000000000000", // base units (0.01 ETH)
+    // token: "0xUSDC…"          // omit for the native token
+});
+console.log(spend.data.tx_hash, spend.data.remaining_after);
+```
+
 ### Agent-to-Agent Delegation
 
 Human-controlled authorization for inter-agent task delegation. Agents cannot delegate to other agents without an explicit delegation record created by a human.
