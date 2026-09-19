@@ -8492,16 +8492,31 @@ export interface paths {
          *     chart queues an approval exactly as a dashboard click would. That resource
          *     comes back as `awaiting_approval` rather than failing the whole chart.
          *
-         *     Per-resource results: `created`, `unchanged`, `skipped`, `refused`,
-         *     `awaiting_approval`, `failed`. `needs_attention` is true when the chart is
-         *     not fully applied — something is waiting on a person, whether an approval,
-         *     an OAuth sign-in, or a resource that drifted and was left alone.
+         *     Resource kinds, in the order apply walks them: `vault`, `agent`,
+         *     `policy` (one per path pattern, named `vault:agent:path`), `connector`
+         *     (`agent/binding_name`; `authorization_url` on the result when a person
+         *     still has to sign in) and `binding` (`agent/name`, from
+         *     `spec.agents[].bindings` — declared in full with `binding_type`, `config`,
+         *     `guardrails.allowed_hosts` and an optional `credential: {vault_ref, path}`
+         *     pointing into a chart vault). A dependent resource whose vault or agent
+         *     was queued for approval this run is `skipped` with "waiting on …" and is
+         *     created by the next apply.
+         *
+         *     Per-resource results: `created`, `patched`, `unchanged`, `skipped`,
+         *     `refused`, `awaiting_approval`, `failed`. `needs_attention` is true when
+         *     the chart is not fully applied — something is waiting on a person, whether
+         *     an approval, an OAuth sign-in, or a resource that drifted and was left
+         *     alone.
          *
          *     Save `applied_state` to `.1claw/apply-state.json`. It records what apply
          *     set, which is what lets the next run tell drift from a first apply.
          *
-         *     v1 creates and reports; it does not delete, prune, or patch in place. An
-         *     apply that silently deletes is an apply nobody runs twice.
+         *     Apply creates, and patches an agent's `description`/`system_prompt` in
+         *     place through the same `update_agent` gate a dashboard edit takes. Policy
+         *     permissions, binding config and guardrails, connector presets and vault
+         *     fields are create-only: a difference is `refused` with the endpoint that
+         *     owns the change. It does not delete or prune. An apply that silently
+         *     deletes is an apply nobody runs twice.
          */
         post: operations["applyChart"];
         delete?: never;
@@ -30526,10 +30541,12 @@ export interface operations {
                             kind?: string;
                             name?: string;
                             /** @enum {string} */
-                            result?: "created" | "unchanged" | "skipped" | "refused" | "awaiting_approval" | "failed";
+                            result?: "created" | "patched" | "unchanged" | "skipped" | "refused" | "awaiting_approval" | "failed";
                             /** Format: uuid */
                             id?: string;
                             detail?: string;
+                            /** @description Connectors only — where a person signs in to finish the install. */
+                            authorization_url?: string;
                         }[];
                         warnings?: string[];
                         /** @description Save to `.1claw/apply-state.json`. */
