@@ -8,7 +8,7 @@ import type {
     UpdatePolicyBackendSettingsRequest,
     ShadowReportResponse,
 } from "../types";
-import type { ApiSchemas } from "../types";
+import type { ApiSchemas, ChartApplyResponse, ChartDiffResponse } from "../types";
 
 /**
  * Org resource — manage organization membership and roles.
@@ -137,6 +137,38 @@ export class OrgResource {
     async listGuardrailRevisions(): Promise<OneclawResponse<GuardrailRevisionListResponse>> {
         return this.http.request<GuardrailRevisionListResponse>("GET", "/v1/org/guardrail-revisions");
     }
+
+    // ── Declarative charts (`1claw apply`) ──────────────────────────
+
+    /**
+     * What applying `chart` would do, without doing it. Human-only. Pass the
+     * `applied_state` a previous apply returned so drift can be told from a
+     * first run.
+     */
+    async diffChart(
+        chart: Record<string, unknown>,
+        appliedState: Record<string, unknown> = {},
+    ): Promise<OneclawResponse<ChartDiffResponse>> {
+        return this.http.request<ChartDiffResponse>("POST", "/v1/org/apply/diff", {
+            body: { chart, applied_state: appliedState },
+        });
+    }
+
+    /**
+     * Apply a chart: creates vaults, agents, policies, connectors and bindings
+     * in dependency order through the same gated handlers the API routes use;
+     * patches an agent's description/system_prompt in place; never deletes.
+     * Save the returned `applied_state` for the next run. Human-only.
+     */
+    async applyChart(
+        chart: Record<string, unknown>,
+        appliedState: Record<string, unknown> = {},
+    ): Promise<OneclawResponse<ChartApplyResponse>> {
+        return this.http.request<ChartApplyResponse>("POST", "/v1/org/apply", {
+            body: { chart, applied_state: appliedState },
+        });
+    }
+
 }
 
 export interface OrgBankrConfigResponse {

@@ -98,13 +98,13 @@ await client.auth.verifyEmailChange({ code: "123456" });
 | `client.vault`     | `create`, `get`, `list`, `delete`, `enableMpc`, `disableMpc`                                                        |
 | `client.secrets`   | `set`, `get`, `delete`, `list`, `rotate`                                                                            |
 | `client.access`    | `grantHuman`, `grantAgent`, `update`, `revoke`, `listGrants`                                                        |
-| `client.agents`    | `enroll` (also `AgentsResource.enroll(baseUrl, …)` static), `create`, `getSelf`, `get`, `list`, `update`, `delete`, `rotateKey`, `generateEoa`, `createSmartAccount`, `deleteSmartAccount`, `rotateSigner`, `submitTransaction`, `signTransaction`, `getTransaction`, `listTransactions`, `simulateTransaction`, `simulateBundle`, `sign`, `createDelegation`, `listDelegations`, `getDelegation`, `updateDelegation`, `revokeDelegation`, `getEffectiveDelegations` |
+| `client.agents`    | `enroll` (also `AgentsResource.enroll(baseUrl, …)` static), `create`, `getSelf`, `get`, `list`, `update`, `delete`, `rotateKey`, `generateEoa`, `createSmartAccount`, `deleteSmartAccount`, `rotateSigner`, `submitTransaction`, `signTransaction`, `getTransaction`, `listTransactions`, `simulateTransaction`, `simulateBundle`, `sign`, `createDelegation`, `listDelegations`, `getDelegation`, `updateDelegation`, `revokeDelegation`, `getEffectiveDelegations`, `pair`, `spendFromPasskeySafe`, `createChild`, `listChildren` |
 | `client.chains`    | `list`, `get`, `adminList`, `create`, `update`, `delete`                                                            |
 | `client.sharing`   | `create`, `access`, `listOutbound`, `listInbound`, `accept`, `decline`, `revoke`                                    |
 | `client.approvals` | `request`, `list`, `approve`, `deny`, `check`, `subscribe`                                                          |
 | `client.billing`   | `usage`, `history`, `llmTokenBilling`, `subscribeLlmTokenBilling`, `disableLlmTokenBilling` (LLM token billing / Stripe AI Gateway) |
 | `client.audit`     | `query`                                                                                                             |
-| `client.org`       | `listMembers`, `getAgentKeysVault`, `getOnboardingStatus`, `provisionOnboarding`, `updateMemberRole`, `removeMember` |
+| `client.org`       | `listMembers`, `getAgentKeysVault`, `getOnboardingStatus`, `provisionOnboarding`, `updateMemberRole`, `removeMember`, `diffChart`, `applyChart` |
 | `client.auth`      | `login`, `signup`, `agentToken`, `apiKeyToken`, `google`, `socialLogin`, `sendEmailOtp`, `verifyEmailOtp`, `exchangeOAuthCode`, `revokeToken`, `revokeConsent`, `getUserInfo`, `changePassword`, `setPassword`, `changeEmail`, `verifyEmailChange`, `forgotPassword`, `resetPassword`, `exportData`, `exchangeFederatedToken`, `logout`, `getMe`, `updateMe`, `deleteMe` |
 | `client.apiKeys`   | `create`, `list`, `revoke`                                                                                          |
 | `client.treasury`  | `create`, `list`, `get`, `update`, `delete`, `addSigner`, `removeSigner`, `requestAccess`, `listAccessRequests`, `approveAccess`, `denyAccess`, `propose`, `listProposals`, `getProposal`, `signProposal`, `executeProposal` |
@@ -134,7 +134,8 @@ await client.auth.verifyEmailChange({ code: "123456" });
 | `client.risk`      | `listEvents`, `getVerdict`, `listVerdicts`, `createHoneytoken`, `listHoneytokens`, `deleteHoneytoken`                |
 | `client.webhooks`  | `create`, `list`, `get`, `update`, `delete`                                                                          |
 | `client.memory`    | `put`, `get`, `list`, `delete`, `search`, `listNamespaces`, `deleteNamespace`                                         |
-| `client.automations` | `create`, `list`, `get`, `update`, `delete`, `trigger`, `listRuns`                                                 |
+| `client.connectors` | `listPresets`, `list`, `install`, `subscribe`, `listSubscriptions`, `unsubscribe`, `pollNow` — pre-built connectors and polled event sources |
+| `client.automations` | `create`, `list`, `get`, `update`, `delete`, `trigger`, `listRuns`, `resumeRun`                                    |
 | `client.runtimes`  | `create`, `list`, `get`, `update`, `delete`, `start`, `stop`, `logs`, `checkSlug`                                    |
 | `client.discovery` | `getAgentCard`, `directory`, `updateDiscovery`, `marketplace`                                                        |
 | `client.envVars`   | `list`, `create`, `get`, `update`, `delete`, `resolve`                                                              |

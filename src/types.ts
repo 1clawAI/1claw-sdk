@@ -985,6 +985,41 @@ export interface BatchDeleteAgentsResponse {
 export type EnrollAgentRequest = ApiSchemas["EnrollAgentRequest"];
 export type EnrollmentStatusResponse = ApiSchemas["EnrollmentStatusResponse"];
 
+export interface ChartResourceAction {
+    action: "create" | "patch" | "unchanged" | "skipped_drifted" | "refused";
+    kind: string;
+    name: string;
+    fields?: string[];
+    drifted_fields?: string[];
+    reason?: string;
+}
+
+export interface ChartDiffResponse {
+    chart_name: string;
+    actions: ChartResourceAction[];
+    warnings: string[];
+    summary: { create: number; patch: number; skipped_drifted: number; unchanged: number; refused: number; no_changes: boolean };
+}
+
+export interface ChartAppliedResource {
+    kind: string;
+    name: string;
+    result: "created" | "patched" | "unchanged" | "skipped" | "refused" | "awaiting_approval" | "failed";
+    id?: string;
+    detail?: string;
+    /** Connectors only: where a person signs in to finish the install. */
+    authorization_url?: string;
+}
+
+export interface ChartApplyResponse {
+    chart_name: string;
+    resources: ChartAppliedResource[];
+    warnings: string[];
+    /** Feed back into the next apply/diff as `applied_state`. */
+    applied_state: Record<string, unknown>;
+    needs_attention: boolean;
+}
+
 export interface CreateChildAgentRequest {
     name: string;
     description?: string;
