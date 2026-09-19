@@ -985,6 +985,21 @@ export interface BatchDeleteAgentsResponse {
 export type EnrollAgentRequest = ApiSchemas["EnrollAgentRequest"];
 export type EnrollmentStatusResponse = ApiSchemas["EnrollmentStatusResponse"];
 
+export interface CreateChildAgentRequest {
+    name: string;
+    description?: string;
+    /** Subset of the parent's vault_ids. Default: the parent's. */
+    vault_ids?: string[];
+    /** Subset of the parent's scopes. Default: the parent's. */
+    scopes?: string[];
+    /** The child's own memory namespaces. Default: `["child:{child_id}"]`. */
+    memory_namespace_allowlist?: string[];
+    /** The child's own action_approval_policy. Default: the parent's. */
+    action_approval_policy?: Record<string, unknown>;
+    expires_at?: string;
+    approval_id?: string;
+}
+
 export interface PasskeySafeSpendRequest {
     to: string;
     /** Base units (wei / token minor units), decimal string. */

@@ -11,6 +11,7 @@ import type {
     EnrollAgentResponse,
     EnrollmentStatusResponse,
     PasskeySafeSpendRequest,
+    CreateChildAgentRequest,
     PasskeySafeSpendResponse,
     BatchDeleteAgentsRequest,
     BatchDeleteAgentsResponse,
@@ -203,6 +204,32 @@ export class AgentsResource {
             "POST",
             `/v1/agents/${agentId}/rotate-key`,
         );
+    }
+
+    // ── Child agents ─────────────────────────────────────────────────
+
+    /**
+     * Create a cheap sub-agent under `parentId` (vault ≥ 0.61.30). The child
+     * gets its own API key, memory namespaces and action_approval_policy; is
+     * created with a subset of the parent's vault_ids/scopes (a superset is
+     * refused); inherits the parent's vault policies and guardrails; does not
+     * count against the plan's agent cap (50 per parent); cannot have children.
+     * Human-only.
+     */
+    async createChild(
+        parentId: string,
+        child: CreateChildAgentRequest,
+    ): Promise<OneclawResponse<AgentCreatedResponse>> {
+        return this.http.request<AgentCreatedResponse>(
+            "POST",
+            `/v1/agents/${parentId}/children`,
+            { body: child },
+        );
+    }
+
+    /** List an agent's child agents. */
+    async listChildren(parentId: string): Promise<OneclawResponse<AgentListResponse>> {
+        return this.http.request<AgentListResponse>("GET", `/v1/agents/${parentId}/children`);
     }
 
     // ── Passkey-owned Safes (custody: passkey_owner) ────────────────

@@ -126,6 +126,23 @@ export class AutomationsResource {
         );
     }
 
+    /**
+     * Resume a run parked on an approval, as if approved (vault ≥ 0.61.30).
+     * Deciding the approval resumes the run automatically; use this for a
+     * decision made elsewhere. `payload` reaches later steps as `{{resume.*}}`.
+     */
+    async resumeRun(
+        automationId: string,
+        runId: string,
+        payload?: Record<string, unknown>,
+    ): Promise<OneclawResponse<AutomationRunResponse>> {
+        return this.http.request<AutomationRunResponse>(
+            "POST",
+            `/v1/automations/${automationId}/runs/${runId}/resume`,
+            { body: payload ? { payload } : {} },
+        );
+    }
+
     /** List public automation presets (no auth required). */
     async getPresets(): Promise<OneclawResponse<AutomationPresetsResponse>> {
         return this.http.request<AutomationPresetsResponse>(

@@ -1432,6 +1432,35 @@ export interface paths {
         patch: operations["updateAgent"];
         trace?: never;
     };
+    "/v1/agents/{agent_id}/children": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: string;
+            };
+            cookie?: never;
+        };
+        /** List an agent's child agents */
+        get: operations["listChildAgents"];
+        put?: never;
+        /**
+         * Create a child agent
+         * @description A cheap sub-agent under a parent. The child has its own API key, memory
+         *     namespaces and `action_approval_policy`; is created with a subset of the
+         *     parent's `vault_ids` and `scopes` (a superset is refused, not trimmed);
+         *     inherits the parent's vault access policies (policy lookups include the
+         *     parent's rows) and guardrails; does not count against the plan's agent cap
+         *     (capped at 50 per parent); and cannot have children of its own. Human-only.
+         *     Audited as `agent.child_created`.
+         */
+        post: operations["createChildAgent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/agents/{agent_id}/rotate-key": {
         parameters: {
             query?: never;
@@ -6543,9 +6572,11 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * List pending approvals
-         * @description Returns approvals for the authenticated user's organization.
-         *     Human-only. Supports filtering by status and pagination.
+         * List approvals
+         * @description Humans get their own approval queue. An agent caller gets only the
+         *     approvals it created (`agent_id` = caller) — enough to recover one whose
+         *     id was lost across a restart, never the organization's queue. Supports
+         *     filtering by status and pagination.
          */
         get: operations["listApprovals"];
         put?: never;
@@ -6570,6 +6601,32 @@ export interface paths {
         get: operations["getApproval"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/approvals/{approval_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancel a pending approval (requester)
+         * @description Withdraws a pending approval. Callable by the agent that requested it or
+         *     the human it was addressed to. First answer wins: if the approval was
+         *     already decided or expired, the existing record is returned unchanged
+         *     (200) rather than an error — the caller's next question is what the
+         *     answer was. A cancellation is delivered to webhook subscribers as
+         *     `approval.decided` with `decision: "cancelled"`, and audited as
+         *     `approval.cancelled`.
+         */
+        post: operations["cancelApproval"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7705,6 +7762,35 @@ export interface paths {
          *     Returns the updated run with status `cancelled`.
          */
         post: operations["cancelAutomationRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/automations/{automationId}/runs/{runId}/resume": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resume a run parked on an approval
+         * @description An `approval_request` step parks the run in `awaiting_approval` and stops the
+         *     clock. Deciding that approval — via the API, the one-tap email link or the
+         *     phone — resumes the run automatically: `approved` continues from the next
+         *     step, `rejected` fails the run with the reason. This route is the hand-off
+         *     for a decision made elsewhere: it marks the approval approved on the caller's
+         *     behalf and continues the run. Human-only. Idempotent — a run that is not
+         *     parked is returned unchanged. Later steps see the approval step's output as
+         *     `{status, approval_id}` and the optional `payload` as `{{resume.*}}`. A
+         *     parked run that nobody decides within 72 hours becomes `timed_out`.
+         *     Emits `automation.run.resumed`.
+         */
+        post: operations["resumeAutomationRun"];
         delete?: never;
         options?: never;
         head?: never;
@@ -12972,6 +13058,16 @@ export interface components {
             approval_id?: string;
         };
         AgentResponse: {
+            /**
+             * @description A `child` is a sub-agent under `parent_agent_id` that inherits its parent's policies and does not count against the plan's agent cap.
+             * @enum {string}
+             */
+            agent_type?: "standard" | "child";
+            /**
+             * Format: uuid
+             * @description Present on child agents.
+             */
+            parent_agent_id?: string;
             /** @description Whether durable key-value and semantic memory is enabled. Omitted when false: the server skips serializing this field unless it is true, so an absent key means disabled. */
             memory_enabled?: boolean;
             /** @description Namespaces this agent may use. Omitted when empty, which means unrestricted. */
@@ -15703,7 +15799,7 @@ export interface components {
             /** @description What the action will do, as submitted. */
             payload?: Record<string, never>;
             /** @enum {string} */
-            status: "pending" | "approved" | "rejected" | "expired";
+            status: "pending" | "approved" | "rejected" | "expired" | "cancelled";
             /** @description Structured summary of the action requiring approval */
             summary: Record<string, never>;
             reason?: string | null;
@@ -15723,7 +15819,7 @@ export interface components {
         };
         ApprovalStatusResponse: {
             /** @enum {string} */
-            status: "pending" | "approved" | "rejected" | "expired";
+            status: "pending" | "approved" | "rejected" | "expired" | "cancelled";
             /** Format: date-time */
             expires_at?: string | null;
         };
@@ -17216,6 +17312,12 @@ export interface components {
         };
         OAuthAppCredentialListResponse: {
             credentials?: components["schemas"]["OAuthAppCredentialResponse"][];
+            /**
+             * @description Provider slugs 1Claw has its own OAuth app for. Where the organization has
+             *     registered no credentials for one of these, connections use 1Claw's app;
+             *     an organization credential for the same provider always wins.
+             */
+            platform_defaults?: string[];
         };
         ImportKeyRequest: {
             /** @description The private key to import */
@@ -20793,6 +20895,73 @@ export interface operations {
                     "application/json": components["schemas"]["GuardrailWideningQueuedResponse"];
                 };
             };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listChildAgents: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Children */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentListResponse"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createChildAgent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    name: string;
+                    description?: string;
+                    /** @description Subset of the parent's vault_ids. Default the parent's. */
+                    vault_ids?: string[];
+                    /** @description Subset of the parent's scopes. Default the parent's. */
+                    scopes?: string[];
+                    /** @description The child's own namespaces. Default `["child:{child_id}"]`. */
+                    memory_namespace_allowlist?: string[];
+                    /** @description The child's own policy. Default the parent's. */
+                    action_approval_policy?: Record<string, never>;
+                    /** Format: date-time */
+                    expires_at?: string;
+                    /** Format: uuid */
+                    approval_id?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Created; `api_key` shown once */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentCreatedResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
         };
     };
@@ -27161,7 +27330,7 @@ export interface operations {
         parameters: {
             query?: {
                 /** @description Filter by approval status */
-                status?: "pending" | "approved" | "rejected" | "expired";
+                status?: "pending" | "approved" | "rejected" | "expired" | "cancelled";
                 limit?: number;
                 offset?: number;
             };
@@ -27204,6 +27373,36 @@ export interface operations {
                     "application/json": components["schemas"]["ApprovalResponse"];
                 };
             };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    cancelApproval: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                approval_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    reason?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description The approval — `cancelled`, or the decision that landed first */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApprovalResponse"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
         };
     };
@@ -29145,6 +29344,39 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    resumeAutomationRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                automationId: string;
+                runId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Exposed to later steps as `{{resume.*}}`. */
+                    payload?: Record<string, never>;
+                };
+            };
+        };
+        responses: {
+            /** @description The run, now running (or unchanged if it was not parked) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AutomationRunResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
         };
     };
