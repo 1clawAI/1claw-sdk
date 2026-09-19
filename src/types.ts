@@ -3345,10 +3345,58 @@ export interface ConnectorPreset {
     documentation_url: string;
     tier_required: string;
     requires_oauth: boolean;
+    /** Events 1Claw can synthesise by polling this connector (vault ≥ 0.61.32). */
+    event_sources: ConnectorEventSource[];
+}
+
+export interface ConnectorEventSource {
+    event_type: string;
+    description: string;
+    /** Path (with query) relative to the binding's base URL. */
+    path: string;
+    /** JSON pointer to the items array; "" = the body itself. */
+    items_pointer: string;
+    id_pointers: string[];
+    min_interval_secs: number;
 }
 
 export interface ConnectorPresetListResponse {
     presets: ConnectorPreset[];
+}
+
+export interface CreateEventSubscriptionRequest {
+    /** An installed connector binding of this agent. */
+    binding_id: string;
+    /** One of the preset's event sources, e.g. `gmail.message.received`. */
+    event_type: string;
+    /** Poll interval; defaults to the source's minimum. */
+    interval_secs?: number;
+}
+
+export interface EventSubscription {
+    id: string;
+    agent_id: string;
+    binding_id: string;
+    event_type: string;
+    interval_secs: number;
+    is_active: boolean;
+    /** False until the first poll has recorded what already exists. */
+    primed: boolean;
+    next_poll_at: string;
+    last_polled_at: string | null;
+    last_error: string | null;
+    consecutive_errors: number;
+    events_emitted: number;
+    created_at: string;
+}
+
+export interface EventSubscriptionListResponse {
+    subscriptions: EventSubscription[];
+}
+
+export interface PollEventSubscriptionResponse {
+    emitted: number;
+    subscription: EventSubscription;
 }
 
 export interface InstallConnectorRequest {

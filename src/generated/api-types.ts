@@ -9502,6 +9502,88 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/agents/{agent_id}/event-subscriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List an agent's event subscriptions */
+        get: operations["listEventSubscriptions"];
+        put?: never;
+        /**
+         * Subscribe to a connector event source
+         * @description Pairs an installed connector binding with one of its preset's event
+         *     sources (see `event_sources` on `GET /v1/connectors/presets`). 1Claw
+         *     then polls the source through the binding — same host and path
+         *     allowlists, same credential, same SSRF guard — keeps the item ids it has
+         *     seen, and dispatches each new item as an automation event of
+         *     `event_type`, so an automation with `trigger_type: event` and
+         *     `event_filter: { "event_type": "gmail.message.received" }` reacts within
+         *     one poll interval instead of on a cron it has to dedupe itself.
+         *
+         *     The first poll primes the subscription: it records what already exists
+         *     and emits nothing, so a new subscription does not replay the inbox. At
+         *     most 25 new items are emitted per poll (oldest first); lists come from
+         *     the source's first page only. Failures back off exponentially on the
+         *     interval and switch the subscription off after 20 in a row.
+         *
+         *     Human users only; the agent needs Execution Intents enabled. At most 20
+         *     subscriptions per agent. The event payload is
+         *     `{ "event_type", "payload": { "subscription_id", "binding_id", "binding", "connector", "item" } }`.
+         */
+        post: operations["createEventSubscription"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/event-subscriptions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete an event subscription
+         * @description Human users only.
+         */
+        delete: operations["deleteEventSubscription"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/event-subscriptions/{id}/poll": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Poll an event subscription now
+         * @description Runs one poll immediately instead of waiting for the interval. The first
+         *     poll of a fresh subscription primes it; a subscription switched off by
+         *     repeated failures is switched back on if the poll succeeds. Human users
+         *     only. A failed poll returns 400 with the source's error and is recorded
+         *     on the subscription like a scheduled failure.
+         */
+        post: operations["pollEventSubscriptionNow"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/agents/{agent_id}/oauth/connections": {
         parameters: {
             query?: never;
@@ -15775,6 +15857,49 @@ export interface components {
             /** @example free */
             tier_required?: string;
             requires_oauth: boolean;
+            /**
+             * @description Events 1Claw can synthesise for this connector by polling a list
+             *     endpoint through the installed binding (nanobots item 4, polling
+             *     interim). Subscribe with `POST /v1/agents/{agent_id}/event-subscriptions`.
+             */
+            event_sources?: components["schemas"]["ConnectorEventSource"][];
+        };
+        ConnectorEventSource: {
+            /** @example gmail.message.received */
+            event_type: string;
+            description: string;
+            /** @description Path (with query) relative to the binding's base URL, inside the preset's allowed paths. */
+            path: string;
+            /** @description JSON pointer to the array of items in the response body; empty means the body is the array. */
+            items_pointer: string;
+            /** @description Pointers within one item whose values together identify it. */
+            id_pointers: string[];
+            /** @example 60 */
+            min_interval_secs: number;
+        };
+        EventSubscription: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            agent_id: string;
+            /** Format: uuid */
+            binding_id: string;
+            /** @example gmail.message.received */
+            event_type: string;
+            interval_secs: number;
+            is_active: boolean;
+            /** @description False until the first poll has recorded what already exists. That poll emits nothing. */
+            primed: boolean;
+            /** Format: date-time */
+            next_poll_at: string;
+            /** Format: date-time */
+            last_polled_at?: string | null;
+            last_error?: string | null;
+            consecutive_errors: number;
+            /** Format: int64 */
+            events_emitted: number;
+            /** Format: date-time */
+            created_at: string;
         };
         InstalledConnector: {
             /** Format: uuid */
@@ -31877,6 +32002,127 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ConnectOAuthResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listEventSubscriptions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Subscriptions */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        subscriptions?: components["schemas"]["EventSubscription"][];
+                    };
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createEventSubscription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    binding_id: string;
+                    /** @example gmail.message.received */
+                    event_type: string;
+                    /** @description Poll interval, at least the source's `min_interval_secs` and at most 86400. Defaults to the minimum. */
+                    interval_secs?: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Subscribed */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventSubscription"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            /** @description This binding already subscribes to that event type */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    deleteEventSubscription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    pollEventSubscriptionNow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Polled */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        emitted: number;
+                        subscription: components["schemas"]["EventSubscription"];
+                    };
                 };
             };
             400: components["responses"]["BadRequest"];

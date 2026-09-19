@@ -459,6 +459,17 @@ export type {
     ConsensusTrigger,
     ConsensusCondition,
     ApprovalRequirement,
+    // Connectors
+    ConnectorPreset,
+    ConnectorPresetListResponse,
+    ConnectorEventSource,
+    InstallConnectorRequest,
+    InstallConnectorResponse,
+    InstalledConnectorListResponse,
+    CreateEventSubscriptionRequest,
+    EventSubscription,
+    EventSubscriptionListResponse,
+    PollEventSubscriptionResponse,
     // Health
     HealthResponse,
     // MCP

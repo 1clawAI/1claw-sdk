@@ -1,10 +1,14 @@
 import type { HttpClient } from "../core/http";
 import type {
     ConnectorPresetListResponse,
+    CreateEventSubscriptionRequest,
+    EventSubscription,
+    EventSubscriptionListResponse,
     InstalledConnectorListResponse,
     InstallConnectorRequest,
     InstallConnectorResponse,
     OneclawResponse,
+    PollEventSubscriptionResponse,
 } from "../types";
 
 /**
@@ -58,6 +62,57 @@ export class ConnectorsResource {
             "POST",
             `/v1/agents/${agentId}/connectors/${slug}/install`,
             { body },
+        );
+    }
+
+    // ── Polled event sources → automation events (vault ≥ 0.61.32) ──
+
+    /**
+     * Subscribe an installed connector binding to one of its preset's event
+     * sources (`event_sources` on `listPresets()`). 1Claw polls the source
+     * through the binding and dispatches each new item as an automation event
+     * of `event_type`. Human-only; the first poll primes and emits nothing.
+     */
+    async subscribe(
+        agentId: string,
+        body: CreateEventSubscriptionRequest,
+    ): Promise<OneclawResponse<EventSubscription>> {
+        return this.http.request<EventSubscription>(
+            "POST",
+            `/v1/agents/${agentId}/event-subscriptions`,
+            { body },
+        );
+    }
+
+    /** An agent's event subscriptions. */
+    async listSubscriptions(
+        agentId: string,
+    ): Promise<OneclawResponse<EventSubscriptionListResponse>> {
+        return this.http.request<EventSubscriptionListResponse>(
+            "GET",
+            `/v1/agents/${agentId}/event-subscriptions`,
+        );
+    }
+
+    /** Delete an event subscription. Human-only. */
+    async unsubscribe(
+        agentId: string,
+        subscriptionId: string,
+    ): Promise<OneclawResponse<void>> {
+        return this.http.request<void>(
+            "DELETE",
+            `/v1/agents/${agentId}/event-subscriptions/${subscriptionId}`,
+        );
+    }
+
+    /** Poll a subscription now instead of waiting for its interval. Human-only. */
+    async pollNow(
+        agentId: string,
+        subscriptionId: string,
+    ): Promise<OneclawResponse<PollEventSubscriptionResponse>> {
+        return this.http.request<PollEventSubscriptionResponse>(
+            "POST",
+            `/v1/agents/${agentId}/event-subscriptions/${subscriptionId}/poll`,
         );
     }
 }
