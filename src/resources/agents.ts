@@ -10,6 +10,8 @@ import type {
     EnrollAgentRequest,
     EnrollAgentResponse,
     EnrollmentStatusResponse,
+    PasskeySafeSpendRequest,
+    PasskeySafeSpendResponse,
     BatchDeleteAgentsRequest,
     BatchDeleteAgentsResponse,
     SubmitTransactionRequest,
@@ -200,6 +202,29 @@ export class AgentsResource {
         return this.http.request<AgentKeyRotatedResponse>(
             "POST",
             `/v1/agents/${agentId}/rotate-key`,
+        );
+    }
+
+    // ── Passkey-owned Safes (custody: passkey_owner) ────────────────
+
+    /**
+     * Spend from a passkey-owned Safe under an active Allowance Module grant
+     * (vault ≥ 0.61.24). The Safe's owner is a human's passkey; 1Claw holds
+     * no key for it. The owner granted this agent a per-period allowance on
+     * chain, and this call signs the module's transfer hash with the agent's
+     * Ethereum signing key after guardrails and the sanctions screen. Above
+     * the remaining on-chain allowance it is refused before any gas is spent.
+     * Counts as one signature.
+     */
+    async spendFromPasskeySafe(
+        agentId: string,
+        safeId: string,
+        spend: PasskeySafeSpendRequest,
+    ): Promise<OneclawResponse<PasskeySafeSpendResponse>> {
+        return this.http.request<PasskeySafeSpendResponse>(
+            "POST",
+            `/v1/agents/${agentId}/passkey-safes/${safeId}/spend`,
+            { body: spend },
         );
     }
 

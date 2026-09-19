@@ -984,6 +984,29 @@ export interface BatchDeleteAgentsResponse {
 
 export type EnrollAgentRequest = ApiSchemas["EnrollAgentRequest"];
 export type EnrollmentStatusResponse = ApiSchemas["EnrollmentStatusResponse"];
+
+export interface PasskeySafeSpendRequest {
+    to: string;
+    /** Base units (wei / token minor units), decimal string. */
+    amount: string;
+    /** ERC-20 contract; omit for the native token. */
+    token?: string;
+}
+
+export interface PasskeySafeSpendResponse {
+    grant_id: string;
+    safe_address: string;
+    chain: string;
+    to: string;
+    amount: string;
+    token_address: string;
+    /** Allowance left in this reset period after this transfer. */
+    remaining_after: string;
+    /** The Allowance Module's delegate nonce this transfer used. */
+    nonce: number;
+    tx_hash: string;
+    status: string;
+}
 export type EnrollAgentResponse = ApiSchemas["EnrollAgentResponse"];
 
 export interface AgentSelfResponse {

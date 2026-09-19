@@ -3660,6 +3660,10 @@ export interface paths {
          *     is the SafeTx hash. The address is counterfactual (CREATE2) until the
          *     first `execute` deploys it. Chains: base, optimism, arbitrum, polygon
          *     (RIP-7212 precompile + fallback verifier), ethereum, sepolia, base-sepolia.
+         *     The passkey must have been registered on the domain making this
+         *     request (its rpId): a credential from `1claw.xyz` cannot sign on
+         *     `1claw.co`, so such a passkey is refused here (400) rather than
+         *     producing a Safe no browser here can sign for.
          */
         post: operations["createPasskeySafe"];
         delete?: never;
@@ -3735,6 +3739,90 @@ export interface paths {
          *     gas and is not an owner. Audited as `passkey_safe.executed`.
          */
         post: operations["executePasskeySafeTx"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/treasury/passkey-safes/{id}/grants": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** List agent spending grants on a passkey Safe */
+        get: operations["listPasskeySafeGrants"];
+        put?: never;
+        /**
+         * Prepare an agent spending grant (Allowance Module)
+         * @description Gives one agent's server-custody Ethereum signing key a bounded, on-chain
+         *     allowance from this Safe through Safe's Allowance Module v1.0.0: one Safe
+         *     transaction (delegatecall into MultiSendCallOnly) that enables the module if
+         *     needed, adds the agent's key as a delegate and sets the allowance per reset
+         *     period. Returns the grant (`pending`) and the SafeTx for the owner's passkey
+         *     to sign; pass `operation` and `grant_id` from `prepare` to `execute`. The cap
+         *     is enforced by the module on-chain — 1claw holding the delegate key gives it
+         *     exactly the allowance and nothing more. Audited as `passkey_safe.grant_activated`.
+         */
+        post: operations["createPasskeySafeGrant"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/treasury/passkey-safes/{id}/grants/{grant_id}/revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                grant_id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Prepare a grant revocation
+         * @description Prepares `AllowanceModule.removeDelegate(delegate, true)` for the owner's
+         *     passkey to sign; `execute` with `grant_id` relays it and marks the grant
+         *     `revoked`. Audited as `passkey_safe.grant_revoked`.
+         */
+        post: operations["revokePasskeySafeGrant"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/passkey-safes/{safe_id}/spend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: string;
+                safe_id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Spend from a passkey-owned Safe under an active grant
+         * @description Agent credential only. Runs the agent's guardrails (chains, allowlists, caps,
+         *     daily limits, approval policy) and the sanctions screen, reads the module's
+         *     current allowance and nonce, signs the Allowance Module transfer hash with the
+         *     agent's Ethereum signing key, and relays `executeAllowanceTransfer` from the
+         *     Safe owner's Ethereum treasury wallet. Above the on-chain remaining allowance
+         *     the request is refused before any gas is spent; the module would refuse it
+         *     anyway. Counts as one signature. Audited as `passkey_safe.allowance_spent`.
+         */
+        post: operations["spendFromPasskeySafeGrant"];
         delete?: never;
         options?: never;
         head?: never;
@@ -15997,6 +16085,10 @@ export interface components {
             safe_address?: string;
             /** Format: uuid */
             passkey_id?: string;
+            /** @description The owning passkey's name — only that credential can sign for the Safe. */
+            passkey_name?: string | null;
+            /** @description The domain the owning passkey was registered under (WebAuthn rpId); a browser on another domain cannot use it. */
+            passkey_rp_id?: string | null;
             /** @enum {string} */
             custody?: "passkey_owner";
             /** @enum {string} */
@@ -16006,6 +16098,58 @@ export interface components {
             owner_signer?: string;
             /** Format: date-time */
             created_at?: string;
+        };
+        PasskeySafePrepare: {
+            /** Format: uuid */
+            safe_id?: string;
+            safe_address?: string;
+            chain?: string;
+            chain_id?: number;
+            to?: string;
+            value_wei?: string;
+            data?: string;
+            nonce?: number;
+            /** @description Pass back to `execute` unchanged. */
+            operation?: number;
+            /**
+             * Format: uuid
+             * @description Present for grant setup / revoke; pass back to `execute`.
+             */
+            grant_id?: string;
+            deploy_required?: boolean;
+            /** @description Hex SafeTx hash — the WebAuthn challenge (raw 32 bytes). */
+            safe_tx_hash?: string;
+            credential_id?: string;
+            /** @description The passkey's registered transports (`internal`, `hybrid`, `usb`…) — pass as the `allowCredentials` hint so the browser asks the right authenticator. */
+            transports?: string[] | null;
+            passkey_name?: string | null;
+            rp_id?: string;
+        };
+        PasskeySafeGrant: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            safe_id?: string;
+            /** Format: uuid */
+            agent_id?: string;
+            chain?: string;
+            /** @description The agent's Ethereum signing key at grant time. */
+            delegate_address?: string;
+            /** @description 0x000…0 for the native token. */
+            token_address?: string;
+            /** @description Base units per reset period. */
+            allowance_amount?: string;
+            reset_time_min?: number;
+            /** @enum {string} */
+            status?: "pending" | "active" | "revoking" | "revoked";
+            setup_tx_hash?: string | null;
+            revoke_tx_hash?: string | null;
+            /** Format: date-time */
+            created_at?: string;
+        };
+        PasskeySafeGrantPrepare: {
+            grant?: components["schemas"]["PasskeySafeGrant"];
+            prepare?: components["schemas"]["PasskeySafePrepare"];
         };
         ClientShareListResponse: {
             /** Format: uuid */
@@ -24464,21 +24608,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        /** Format: uuid */
-                        safe_id?: string;
-                        safe_address?: string;
-                        chain?: string;
-                        chain_id?: number;
-                        to?: string;
-                        value_wei?: string;
-                        data?: string;
-                        nonce?: number;
-                        deploy_required?: boolean;
-                        safe_tx_hash?: string;
-                        credential_id?: string;
-                        rp_id?: string;
-                    };
+                    "application/json": components["schemas"]["PasskeySafePrepare"];
                 };
             };
             400: components["responses"]["BadRequest"];
@@ -24503,6 +24633,18 @@ export interface operations {
                     value_wei: string;
                     data?: string;
                     nonce: number;
+                    /**
+                     * @description 0 = call. 1 = delegatecall, accepted only with a `grant_id` whose
+                     *     prepared setup calldata this is, and only to the pinned
+                     *     MultiSendCallOnly — the API cannot delegatecall arbitrary code.
+                     * @default 0
+                     */
+                    operation?: number;
+                    /**
+                     * Format: uuid
+                     * @description Pass back from a grant or revoke prepare; activates / revokes the grant on success.
+                     */
+                    grant_id?: string;
                     /** @description Base64url. */
                     authenticator_data: string;
                     /** @description Base64url. */
@@ -24533,6 +24675,153 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    listPasskeySafeGrants: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Grants */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        grants?: components["schemas"]["PasskeySafeGrant"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createPasskeySafeGrant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    agent_id: string;
+                    /** @description ERC-20 contract; omit for the native token. */
+                    token?: string;
+                    /** @description Base units */
+                    allowance_amount: string;
+                    /**
+                     * @description Reset period in minutes.
+                     * @default 1440
+                     */
+                    reset_time_min?: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Grant and what to sign */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PasskeySafeGrantPrepare"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    revokePasskeySafeGrant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                grant_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Grant and what to sign */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PasskeySafeGrantPrepare"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    spendFromPasskeySafeGrant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: string;
+                safe_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    to: string;
+                    /** @description Base units */
+                    amount: string;
+                    /** @description ERC-20 contract; omit for the native token. */
+                    token?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Broadcast */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        grant_id?: string;
+                        safe_address?: string;
+                        chain?: string;
+                        to?: string;
+                        amount?: string;
+                        token_address?: string;
+                        /** @description Allowance left in this period after this transfer. */
+                        remaining_after?: string;
+                        /** @description The module's delegate nonce used. */
+                        nonce?: number;
+                        tx_hash?: string;
+                        status?: string;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            402: components["responses"]["PaymentRequired"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];

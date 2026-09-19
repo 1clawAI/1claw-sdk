@@ -205,6 +205,8 @@ export type {
     EnrollAgentRequest,
     EnrollAgentResponse,
     EnrollmentStatusResponse,
+    PasskeySafeSpendRequest,
+    PasskeySafeSpendResponse,
     BatchDeleteAgentsRequest,
     BatchDeleteAgentsResponse,
     // Chains
