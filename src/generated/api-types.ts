@@ -14410,10 +14410,14 @@ export interface components {
         };
         SubscribeRequest: {
             /** @enum {string} */
-            tier: "pro" | "business";
+            tier: "pro" | "team" | "business";
             /** @enum {string} */
-            interval: "monthly" | "yearly";
-            /** @default true */
+            interval: "monthly" | "annual";
+            /**
+             * @deprecated
+             * @description Accepted and ignored — plans no longer start with a trial (2026-09-19); checkout charges on completion.
+             * @default false
+             */
             trial: boolean;
         };
         TopupRequest: {
