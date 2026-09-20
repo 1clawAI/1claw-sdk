@@ -1080,6 +1080,35 @@ export interface RouterKeyListResponse {
     keys: RouterKey[];
 }
 
+/** `POST /v1/agents/{id}/tool-bindings` body (vault ≥ 0.61.33). */
+export interface CreateToolBindingRequest {
+    /** Vault path of the secret the placeholder stands for. */
+    secret_path: string;
+    /** Tool the binding applies to (`http_request`, `run_sql`, …) or `*`. */
+    tool_name: string;
+    /** JSON pointer into the tool's arguments (`/headers/Authorization`, `/body/*`) or `*` (default). */
+    arg_path?: string;
+    /** Hosts the rehydrated call may reach (`api.stripe.com`, `*.googleapis.com`). Required. */
+    destination_hosts: string[];
+}
+
+/** Which secret may be rehydrated for which agent, tool, argument and hosts. */
+export interface SecretToolBinding {
+    id: string;
+    org_id: string;
+    agent_id: string;
+    secret_path: string;
+    tool_name: string;
+    arg_path: string;
+    destination_hosts: string[];
+    created_by?: string | null;
+    created_at: string;
+}
+
+export interface ToolBindingListResponse {
+    bindings: SecretToolBinding[];
+}
+
 export interface PasskeySafeSpendRequest {
     to: string;
     /** Base units (wei / token minor units), decimal string. */

@@ -13,6 +13,9 @@ import type {
     PasskeySafeSpendRequest,
     CreateChildAgentRequest,
     CreateRouterKeyRequest,
+    CreateToolBindingRequest,
+    SecretToolBinding,
+    ToolBindingListResponse,
     RouterKeyCreatedResponse,
     RouterKey,
     RouterKeyListResponse,
@@ -263,6 +266,32 @@ export class AgentsResource {
     /** Revoke a router key; the gateway refuses it within 60 s. Idempotent. Human-only. */
     async revokeRouterKey(agentId: string, keyId: string): Promise<OneclawResponse<RouterKey>> {
         return this.http.request<RouterKey>("DELETE", `/v1/agents/${agentId}/router-keys/${keyId}`);
+    }
+
+    // ── Secret → tool bindings (rehydration policy, vault ≥ 0.61.33) ──
+
+    /**
+     * Allow the enclave to rehydrate the `⟦sk:…⟧` placeholder for
+     * `secret_path` into `tool_name` at `arg_path`, only toward
+     * `destination_hosts`. Human-only. Without a matching binding a
+     * placeholder in a TEE-executed tool call is a 403.
+     */
+    async createToolBinding(
+        agentId: string,
+        req: CreateToolBindingRequest,
+    ): Promise<OneclawResponse<SecretToolBinding>> {
+        return this.http.request<SecretToolBinding>("POST", `/v1/agents/${agentId}/tool-bindings`, {
+            body: req,
+        });
+    }
+
+    async listToolBindings(agentId: string): Promise<OneclawResponse<ToolBindingListResponse>> {
+        return this.http.request<ToolBindingListResponse>("GET", `/v1/agents/${agentId}/tool-bindings`);
+    }
+
+    /** Remove a binding. Human-only. */
+    async deleteToolBinding(agentId: string, bindingId: string): Promise<OneclawResponse<void>> {
+        return this.http.request<void>("DELETE", `/v1/agents/${agentId}/tool-bindings/${bindingId}`);
     }
 
     // ── Passkey-owned Safes (custody: passkey_owner) ────────────────
