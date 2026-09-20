@@ -2492,6 +2492,28 @@ export interface AutomationVersionListResponse {
     versions: AutomationVersionResponse[];
 }
 
+export interface DryRunStep {
+    index: number;
+    name?: string | null;
+    type: string;
+    known: boolean;
+    resolved: Record<string, unknown>;
+    skipped_by?: string | null;
+    effect: string;
+    on_error: { action: string; max_attempts: number; backoff_secs: number };
+    unresolved_templates: string[];
+    budget_exceeded?: string | null;
+}
+
+export interface DryRunResponse {
+    ok: boolean;
+    error?: string;
+    steps?: DryRunStep[];
+    warnings?: string[];
+    parks?: number;
+    budget?: RunBudget;
+}
+
 /**
  * Per-step `on_error` policy (vault ≥ 0.61.45): `"fail"` (default),
  * `"continue"` (record a failed result and go on), `"retry"` (3 attempts,

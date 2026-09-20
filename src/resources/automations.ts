@@ -8,7 +8,9 @@ import type {
     AutomationRunListResponse,
     AutomationPresetsResponse,
     AutomationVersionListResponse,
+    DryRunResponse,
     TriggerAutomationRequest,
+    WorkflowSpec,
     OneclawResponse,
 } from "../types";
 
@@ -85,6 +87,40 @@ export class AutomationsResource {
             "POST",
             `/v1/automations/${automationId}/trigger`,
             { body },
+        );
+    }
+
+    /**
+     * Preview what a run would do with nothing done (vault ≥ 0.61.46): each
+     * step after template substitution, its effect, error policy, unresolved
+     * templates and the budget it would hit. Pass `workflowSpec` to preview an
+     * unsaved spec, otherwise the automation's current one.
+     */
+    async dryRun(
+        automationId: string | null,
+        options?: { workflowSpec?: WorkflowSpec; input?: Record<string, unknown> },
+    ): Promise<OneclawResponse<DryRunResponse>> {
+        const body = { workflow_spec: options?.workflowSpec, input: options?.input };
+        return this.http.request<DryRunResponse>(
+            "POST",
+            automationId ? `/v1/automations/${automationId}/dry-run` : "/v1/automations/dry-run",
+            { body },
+        );
+    }
+
+    /**
+     * Start a new run seeded with `runId`'s results up to `fromStep` and
+     * continue from there, on the spec version that run executed.
+     */
+    async rerunFromStep(
+        automationId: string,
+        runId: string,
+        fromStep = 0,
+    ): Promise<OneclawResponse<AutomationRunResponse>> {
+        return this.http.request<AutomationRunResponse>(
+            "POST",
+            `/v1/automations/${automationId}/runs/${runId}/rerun`,
+            { body: { from_step: fromStep } },
         );
     }
 
