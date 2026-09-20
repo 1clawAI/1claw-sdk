@@ -7,6 +7,8 @@ import type {
     AutomationRunResponse,
     AutomationRunListResponse,
     AutomationPresetsResponse,
+    AutomationVersionListResponse,
+    TriggerAutomationRequest,
     OneclawResponse,
 } from "../types";
 
@@ -66,15 +68,68 @@ export class AutomationsResource {
         );
     }
 
-    /** Manually trigger an automation, optionally with input data. */
+    /**
+     * Manually trigger an automation. `input` reaches steps as `{{trigger.*}}`.
+     * With `options.idempotencyKey`, the same key twice returns the run already
+     * started for it (HTTP 200) rather than a second one (201).
+     */
     async trigger(
         automationId: string,
         input?: Record<string, unknown>,
+        options?: { idempotencyKey?: string },
     ): Promise<OneclawResponse<AutomationRunResponse>> {
+        const body: TriggerAutomationRequest = {};
+        if (input) body.input = input;
+        if (options?.idempotencyKey) body.idempotency_key = options.idempotencyKey;
         return this.http.request<AutomationRunResponse>(
             "POST",
             `/v1/automations/${automationId}/trigger`,
-            { body: input ?? {} },
+            { body },
+        );
+    }
+
+    /** Every spec version the automation has had, newest first (vault ≥ 0.61.45). */
+    async listVersions(
+        automationId: string,
+    ): Promise<OneclawResponse<AutomationVersionListResponse>> {
+        return this.http.request<AutomationVersionListResponse>(
+            "GET",
+            `/v1/automations/${automationId}/versions`,
+        );
+    }
+
+    /**
+     * Publish an earlier version's spec as the new current version. A rollback
+     * that widens the automation goes through the `automation.widen` consensus
+     * gate; pass `approvalId` when one is required.
+     */
+    async rollback(
+        automationId: string,
+        version: number,
+        options?: { note?: string; approvalId?: string },
+    ): Promise<OneclawResponse<AutomationResponse>> {
+        return this.http.request<AutomationResponse>(
+            "POST",
+            `/v1/automations/${automationId}/versions/${version}/rollback`,
+            { body: { note: options?.note, approval_id: options?.approvalId } },
+        );
+    }
+
+    /**
+     * Continue a run parked on an `awaiting_callback` step. Public: no API key,
+     * just the per-run token from `{{run.callback_token}}`. `payload` reaches
+     * later steps as `{{resume.*}}`.
+     */
+    async callback(
+        automationId: string,
+        runId: string,
+        token: string,
+        payload?: Record<string, unknown>,
+    ): Promise<OneclawResponse<AutomationRunResponse>> {
+        return this.http.request<AutomationRunResponse>(
+            "POST",
+            `/v1/automations/${automationId}/runs/${runId}/callback/${encodeURIComponent(token)}`,
+            { body: payload ?? {} },
         );
     }
 

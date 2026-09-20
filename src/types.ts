@@ -2450,6 +2450,66 @@ export interface UpdateAutomationRequest {
     event_filter?: Record<string, unknown> | null;
     workflow_spec?: WorkflowSpec;
     is_active?: boolean;
+    /** Control-plane approval for a widening change (vault ≥ 0.61.45). */
+    approval_id?: string;
+    /** Note recorded on the new spec version. */
+    version_note?: string;
+    /**
+     * Inbound signature scheme for a webhook-triggered automation; `null`
+     * removes it. The secret is stored encrypted and never returned.
+     */
+    webhook_signature?: WebhookSignatureConfig | null;
+}
+
+export interface WebhookSignatureConfig {
+    scheme: "stripe" | "github" | "hmac_sha256";
+    secret: string;
+    /** Header carrying the signature (defaults per scheme). */
+    header?: string;
+    /** Timestamp tolerance for schemes that carry one (stripe). Default 300. */
+    tolerance_secs?: number;
+}
+
+export interface TriggerAutomationRequest {
+    /** Exposed to steps as `{{trigger.*}}`. */
+    input?: Record<string, unknown>;
+    /** Same key twice returns the existing run (200) instead of a second (201). */
+    idempotency_key?: string;
+}
+
+export interface AutomationVersionResponse {
+    version: number;
+    spec_hash: string;
+    workflow_spec: WorkflowSpec;
+    created_by_type: string;
+    note?: string | null;
+    created_at: string;
+    current: boolean;
+}
+
+export interface AutomationVersionListResponse {
+    current_version: number;
+    versions: AutomationVersionResponse[];
+}
+
+/**
+ * Per-step `on_error` policy (vault ≥ 0.61.45): `"fail"` (default),
+ * `"continue"` (record a failed result and go on), `"retry"` (3 attempts,
+ * 2 s linear backoff) or the object form. Steps that move funds or park the
+ * run are never retried automatically.
+ */
+export type StepOnError =
+    | "fail"
+    | "continue"
+    | "retry"
+    | { action: "retry" | "continue" | "fail"; max_attempts?: number; backoff_secs?: number };
+
+/** Per-run ceilings on `workflow_spec.budget` (vault ≥ 0.61.45). */
+export interface RunBudget {
+    max_tokens?: number;
+    max_cost_cents?: number;
+    /** Steps executed, counting every for_each iteration and sub-workflow step. */
+    max_steps?: number;
 }
 
 export interface AutomationResponse {
@@ -2480,6 +2540,10 @@ export interface AutomationResponse {
     agent_name?: string | null;
     /** Whether created by a human or agent (chat-native create). */
     created_by_type?: "user" | "agent" | string;
+    /** Current spec version (vault ≥ 0.61.45). */
+    spec_version?: number;
+    /** Inbound signature scheme name, never the secret. */
+    webhook_signature_scheme?: string | null;
 }
 
 export interface AutomationListResponse {
@@ -2490,7 +2554,7 @@ export interface AutomationRunResponse {
     id: string;
     automation_id: string;
     agent_id: string;
-    status: string;
+    status: AutomationRunStatus | string;
     step_results?: unknown;
     error?: string;
     trigger_source?: string;
@@ -2498,13 +2562,33 @@ export interface AutomationRunResponse {
     finished_at?: string;
     tokens_used: number;
     cost_cents: number;
+    /** Why the run is parked: approval, wait_until or callback. */
+    paused_reason?: "approval" | "wait_until" | "callback" | string;
+    paused_at_step?: number;
+    paused_approval_id?: string;
+    paused_until?: string;
+    paused_expires_at?: string;
+    /** The spec version this run executed. */
+    spec_version?: number;
+    idempotency_key?: string;
+    /** Set when a `call_automation` step started this run. */
+    parent_run_id?: string;
 }
 
 export interface AutomationRunListResponse {
     runs: AutomationRunResponse[];
 }
 
-export type AutomationRunStatus = 'running' | 'success' | 'failed' | 'timed_out' | 'cancelled' | 'awaiting_approval';
+export type AutomationRunStatus =
+    | 'running'
+    | 'success'
+    | 'completed_with_skips'
+    | 'failed'
+    | 'timed_out'
+    | 'cancelled'
+    | 'awaiting_approval'
+    | 'waiting'
+    | 'awaiting_callback';
 
 export interface AutomationPreset {
     id: string;
