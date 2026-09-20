@@ -3927,3 +3927,29 @@ export interface PaySettingsResponse {
     pay_grant_max_usd: string | null;
     pay_grant_max_ttl_secs: number | null;
 }
+
+/** `GET /v1/org/overview` (vault ≥ 0.61.46). */
+export interface OrgOverview {
+    generated_at: string;
+    window_hours: number;
+    inventory: Record<string, number>;
+    activity: Record<string, number>;
+    spend: {
+        inference_usd: number;
+        inference_tokens: number;
+        execution_cost_cents: number;
+        automation_cost_cents: number;
+        credit_balance_micro_usd: number;
+        billing_tier: string;
+    };
+    health: Record<string, number>;
+    trend: Array<{
+        day: string;
+        audit_events: number;
+        denials: number;
+        shroud_requests: number;
+        shroud_blocked: number;
+        automation_runs: number;
+        transactions: number;
+    }>;
+}

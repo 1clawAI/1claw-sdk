@@ -8,7 +8,7 @@ import type {
     UpdatePolicyBackendSettingsRequest,
     ShadowReportResponse,
 } from "../types";
-import type { ApiSchemas, ChartApplyResponse, ChartDiffResponse } from "../types";
+import type { ApiSchemas, ChartApplyResponse, ChartDiffResponse, OrgOverview } from "../types";
 
 /**
  * Org resource — manage organization membership and roles.
@@ -17,6 +17,14 @@ export class OrgResource {
     constructor(private readonly http: HttpClient) {}
 
     /** List all members of the current organization. */
+    /**
+     * The whole org in one call (vault ≥ 0.61.46): inventory, activity in the
+     * last `hours`, spend, health and a 7-day trend. Humans and platform apps.
+     */
+    async overview(hours = 24): Promise<OneclawResponse<OrgOverview>> {
+        return this.http.request<OrgOverview>("GET", `/v1/org/overview?hours=${hours}`);
+    }
+
     async listMembers(): Promise<OneclawResponse<OrgMemberListResponse>> {
         return this.http.request<OrgMemberListResponse>(
             "GET",
