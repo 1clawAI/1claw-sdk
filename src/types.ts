@@ -2688,6 +2688,8 @@ export interface UpdateRuntimeRequest {
     shell_access_enabled?: boolean;
     shell_auth_policy?: string;
     shell_max_session_minutes?: number;
+    /** Scheduled start/stop (vault ≥ 0.61.47); `null` clears it. */
+    schedule?: RuntimeSchedule | null;
 }
 
 export interface RuntimeResponse {
@@ -2697,6 +2699,12 @@ export interface RuntimeResponse {
     template?: string;
     preset: string;
     provider: string;
+    /** Resolved image (digest form when known); tokens carry it as `runtime_image`. vault ≥ 0.61.47 */
+    image_digest?: string | null;
+    previous_image_digest?: string | null;
+    schedule?: RuntimeSchedule | null;
+    next_scheduled_start_at?: string | null;
+    scheduled_stop_at?: string | null;
     status: string;
     image?: string;
     env_public?: Record<string, string>;
@@ -3952,4 +3960,53 @@ export interface OrgOverview {
         automation_runs: number;
         transactions: number;
     }>;
+}
+
+/** `{start_cron, timezone, stop_after_secs}` — see runtimes docs. */
+export interface RuntimeSchedule {
+    start_cron: string;
+    timezone?: string;
+    /** 60–86400; null leaves the stop to the idle reconciler. */
+    stop_after_secs?: number | null;
+}
+
+export interface ProvisionRuntimeRequest {
+    name: string;
+    template?: string;
+    preset?: string;
+    /** Either `id` (existing) or `name` (create with keys + default-vault grant). */
+    agent: { id?: string; name?: string; description?: string };
+    env_public?: Record<string, string>;
+    expose_http?: boolean;
+    source_repo?: string;
+    startup_command?: string;
+    environment?: string;
+    /** Default true. */
+    start?: boolean;
+    /** Control-plane approval for `agent.create` when the org gates it. */
+    approval_id?: string;
+}
+
+export interface ProvisionRuntimeResponse {
+    runtime: RuntimeResponse;
+    agent_id: string;
+    /** Only when the agent was created here; shown once. */
+    agent_api_key?: string;
+    vault_id?: string;
+    started: boolean;
+}
+
+export interface ResolvedEnvEntry {
+    key: string;
+    source: "platform" | "env_public" | "vault_env" | "agent" | "secret";
+    value?: string;
+    masked: boolean;
+    overrides?: string | null;
+}
+
+export interface ResolvedEnvResponse {
+    runtime_id: string;
+    environment: string;
+    restart_required_for_changes: boolean;
+    entries: ResolvedEnvEntry[];
 }

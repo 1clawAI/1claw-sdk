@@ -7,6 +7,9 @@ import type {
     SlugCheckResponse,
     ShellSessionRequest,
     ShellSessionResponse,
+    ProvisionRuntimeRequest,
+    ProvisionRuntimeResponse,
+    ResolvedEnvResponse,
     OneclawResponse,
 } from "../types";
 
@@ -27,6 +30,31 @@ export class RuntimesResource {
     }
 
     /** List all runtimes in the current organization. */
+    /**
+     * Agent (new or existing) + keys + default-vault grant + runtime + start
+     * in one call (vault ≥ 0.61.48). Every existing gate applies.
+     */
+    async provision(
+        body: ProvisionRuntimeRequest,
+    ): Promise<OneclawResponse<ProvisionRuntimeResponse>> {
+        return this.http.request<ProvisionRuntimeResponse>("POST", "/v1/runtimes/provision", {
+            body,
+        });
+    }
+
+    /** Every env var the container is started with, by source; secrets masked. */
+    async resolvedEnv(runtimeId: string): Promise<OneclawResponse<ResolvedEnvResponse>> {
+        return this.http.request<ResolvedEnvResponse>(
+            "GET",
+            `/v1/runtimes/${runtimeId}/env/resolved`,
+        );
+    }
+
+    /** Restart on the previous resolved image (409 when none is recorded). */
+    async rollback(runtimeId: string): Promise<OneclawResponse<RuntimeResponse>> {
+        return this.http.request<RuntimeResponse>("POST", `/v1/runtimes/${runtimeId}/rollback`);
+    }
+
     async list(): Promise<OneclawResponse<RuntimeListResponse>> {
         return this.http.request<RuntimeListResponse>("GET", "/v1/runtimes");
     }
