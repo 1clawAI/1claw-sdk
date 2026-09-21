@@ -3937,6 +3937,141 @@ export interface PaySettingsResponse {
 }
 
 /** `GET /v1/org/overview` (vault ≥ 0.61.46). */
+// ---------------------------------------------------------------------------
+// AI spend (vault ≥ 0.61.40)
+// ---------------------------------------------------------------------------
+
+export interface AiSpendQuery {
+    /** RFC 3339. Default: 30 days before `to`. */
+    from?: string;
+    /** RFC 3339. Default: now. */
+    to?: string;
+    interval?: "day" | "week" | "month";
+    agentId?: string;
+    provider?: string;
+}
+
+export interface AiSpendTotals {
+    cost_usd: number;
+    tokens_input: number;
+    tokens_output: number;
+    tokens: number;
+    requests: number;
+    blocked: number;
+    unpriced_requests: number;
+    agents: number;
+    models: number;
+    avg_cost_per_day: number;
+    cost_per_request: number;
+    cost_per_mtok: number;
+}
+
+export interface AiSpendSeriesRow {
+    bucket: string;
+    provider: string;
+    cost_usd: number;
+    tokens: number;
+    requests: number;
+}
+
+export interface AiSpendByProvider {
+    provider: string;
+    cost_usd: number;
+    tokens: number;
+    requests: number;
+    previous_cost_usd: number;
+    share_pct: number;
+    trend_pct: number | null;
+}
+
+export interface AiSpendByModel {
+    provider: string;
+    model: string;
+    cost_usd: number;
+    tokens_input: number;
+    tokens_output: number;
+    requests: number;
+    previous_cost_usd: number;
+    priced: boolean;
+    share_pct: number;
+    trend_pct: number | null;
+}
+
+export interface AiSpendByAgent {
+    agent_id: string;
+    agent_name: string;
+    is_active: boolean;
+    cost_usd: number;
+    tokens: number;
+    requests: number;
+    blocked: number;
+    top_model: string | null;
+    top_provider: string | null;
+    previous_cost_usd: number;
+    last_request_at: string | null;
+    daily_budget_usd: number | null;
+    today_cost_usd: number;
+    blocked_by_budget: number;
+    max_tokens_per_request: number | null;
+    max_requests_per_day: number | null;
+    share_pct: number;
+    trend_pct: number | null;
+    budget_used_pct: number | null;
+}
+
+export interface AiSpendRouterKeyCap {
+    key_id: string;
+    agent_id: string;
+    agent_name: string;
+    name: string;
+    spent_usd: number;
+    cap_usd: number | null;
+    last_used_at: string | null;
+}
+
+export interface AiSpendLimits {
+    agents_with_daily_budget: number;
+    agents_over_80pct: number;
+    agents_at_cap: number;
+    blocked_by_budget: number;
+    router_keys: AiSpendRouterKeyCap[];
+    credit_balance_usd: number;
+    /** 1Claw's inspection fee in the window — separate from provider cost. */
+    inspection_fees_usd: number;
+    billing_tier: string;
+}
+
+export interface AiSpend {
+    generated_at: string;
+    window: {
+        from: string;
+        to: string;
+        interval: string;
+        previous_from: string;
+        previous_to: string;
+        days: number;
+    };
+    totals: AiSpendTotals;
+    previous: AiSpendTotals;
+    series: AiSpendSeriesRow[];
+    by_provider: AiSpendByProvider[];
+    by_model: AiSpendByModel[];
+    by_agent: AiSpendByAgent[];
+    limits: AiSpendLimits;
+}
+
+export interface LlmModelPrice {
+    id: string;
+    /** Null for a global row. */
+    org_id: string | null;
+    provider: string;
+    model_pattern: string;
+    input_micro_usd_per_mtok: number;
+    output_micro_usd_per_mtok: number;
+    source: string;
+    updated_at: string;
+}
+
 export interface OrgOverview {
     generated_at: string;
     window_hours: number;

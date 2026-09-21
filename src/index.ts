@@ -14,6 +14,7 @@ export { ApprovalsResource } from "./resources/approvals";
 export { BillingResource } from "./resources/billing";
 export { AuditResource } from "./resources/audit";
 export { OrgResource } from "./resources/org";
+export { SpendResource } from "./resources/spend";
 export { AuthResource, generatePKCE, buildAuthorizeUrl } from "./resources/auth";
 export type {
     OAuthTokenRequest,

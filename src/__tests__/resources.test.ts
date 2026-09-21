@@ -10,6 +10,7 @@ import { ApprovalsResource } from "../resources/approvals";
 import { BillingResource } from "../resources/billing";
 import { AuditResource } from "../resources/audit";
 import { OrgResource } from "../resources/org";
+import { SpendResource } from "../resources/spend";
 import { AuthResource } from "../resources/auth";
 import { ApiKeysResource } from "../resources/api-keys";
 import { TreasuryResource } from "../resources/treasury";
@@ -525,6 +526,26 @@ describe("AuditResource", () => {
         await new AuditResource(makeHttp()).query();
         const url = new URL(lastCall().url);
         expect(url.search).toBe("");
+    });
+});
+
+// ---------------------------------------------------------------------------
+// SpendResource
+// ---------------------------------------------------------------------------
+describe("SpendResource", () => {
+    it("ai sends GET /v1/spend/ai with the window and filters", async () => {
+        globalThis.fetch = mockFetch(200, { totals: { cost_usd: 1 } });
+        await new SpendResource(makeHttp()).ai({ from: "2026-09-01T00:00:00Z", interval: "week", provider: "anthropic" });
+        expect(lastCall().url).toBe(`${BASE}/v1/spend/ai?from=2026-09-01T00%3A00%3A00Z&interval=week&provider=anthropic`);
+    });
+
+    it("setPrice sends PUT /v1/spend/ai/prices with snake_case fields", async () => {
+        globalThis.fetch = mockFetch(200, { id: "p1" });
+        await new SpendResource(makeHttp()).setPrice({ provider: "openai", modelPattern: "gpt-5%", inputUsdPerMtok: 1.25, outputUsdPerMtok: 10 });
+        const call = lastCall();
+        expect(call.url).toBe(`${BASE}/v1/spend/ai/prices`);
+        expect(call.init?.method).toBe("PUT");
+        expect(JSON.parse(String(call.init?.body))).toEqual({ provider: "openai", model_pattern: "gpt-5%", input_usd_per_mtok: 1.25, output_usd_per_mtok: 10 });
     });
 });
 

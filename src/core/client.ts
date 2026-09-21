@@ -9,6 +9,7 @@ import { ApprovalsResource } from "../resources/approvals";
 import { BillingResource } from "../resources/billing";
 import { AuditResource } from "../resources/audit";
 import { OrgResource } from "../resources/org";
+import { SpendResource } from "../resources/spend";
 import { AuthResource } from "../resources/auth";
 import { ApiKeysResource } from "../resources/api-keys";
 import { ChainsResource } from "../resources/chains";
@@ -89,6 +90,8 @@ export class OneclawClient {
     readonly audit: AuditResource;
     /** Organization — manage members and roles. */
     readonly org: OrgResource;
+    /** Spend — AI inference cost per agent, provider and model, against budgets and caps. */
+    readonly spend: SpendResource;
     /** Authentication — login, agent auth, API key auth, Google OAuth. */
     readonly auth: AuthResource;
     /** API keys — create, list, and revoke personal API keys. */
@@ -184,6 +187,7 @@ export class OneclawClient {
         this.billing = new BillingResource(this.http);
         this.audit = new AuditResource(this.http);
         this.org = new OrgResource(this.http);
+        this.spend = new SpendResource(this.http);
         this.auth = new AuthResource(this.http);
         this.apiKeys = new ApiKeysResource(this.http);
         this.chains = new ChainsResource(this.http);
