@@ -1161,6 +1161,71 @@ await client.agents.create({ name: "bot", system_prompt: "Default persona" });
 // getConnection() includes provisioned_tier when billing_model is platform_pays
 ```
 
+## v0.61 — AI spend, pricing, and org overview
+
+What the org's agents spent on inference (vault ≥ 0.61.40), by provider, model,
+agent and day, against the org's price card — plus a single dashboard-style
+snapshot endpoint.
+
+```typescript
+// Last 30 days by default; pass from/to/interval to change the window.
+const { data: spend } = await client.spend.ai({
+    interval: "day",
+    provider: "anthropic",
+});
+console.log(spend.totals.cost_usd, "vs.", spend.previous.cost_usd, "previous window");
+for (const row of spend.by_model) {
+    console.log(row);
+}
+
+// CSV export — one row per agent × provider × model. Returns a path, not a
+// fetch: build the full URL yourself (e.g. `${baseUrl}${client.spend.aiCsvPath()}`).
+const csvPath = client.spend.aiCsvPath({ from: "2026-09-01T00:00:00Z" });
+
+// The price card: global list prices plus this org's overrides.
+const { data: card } = await client.spend.listPrices();
+
+// Owner/admin: override a price, or remove the override.
+const { data: price } = await client.spend.setPrice({
+    provider: "anthropic",
+    modelPattern: "claude-opus-4-*",
+    inputUsdPerMtok: 12,
+    outputUsdPerMtok: 60,
+});
+await client.spend.deletePrice(price.id);
+
+// Owner/admin: price any requests that arrived before a price card existed for their model.
+const { data: result } = await client.spend.reprice();
+console.log(`${result.repriced} request(s) priced`);
+
+// A single snapshot across inventory, activity, spend, and health — the
+// dashboard overview endpoint, `hours` default 24.
+const { data: overview } = await client.org.overview(24);
+console.log(overview.spend.inference_usd, overview.health);
+```
+
+## v0.61 — One-call runtime provisioning
+
+Agent (new or existing) + keys + default-vault grant + runtime + start, in one
+call (vault ≥ 0.61.48). Every existing per-step gate (agent quota, runtime
+quota, control-plane approval) still applies to this call.
+
+```typescript
+const { data: provisioned } = await client.runtimes.provision({
+    name: "my-runtime",
+    template: "openclaw",
+    preset: "small",
+    // Either { id } for an existing agent, or { name } to create one — the
+    // create path also grants it read/write on a new default vault.
+    agent: { name: "my-agent" },
+});
+console.log(provisioned.runtime.id, provisioned.started);
+if (provisioned.agent_api_key) {
+    // Only present when the agent was created here — shown once, store it now.
+    console.log("save this key:", provisioned.agent_api_key);
+}
+```
+
 ## OpenAPI Types
 
 The SDK's request types are generated from the **OpenAPI 3.1** spec, published as [@1claw/openapi-spec](https://www.npmjs.com/package/@1claw/openapi-spec). Advanced users can access the raw generated types:
