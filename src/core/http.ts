@@ -34,6 +34,7 @@ export class HttpClient {
     private maxAutoPayUsd: number;
     private agentCredentials?: { agentId?: string; apiKey: string };
     private refreshPromise?: Promise<void>;
+    private pendingInitialAuth?: Promise<void>;
     private _resolvedAgentId?: string;
     private dpopEnabled: boolean;
     private dpopManager?: DPoPManager;
@@ -65,6 +66,29 @@ export class HttpClient {
     /** Agent ID resolved from the token exchange (for key-only auth). */
     get resolvedAgentId(): string | undefined {
         return this._resolvedAgentId ?? this.agentCredentials?.agentId;
+    }
+
+    /**
+     * Kick off a one-time API-key-to-JWT exchange for a 1ck_ user key, and
+     * make every request-dispatch entry point wait for it before firing —
+     * the same shape as ensureToken()'s agent-key refresh below, and for the
+     * same reason: a raw fetch(), not this.request(), so this promise never
+     * ends up awaiting itself.
+     */
+    authenticateWithApiKey(apiKey: string): void {
+        this.pendingInitialAuth = fetch(`${this.baseUrl}/v1/auth/api-key-token`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ api_key: apiKey }),
+        })
+            .then(async (res) => {
+                if (!res.ok) return;
+                const data = (await res.json()) as { access_token?: string };
+                if (data.access_token) this.setToken(data.access_token);
+            })
+            .catch(() => {
+                /* auth failure surfaces on the next request via a missing/expired token */
+            });
     }
 
     /** Replace the current Bearer token (called by auth methods). */
@@ -213,6 +237,7 @@ export class HttpClient {
             acceptStatuses?: number[];
         } = {},
     ): Promise<OneclawResponse<T>> {
+        if (this.pendingInitialAuth) await this.pendingInitialAuth;
         if (!options.skipAuth) {
             await this.ensureToken();
         }
@@ -279,6 +304,7 @@ export class HttpClient {
             headers?: Record<string, string>;
         } = {},
     ): Promise<T> {
+        if (this.pendingInitialAuth) await this.pendingInitialAuth;
         await this.ensureToken();
         const url = this.buildUrl(path, options.query);
         const headers: Record<string, string> = {
@@ -378,6 +404,7 @@ export class HttpClient {
             headers?: Record<string, string>;
         } = {},
     ): Promise<Response> {
+        if (this.pendingInitialAuth) await this.pendingInitialAuth;
         await this.ensureToken();
         const url = this.buildUrl(path);
         const headers: Record<string, string> = {

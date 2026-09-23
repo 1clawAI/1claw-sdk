@@ -171,10 +171,15 @@ export class OneclawClient {
         this.http = new HttpClient(config);
 
         if (config.apiKey && !config.token && !config.agentId) {
-            // ocv_ keys are agent keys — HttpClient handles token exchange.
-            // 1ck_ keys are user keys — need a one-time token exchange here.
+            // ocv_ keys are agent keys — HttpClient.ensureToken() exchanges
+            // and refreshes them per-request, awaited by every dispatch
+            // entry point, so no request can race it.
+            // 1ck_ keys are user keys — a one-time exchange, kicked off here
+            // and awaited the same way (HttpClient.pendingInitialAuth) so a
+            // request fired immediately after construction can't race it
+            // either.
             if (!config.apiKey.startsWith("ocv_")) {
-                this.autoAuthenticateUserKey(config);
+                this.http.authenticateWithApiKey(config.apiKey);
             }
         }
 
@@ -238,20 +243,6 @@ export class OneclawClient {
         );
     }
 
-    private autoAuthenticateUserKey(config: OneclawClientConfig): void {
-        const authPromise = this.http
-            .request<{ access_token: string }>("POST", "/v1/auth/api-key-token", {
-                body: { api_key: config.apiKey },
-            })
-            .then((res) => {
-                if (res.data?.access_token)
-                    this.http.setToken(res.data.access_token);
-            });
-
-        authPromise.catch(() => {
-            /* auth failure will surface on the next request */
-        });
-    }
 }
 
 /**

@@ -170,6 +170,52 @@ describe("HttpClient", () => {
         );
     });
 
+    it("authenticateWithApiKey: a request fired immediately after does not race the exchange", async () => {
+        let resolveExchange: () => void = () => {};
+        const exchangeGate = new Promise<void>((resolve) => {
+            resolveExchange = resolve;
+        });
+
+        const fetcher = vi.fn().mockImplementation(async (url: string) => {
+            if (url.endsWith("/v1/auth/api-key-token")) {
+                await exchangeGate; // simulate a slow token exchange
+                return {
+                    ok: true,
+                    status: 200,
+                    headers: new Headers(),
+                    json: () => Promise.resolve({ access_token: "exchanged-jwt" }),
+                } as unknown as Response;
+            }
+            return {
+                ok: true,
+                status: 200,
+                headers: new Headers(),
+                json: () => Promise.resolve({ id: "v1" }),
+            } as unknown as Response;
+        });
+        globalThis.fetch = fetcher;
+
+        const http = new HttpClient({ baseUrl: "https://api.test" });
+        http.authenticateWithApiKey("1ck_test");
+
+        const requestPromise = http.request("GET", "/v1/vaults");
+
+        // Give the event loop a turn: without the fix, the /v1/vaults fetch
+        // fires here already, before the exchange resolves, with no token.
+        await new Promise((r) => setTimeout(r, 10));
+        const vaultsCallBeforeResolve = fetcher.mock.calls.find(([url]) =>
+            url.endsWith("/v1/vaults"),
+        );
+        expect(vaultsCallBeforeResolve).toBeUndefined();
+
+        resolveExchange();
+        await requestPromise;
+
+        const vaultsCall = fetcher.mock.calls.find(([url]) => url.endsWith("/v1/vaults"));
+        expect(vaultsCall).toBeDefined();
+        expect(vaultsCall![1].headers["Authorization"]).toBe("Bearer exchanged-jwt");
+    });
+
     describe("x402 auto-payment", () => {
         const paymentRequirement = {
             x402Version: 1,
