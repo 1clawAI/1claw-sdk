@@ -532,6 +532,18 @@ export interface CreateAgentRequest {
     card_reveal_enabled?: boolean;
     /** When true, card orders route through the approval queue before payment. Default on. */
     card_require_approval?: boolean;
+    /** Graduated transaction approval policy (HITL thresholds). Separate from hard guardrails. */
+    tx_approval_policy?: Record<string, unknown> | null;
+    /**
+     * Which business actions this agent must ask a human about, and above what amount.
+     * `{}` means no per-action rules. Shape: `{ default_mode: "deny"|"approve"|"allow",
+     * rules: [{ action_type, mode, require_for_amount_above_usd?, summary_template? }] }`.
+     */
+    action_approval_policy?: Record<string, unknown> | null;
+    /** EIP-712 escalation when typed_data matches no allowlist — deny (403) or route to HITL (approve). */
+    typed_data_policy?: "deny" | "approve";
+    /** Simulation failure escalation — deny (422) or route to HITL (approve). */
+    simulation_failure_policy?: "deny" | "approve";
 }
 
 export interface UpdateAgentRequest {
@@ -602,6 +614,23 @@ export interface UpdateAgentRequest {
     card_reveal_enabled?: boolean;
     /** When true, card orders route through the approval queue before payment. */
     card_require_approval?: boolean;
+    /** Graduated transaction approval policy (HITL thresholds). `null` clears. */
+    tx_approval_policy?: Record<string, unknown> | null;
+    /**
+     * Which business actions this agent must ask a human about, and above what amount.
+     * `{}` means no per-action rules. `null` clears. A rule can only raise the bar —
+     * editing this is classified as a guardrail widening, routed through the same
+     * approval flow as loosening a transaction limit.
+     */
+    action_approval_policy?: Record<string, unknown> | null;
+    /** EIP-712 escalation policy. `null` clears. */
+    typed_data_policy?: "deny" | "approve" | null;
+    /** Simulation failure escalation policy. `null` clears. */
+    simulation_failure_policy?: "deny" | "approve" | null;
+    /** Block unlimited ERC-20 approvals. */
+    tx_block_unlimited_approvals?: boolean;
+    /** Escalation for the blind-signing "eip712_digest" intent: allow, deny, or route to HITL. */
+    raw_signing_policy?: "allow" | "deny" | "approve";
     /** Approved policy_change id when resuming a queued guardrail widening. */
     approval_id?: string;
 }
@@ -696,6 +725,18 @@ export interface AgentResponse {
     card_reveal_enabled?: boolean;
     /** When true, card orders route through the approval queue before payment. */
     card_require_approval?: boolean;
+    /** Graduated transaction approval policy (HITL thresholds). */
+    tx_approval_policy?: Record<string, unknown> | null;
+    /** Which business actions this agent must ask a human about, and above what amount. */
+    action_approval_policy?: Record<string, unknown> | null;
+    /** EIP-712 escalation policy. */
+    typed_data_policy?: "deny" | "approve" | null;
+    /** Simulation failure escalation policy. */
+    simulation_failure_policy?: "deny" | "approve" | null;
+    /** Block unlimited ERC-20 approvals. */
+    tx_block_unlimited_approvals?: boolean;
+    /** Escalation for the blind-signing "eip712_digest" intent: allow, deny, or route to HITL. */
+    raw_signing_policy?: "allow" | "deny" | "approve";
     created_at: string;
     expires_at?: string;
     last_active_at?: string;
