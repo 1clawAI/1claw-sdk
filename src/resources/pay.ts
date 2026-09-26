@@ -147,6 +147,15 @@ export class PayResource {
      * Human callers only. These are the numbers every other pay decision is
      * measured against, so an agent cannot set them. Omitted fields are left
      * alone; values can be set but not currently cleared.
+     *
+     * **Widening requires re-authentication** (PAY-L1). Raising a cap,
+     * enabling pay or grant mode, turning off the passkey or approval
+     * requirement, lengthening a grant TTL, or adding a payee to the
+     * allowlist all need an `X-Auth-Confirm` header — a password or a
+     * single-use `rat_` token from `POST /v1/auth/reauth`. Without one the
+     * call returns 403 naming what is needed. Tightening needs nothing:
+     * lowering a cap, disabling pay, or removing a payee go through on the
+     * session alone, deliberately, so nothing discourages tightening.
      */
     async updateSettings(
         agentId: string,
