@@ -4157,6 +4157,14 @@ export interface ProvisionRuntimeRequest {
     source_repo?: string;
     startup_command?: string;
     environment?: string;
+    idle_timeout_secs?: number;
+    http_port?: number;
+    slug?: string;
+    inbound_auth?: "api_key" | "jwt" | "public";
+    source_branch?: string;
+    shell_access_enabled?: boolean;
+    shell_auth_policy?: "password_2fa" | "password_only" | "passkey_only";
+    shell_max_session_minutes?: number;
     /** Default true. */
     start?: boolean;
     /** Control-plane approval for `agent.create` when the org gates it. */
