@@ -526,6 +526,15 @@ export interface CreateAgentRequest {
     card_max_order_usd?: string;
     /** Maximum cumulative USD spent ordering cards per rolling 24h window. */
     card_daily_limit_usd?: string;
+    /**
+     * Daily USD cap across **all** of this agent's x402 stablecoin spend —
+     * `POST /v1/pay` and card orders together, calendar day UTC.
+     *
+     * Applied in addition to the per-route caps, never instead of them. The
+     * `tx_*`, `pay_*` and `card_*` caps each bound one route and none bounds
+     * the others, so this is the only field that caps total spend.
+     */
+    usdc_daily_limit_usd?: string;
     /** Allowed x402 payTo recipients for card orders (empty = built-in Laso recipients). */
     card_payto_allowlist?: string[];
     /** Whether agents may reveal card details subject to per-card reveal policy. */
@@ -608,6 +617,15 @@ export interface UpdateAgentRequest {
     card_max_order_usd?: string | null;
     /** Maximum cumulative USD spent ordering cards per rolling 24h window. `null` clears. */
     card_daily_limit_usd?: string | null;
+    /**
+     * Daily USD cap across **all** of this agent's x402 stablecoin spend —
+     * `POST /v1/pay` and card orders together, calendar day UTC. `null` clears.
+     *
+     * Applied in addition to the per-route caps, never instead of them. The
+     * `tx_*`, `pay_*` and `card_*` caps each bound one route and none bounds
+     * the others, so this is the only field that caps total spend.
+     */
+    usdc_daily_limit_usd?: string | null;
     /** Allowed x402 payTo recipients for card orders (empty = built-in Laso recipients). */
     card_payto_allowlist?: string[];
     /** Whether agents may reveal card details subject to per-card reveal policy. */
@@ -719,6 +737,15 @@ export interface AgentResponse {
     card_max_order_usd?: string;
     /** Maximum cumulative USD spent ordering cards per rolling 24h window. */
     card_daily_limit_usd?: string;
+    /**
+     * Daily USD cap across **all** of this agent's x402 stablecoin spend —
+     * `POST /v1/pay` and card orders together, calendar day UTC.
+     *
+     * Applied in addition to the per-route caps, never instead of them. The
+     * `tx_*`, `pay_*` and `card_*` caps each bound one route and none bounds
+     * the others, so this is the only field that caps total spend.
+     */
+    usdc_daily_limit_usd?: string;
     /** Allowed x402 payTo recipients for card orders (empty = built-in Laso recipients). */
     card_payto_allowlist?: string[];
     /** Whether agents may reveal card details subject to per-card reveal policy. */
