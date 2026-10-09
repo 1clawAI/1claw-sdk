@@ -39,7 +39,15 @@ export class ChannelsResource {
         );
     }
 
-    /** Update a channel's name, active status, or config. */
+    /**
+     * Update a channel's name, active status, config, or who may use it.
+     *
+     * Two separate grants, easy to conflate: `owner_sender_id` names who may
+     * run admin slash commands, while a non-empty `sender_allowlist` does that
+     * *and* stops every other sender getting replies at all. Pass
+     * `owner_sender_id: null` to revoke an admin — an omitted field means
+     * "leave it alone".
+     */
     async update(
         agentId: string,
         channelId: string,

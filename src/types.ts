@@ -3015,6 +3015,17 @@ export interface CreateChannelRequest {
     config: Record<string, string>;
     slash_commands_enabled?: boolean;
     voice_transcription_enabled?: boolean;
+    /**
+     * External sender IDs permitted to message the agent **and** to run admin
+     * slash commands. A non-empty list also gates auto-respond, so everyone
+     * outside it stops getting replies.
+     *
+     * The vault has accepted this at create time all along; it was missing
+     * here, so the only way to set it from the SDK was a follow-up `update`.
+     */
+    sender_allowlist?: string[];
+    /** Defaults to true server-side. */
+    auto_respond_enabled?: boolean;
 }
 
 export interface UpdateChannelRequest {
@@ -3024,7 +3035,21 @@ export interface UpdateChannelRequest {
     slash_commands_enabled?: boolean;
     voice_transcription_enabled?: boolean;
     auto_respond_enabled?: boolean;
+    /**
+     * Replaces the allowlist. `[]` clears it; omitting the field leaves it
+     * unchanged. A non-empty list gates auto-respond as well as admin
+     * commands.
+     */
     sender_allowlist?: string[];
+    /**
+     * External sender ID that may run admin slash commands, without
+     * restricting who may message the agent.
+     *
+     * `null` revokes admin; omitting the field leaves the current admin
+     * alone. The two are distinct server-side, so pass `null` explicitly
+     * rather than `undefined` — an absent key means "no change".
+     */
+    owner_sender_id?: string | null;
 }
 
 export interface ChannelResponse {

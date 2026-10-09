@@ -14,6 +14,7 @@ import { SpendResource } from "../resources/spend";
 import { AuthResource } from "../resources/auth";
 import { ApiKeysResource } from "../resources/api-keys";
 import { TreasuryResource } from "../resources/treasury";
+import { ChannelsResource } from "../resources/channels";
 
 const BASE = "https://api.test";
 const originalFetch = globalThis.fetch;
@@ -707,5 +708,54 @@ describe("TreasuryResource", () => {
         globalThis.fetch = mockFetch(200, { requests: [] });
         await new TreasuryResource(makeHttp()).listAccessRequests("t-1");
         expect(lastCall().url).toBe(`${BASE}/v1/treasury/t-1/access-requests`);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// ChannelsResource
+//
+// The admin grant and the sender allowlist are two different things, and the
+// clear has to survive serialisation. `JSON.stringify` drops `undefined`
+// properties, so a revoke expressed as `undefined` reaches the vault as an
+// absent key — which means "leave the admin alone". That is the shape of the
+// bug this command was reported for: a 200 that changed nothing.
+// ---------------------------------------------------------------------------
+describe("ChannelsResource", () => {
+    it("update sends PATCH /v1/agents/{id}/channels/{id}", async () => {
+        globalThis.fetch = mockFetch(200, { id: "c-1" });
+        await new ChannelsResource(makeHttp()).update("a-1", "c-1", { channel_name: "support" });
+        expect(lastCall().init.method).toBe("PATCH");
+        expect(lastCall().url).toBe(`${BASE}/v1/agents/a-1/channels/c-1`);
+    });
+
+    it("a null owner_sender_id survives into the request body", async () => {
+        globalThis.fetch = mockFetch(200, { id: "c-1" });
+        await new ChannelsResource(makeHttp()).update("a-1", "c-1", { owner_sender_id: null });
+        const body = JSON.parse(lastCall().init.body as string);
+        expect("owner_sender_id" in body).toBe(true);
+        expect(body.owner_sender_id).toBeNull();
+    });
+
+    it("omitting owner_sender_id leaves the key out entirely", async () => {
+        globalThis.fetch = mockFetch(200, { id: "c-1" });
+        await new ChannelsResource(makeHttp()).update("a-1", "c-1", { is_active: false });
+        const body = JSON.parse(lastCall().init.body as string);
+        expect("owner_sender_id" in body).toBe(false);
+        expect(body.is_active).toBe(false);
+    });
+
+    it("create accepts a sender allowlist", async () => {
+        // The vault has taken this at create time all along; the SDK type
+        // omitted it, so the only route was a second round trip.
+        globalThis.fetch = mockFetch(201, { id: "c-1" });
+        await new ChannelsResource(makeHttp()).create("a-1", {
+            channel_type: "telegram",
+            config: { bot_token: "t" },
+            sender_allowlist: ["111"],
+            auto_respond_enabled: true,
+        });
+        const body = JSON.parse(lastCall().init.body as string);
+        expect(body.sender_allowlist).toEqual(["111"]);
+        expect(body.auto_respond_enabled).toBe(true);
     });
 });
