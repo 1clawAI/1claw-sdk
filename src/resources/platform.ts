@@ -975,6 +975,18 @@ export class PlatformResource {
         body: {
             intents_api_enabled?: boolean;
             execution_intents_enabled?: boolean;
+            /** Agent memory. Accepted by the vault since the field was added
+             *  there; it was simply never mirrored here. */
+            memory_enabled?: boolean;
+            /**
+             * Raw/blind digest signing (`sign_digest`, `eip712_digest`).
+             *
+             * This is the only route that reaches an already-bootstrapped
+             * agent: it lives in the end user's own org, so a platform app
+             * calling `PATCH /v1/agents/{id}` gets a 403, and the fleet
+             * bulk-patch refuses capability flags by design.
+             */
+            raw_signing_enabled?: boolean;
             system_prompt?: string | null;
         },
     ): Promise<
@@ -982,6 +994,8 @@ export class PlatformResource {
             agent_id: string;
             intents_api_enabled: boolean;
             execution_intents_enabled: boolean;
+            memory_enabled: boolean;
+            raw_signing_enabled: boolean;
             system_prompt?: string | null;
         }>
     > {
