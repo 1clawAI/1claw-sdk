@@ -2241,7 +2241,16 @@ export interface BootstrapResponse {
         agent_ids?: string[];
         policy_ids: string[];
         signing_key_chains?: string[];
+        /** First agent's key; kept for compatibility. Prefer agent_api_keys. */
         agent_api_key?: string;
+        /**
+         * Every agent the template created, with its one-time key.
+         *
+         * Returned once. A platform app cannot rotate a key in the end user's
+         * org, so a multi-agent template used to strand agents 2..N with
+         * credentials nobody could recover.
+         */
+        agent_api_keys?: { agent_id: string; api_key: string }[];
         signing_keys?: BootstrapSigningKey[];
         agent_evm_address?: string;
         runtime_ids?: string[];

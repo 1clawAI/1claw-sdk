@@ -996,8 +996,15 @@ export class PlatformResource {
         OneclawResponse<{
             connection_id: string;
             agent_ids: string[];
-            /** Returned once, at creation, and never retrievable again. */
+            /** The first agent's key. Prefer `agent_api_keys`. */
             agent_api_key?: string;
+            /**
+             * Every agent created by this call, with its one-time key.
+             *
+             * Returned once. A platform app cannot rotate a key in the end
+             * user's org, so a key missed here cannot be recovered.
+             */
+            agent_api_keys: { agent_id: string; api_key: string }[];
             agent_evm_address?: string;
             signing_keys: {
                 chain: string;
