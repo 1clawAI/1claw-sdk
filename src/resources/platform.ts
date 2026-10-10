@@ -968,6 +968,56 @@ export class PlatformResource {
         );
     }
 
+    /**
+     * Add agents to a connection that has already been bootstrapped
+     * (`plt_` auth).
+     *
+     * Bootstrap refuses a second run with a 409, because it also creates the
+     * vault, the policies and the plan tier. This applies only the agent part
+     * of a template: its `agents` and their per-agent `signing_keys`, `eoa`
+     * and `runtime`. New agents attach to the vault the connection already
+     * has.
+     *
+     * Configuration comes from a template rather than from fields here so the
+     * agent portion of a spec has one reader, shared with bootstrap.
+     *
+     * Capped per connection by `max_agents_per_connection` on the app, and the
+     * whole batch is checked first, so a template that would overshoot is
+     * refused rather than partly applied.
+     */
+    async addConnectionAgents(
+        connectionId: string,
+        body: {
+            template_id: string;
+            /** Substituted into the spec as `{{params.*}}`, as at bootstrap. */
+            params?: Record<string, unknown>;
+        },
+    ): Promise<
+        OneclawResponse<{
+            connection_id: string;
+            agent_ids: string[];
+            /** Returned once, at creation, and never retrievable again. */
+            agent_api_key?: string;
+            agent_evm_address?: string;
+            signing_keys: {
+                chain: string;
+                curve: string;
+                public_key: string;
+                address: string;
+                agent_id?: string | null;
+            }[];
+            runtime_ids: string[];
+            agent_count: number;
+            max_agents_per_connection: number;
+        }>
+    > {
+        return this.http.request(
+            "POST",
+            `/v1/platform/connections/${connectionId}/agents`,
+            { body },
+        );
+    }
+
     /** Patch limited agent settings on a connection (`plt_` auth). */
     async patchConnectionAgent(
         connectionId: string,
