@@ -2244,11 +2244,12 @@ export interface BootstrapResponse {
         /** First agent's key; kept for compatibility. Prefer agent_api_keys. */
         agent_api_key?: string;
         /**
-         * Every agent the template created, with its one-time key.
+         * The created agent and its one-time key. Exactly one entry.
          *
-         * Returned once. A platform app cannot rotate a key in the end user's
-         * org, so a multi-agent template used to strand agents 2..N with
-         * credentials nobody could recover.
+         * A template declaring more than one agent is refused with 400: a key
+         * is returned once and cannot be re-issued to a platform app, so
+         * batching them would put several unrecoverable credentials in one
+         * response. Split the template and bootstrap once per agent.
          */
         agent_api_keys?: { agent_id: string; api_key: string }[];
         signing_keys?: BootstrapSigningKey[];

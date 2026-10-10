@@ -984,6 +984,9 @@ export class PlatformResource {
      * Capped per connection by `max_agents_per_connection` on the app, and the
      * whole batch is checked first, so a template that would overshoot is
      * refused rather than partly applied.
+     *
+     * One agent per call. A template declaring more than one is refused with
+     * 400; split it and call once per agent.
      */
     async addConnectionAgents(
         connectionId: string,
@@ -999,10 +1002,13 @@ export class PlatformResource {
             /** The first agent's key. Prefer `agent_api_keys`. */
             agent_api_key?: string;
             /**
-             * Every agent created by this call, with its one-time key.
+             * The created agent and its one-time key. Exactly one entry.
              *
-             * Returned once. A platform app cannot rotate a key in the end
-             * user's org, so a key missed here cannot be recovered.
+             * Provisioning is one agent per call: a key is returned once and
+             * cannot be re-issued to a platform app, so a response carrying
+             * several would put several unrecoverable credentials in one
+             * payload. A template declaring more than one agent is refused
+             * with 400.
              */
             agent_api_keys: { agent_id: string; api_key: string }[];
             agent_evm_address?: string;
