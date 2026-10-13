@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 /**
@@ -36,6 +36,26 @@ function handWrittenProps(src: string, iface: string): Set<string> {
 }
 
 describe("hand-written types cover the OpenAPI schema", () => {
+  // A clear failure rather than an ENOENT stack trace.
+  //
+  // `packages/openapi-spec` is a sibling submodule, and a checkout without it
+  // made this throw `ENOENT: no such file or directory` — which is true but
+  // says nothing about what to do. CI's SDK job did exactly that on first run.
+  //
+  // Deliberately NOT a skip. A skip would make the test vacuous in precisely
+  // the environment where nobody is watching, which is how the 76 missing
+  // properties survived in the first place. If the spec is not there, the
+  // check cannot run, and that is a failure with instructions.
+  if (!existsSync(SPEC)) {
+    it("needs packages/openapi-spec checked out", () => {
+      throw new Error(
+        `${SPEC} is missing, so this test cannot verify that src/types.ts covers ` +
+          `the API. Run: git submodule update --init packages/openapi-spec`,
+      );
+    });
+    return;
+  }
+
   const spec = JSON.parse(readFileSync(SPEC, "utf8"));
   const types = readFileSync(TYPES, "utf8");
 
