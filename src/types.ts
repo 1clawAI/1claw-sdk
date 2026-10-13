@@ -553,6 +553,59 @@ export interface CreateAgentRequest {
     typed_data_policy?: "deny" | "approve";
     /** Simulation failure escalation — deny (422) or route to HITL (approve). */
     simulation_failure_policy?: "deny" | "approve";
+    // Added 2026-10-13. These are accepted (or returned) by the API and were
+    // absent from this hand-written interface, so an SDK user on these types
+    // could not reach them at all. Generated from the OpenAPI schema; see
+    // `hand_written_types_cover_the_spec.test.ts`, which now fails if the two
+    // drift again.
+    /** Address screening policy applied to transaction recipients. */
+    address_screening_policy?: Record<string, unknown>;
+    /** Allow EIP-7702 (tx type 4) set-code transactions. */
+    allow_eip7702?: boolean;
+    /** Allow ERC-4337 gasless UserOperations. */
+    allow_erc4337?: boolean;
+    /** Optional completed approval ID for control-plane consensus bypass when creating an agent under a control-plane governance policy. */
+    approval_id?: string;
+    /** Default LLM model for automations and Shroud. */
+    default_llm_model?: string;
+    /** Default LLM provider for automations and Shroud. */
+    default_llm_provider?: string;
+    /** List this agent in the cross-org agent directory. */
+    discoverable?: boolean;
+    /** When true, env var resolve endpoints auto-fill environment from this agent's tag. */
+    env_auto_resolve?: boolean;
+    /** Named environment for this agent (production, preview, development, or custom). */
+    environment?: string;
+    /** When true, the environment tag cannot be changed after creation. */
+    environment_locked?: boolean;
+    /** Enable durable key-value and semantic memory for this agent. Required before PUT /v1/agents/{agent_id}/memory/{namespace}/{key} will accept a write... */
+    memory_enabled?: boolean;
+    /** Maximum size of a single memory entry value. Null uses the platform default (64 KiB). */
+    memory_max_entry_bytes?: unknown;
+    /** Namespaces this agent may use. Empty or omitted means unrestricted. */
+    memory_namespace_allowlist?: string[];
+    /** Cap on first-time recipient spend in native units. */
+    new_recipient_cap_native?: unknown;
+    /** personal_sign guardrails (message allowlist, max bytes, etc.). */
+    personal_sign_policy?: Record<string, unknown>;
+    /** Description shown on the public directory listing. */
+    public_description?: string;
+    /** Tags shown on the public directory listing. */
+    public_tags?: string[];
+    /** Raw digest signing policy — allow, deny, or route to HITL (approve). */
+    raw_signing_policy?: "allow" | "deny" | "approve";
+    /** Skip creating the default access policy for this agent. */
+    skip_default_policy?: boolean;
+    /** Block unlimited ERC-20 approvals (max uint256 / setApprovalForAll). */
+    tx_block_unlimited_approvals?: boolean;
+    /** Rolling 24h USD spend cap (requires price oracle). */
+    tx_daily_limit_usd?: unknown;
+    /** Per-transaction USD cap (requires price oracle). */
+    tx_max_value_usd?: unknown;
+    /** Max native-unit spend to the same recipient per UTC day. */
+    tx_per_recipient_daily_limit?: unknown;
+    /** Max transactions to the same recipient address per UTC day. */
+    tx_per_recipient_max_per_day?: unknown;
 }
 
 export interface UpdateAgentRequest {
@@ -651,6 +704,71 @@ export interface UpdateAgentRequest {
     raw_signing_policy?: "allow" | "deny" | "approve";
     /** Approved policy_change id when resuming a queued guardrail widening. */
     approval_id?: string;
+    // Added 2026-10-13. These are accepted (or returned) by the API and were
+    // absent from this hand-written interface, so an SDK user on these types
+    // could not reach them at all. Generated from the OpenAPI schema; see
+    // `hand_written_types_cover_the_spec.test.ts`, which now fails if the two
+    // drift again.
+    /** Recipient address screening policy. `mode` may be `off`, `deny`, or `approve`. */
+    address_screening_policy?: Record<string, unknown>;
+    /** Allow EIP-7702 (tx type 4). */
+    allow_eip7702?: boolean;
+    /** Allow ERC-4337 gasless UserOperations. */
+    allow_erc4337?: boolean;
+    /** When true, clears circuit-breaker auto-suspension (human owner/admin only). */
+    clear_auto_suspended?: boolean;
+    /** Default LLM model for automations and Shroud. */
+    default_llm_model?: unknown;
+    /** Default LLM provider for automations and Shroud. */
+    default_llm_provider?: unknown;
+    /** List this agent in the cross-org agent directory. */
+    discoverable?: boolean;
+    /** When true, env var resolve endpoints auto-fill environment from this agent's tag. */
+    env_auto_resolve?: boolean;
+    /** Named environment for this agent (production, preview, development, or custom). */
+    environment?: unknown;
+    /** When true, the environment tag cannot be changed after creation. */
+    environment_locked?: boolean;
+    /** Per-agent TTL override for federation tokens (seconds). NULL falls back to the global default (`ONECLAW_JWT_FEDERATED_TOKEN_EXPIRY_SECS`). Hard-cap... */
+    federated_token_ttl_seconds?: unknown;
+    /** Allowlist of `aud` values the federation token-exchange may issue tokens for (e.g. `["https://api.anthropic.com"]`). Empty array blocks all federat... */
+    federation_audiences?: string[];
+    /** Enable OIDC federation (RFC 8693 token-exchange) for this agent. When true, the agent may call POST /v1/auth/federated-token to mint federation tok... */
+    federation_enabled?: boolean;
+    /** Enable durable key-value and semantic memory for this agent. Required before PUT /v1/agents/{agent_id}/memory/{namespace}/{key} will accept a write... */
+    memory_enabled?: boolean;
+    /** Maximum size of a single memory entry value. Null uses the platform default (64 KiB). */
+    memory_max_entry_bytes?: unknown;
+    /** Namespaces this agent may use. Empty or omitted means unrestricted. */
+    memory_namespace_allowlist?: string[];
+    /** First-time recipient native cap. Null clears. */
+    new_recipient_cap_native?: unknown;
+    /** Per-environment guardrail overrides keyed by environment slug. */
+    per_environment_guardrails?: Record<string, unknown>;
+    /** personal_sign guardrails JSON. */
+    personal_sign_policy?: Record<string, unknown>;
+    /** Description shown on the public directory listing. */
+    public_description?: unknown;
+    /** Tags shown on the public directory listing. */
+    public_tags?: string[];
+    /** Smart account address associated with this agent. */
+    smart_account_address?: string;
+    /** Chain name for the smart account. */
+    smart_account_chain?: string;
+    /** EVM chain id for the smart account. */
+    smart_account_chain_id?: number;
+    /** Smart account initialisation data. */
+    smart_account_init_data?: Record<string, unknown>;
+    /** Smart account deployment nonce. */
+    smart_account_nonce?: string;
+    /** Rolling 24h USD spend cap. Null clears. */
+    tx_daily_limit_usd?: unknown;
+    /** Per-tx USD cap. Null clears. */
+    tx_max_value_usd?: unknown;
+    /** Max native spend to same recipient per UTC day. Null clears. */
+    tx_per_recipient_daily_limit?: unknown;
+    /** Max transactions to the same recipient per UTC day. Null clears. */
+    tx_per_recipient_max_per_day?: unknown;
 }
 
 export interface AgentResponse {
@@ -767,6 +885,47 @@ export interface AgentResponse {
     created_at: string;
     expires_at?: string;
     last_active_at?: string;
+    // Added 2026-10-13. These are accepted (or returned) by the API and were
+    // absent from this hand-written interface, so an SDK user on these types
+    // could not reach them at all. Generated from the OpenAPI schema; see
+    // `hand_written_types_cover_the_spec.test.ts`, which now fails if the two
+    // drift again.
+    /** Recipient address screening policy. `mode` may be `off`, `deny`, or `approve`. */
+    address_screening_policy?: Record<string, unknown>;
+    /** A `child` is a sub-agent under `parent_agent_id` that inherits its parent's policies and does not count against the plan's agent cap. */
+    agent_type?: "standard" | "child";
+    allow_eip7702?: boolean;
+    allow_erc4337?: boolean;
+    /** True when circuit breaker auto-suspended the agent after repeated guardrail denials. */
+    auto_suspended?: boolean;
+    /** When true, env var resolve endpoints auto-fill environment from this agent's tag. */
+    env_auto_resolve?: boolean;
+    /** Named environment this agent belongs to (production, preview, development, or custom). */
+    environment?: unknown;
+    /** When true, the environment tag is locked and cannot be changed. */
+    environment_locked?: boolean;
+    /** Per-agent TTL override for federation tokens (60..=3600). */
+    federated_token_ttl_seconds?: unknown;
+    /** Allowlist of audience URIs the agent may federate to. */
+    federation_audiences?: string[];
+    /** Whether this agent may mint OIDC federation tokens via POST /v1/auth/federated-token. False by default. */
+    federation_enabled?: boolean;
+    /** Whether durable key-value and semantic memory is enabled. Omitted when false: the server skips serializing this field unless it is true, so an abse... */
+    memory_enabled?: boolean;
+    /** Maximum size of a single memory entry value. Omitted when unset, which means the platform default (64 KiB). */
+    memory_max_entry_bytes?: unknown;
+    /** Namespaces this agent may use. Omitted when empty, which means unrestricted. */
+    memory_namespace_allowlist?: string[];
+    new_recipient_cap_native?: unknown;
+    /** Present on child agents. */
+    parent_agent_id?: string;
+    /** Per-environment guardrail overrides keyed by environment slug. */
+    per_environment_guardrails?: Record<string, unknown>;
+    personal_sign_policy?: unknown;
+    tx_daily_limit_usd?: unknown;
+    tx_max_value_usd?: unknown;
+    tx_per_recipient_daily_limit?: unknown;
+    tx_per_recipient_max_per_day?: unknown;
 }
 
 // ---------------------------------------------------------------------------
