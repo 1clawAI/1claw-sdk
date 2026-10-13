@@ -45,6 +45,12 @@ export interface paths {
          *     is fresh.
          *
          *     User JWTs from password, API key, or device flow do **not** include `shroud_config`.
+         *
+         *     **Router keys.** An `sk-shroud-v1-…` key (minted at
+         *     `POST /v1/agents/{agent_id}/router-keys`) is exchanged key-only — send `api_key`
+         *     alone, no `agent_id`. The token carries a `router_key` claim
+         *     (`{id, max_concurrent_streams?, spend_cap_micro_usd?}`), lives at most **60 s**
+         *     (revocation SLA), and is only issued for Shroud-enabled agents. Revoked keys get 401.
          */
         post: operations["agentToken"];
         delete?: never;
@@ -2448,6 +2454,146 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/spend/ai": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * AI spend
+         * @description Inference spend for the org over a window (default the last 30 days):
+         *     totals with the previous equal-length window for comparison, a time series
+         *     by provider, and breakdowns by provider, by model and by agent — each agent
+         *     with its `shroud_config` daily budget, today's spend against it and the
+         *     requests Shroud blocked for budget. `limits` carries router-key spend caps,
+         *     the credit balance and 1Claw's inspection fees for the window (a separate
+         *     number from provider cost). Every request is priced at ingest from the
+         *     price card (`GET /v1/spend/ai/prices`); a request whose provider has no
+         *     card is counted as unpriced, not free. Human and platform callers only.
+         *     Backs the dashboard's Spend tab; the same numbers reach an org's own
+         *     collector as OTEL metrics `ai.cost_usd`, `ai.tokens.input`, `ai.tokens.output`.
+         */
+        get: operations["getAiSpend"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/spend/ai/export.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * AI spend as CSV
+         * @description One row per agent × provider × model in the window (same filters as `GET /v1/spend/ai`).
+         */
+        get: operations["exportAiSpendCsv"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/spend/ai/prices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * LLM price card
+         * @description The global price card (public list prices per million tokens) plus this
+         *     org's overrides. Matching: an org row beats a global row; among those the
+         *     longest `model_pattern` wins; a pattern ending in `%` is a prefix match.
+         */
+        get: operations["listLlmPrices"];
+        /**
+         * Set an org price override
+         * @description Owner/admin. Upserts one override for this org; future requests are priced with it (history is not rewritten).
+         */
+        put: operations["upsertLlmPrice"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/spend/ai/prices/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove an org price override */
+        delete: operations["deleteLlmPrice"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/spend/ai/reprice": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Price the org's unpriced requests
+         * @description Owner/admin. Re-runs the price card over rows that had no price when they arrived (after adding a card for that provider). Already-priced rows are untouched.
+         */
+        post: operations["repriceAiSpend"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/org/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * System overview
+         * @description The whole org in one call: inventory (vaults, secrets, agents, runtimes,
+         *     automations, bindings, policies, wallets, apps, members), activity in the last
+         *     `hours` (secret reads/writes, denials, executions, transactions, Shroud
+         *     requests/blocked/redacted/injections, automation runs, approvals, consensus,
+         *     risk events, API requests), spend (inference, executions, automations, credit
+         *     balance), health (expiring secrets, stale/suspended/unpoliced agents, failing
+         *     automations, errored runtimes, overdue approvals) and a 7-day trend. Human and
+         *     platform callers only. Backs the dashboard's Overview tab.
+         */
+        get: operations["getOrgOverview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/org/members": {
         parameters: {
             query?: never;
@@ -2505,6 +2651,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/referrals/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Your own referral link and signups
+         * @description The caller's referral code, the link to share, how many signups it has
+         *     produced, and a recent list.
+         *
+         *     Users only — a referral link belongs to a person, so an agent principal
+         *     gets 403.
+         *
+         *     The link's host comes from the brand the request arrived on, the same
+         *     way the SIWE domain and the WebAuthn rpId do: someone on 1claw.co must
+         *     not be handed a 1claw.xyz link to post.
+         *
+         *     `recent[].referred_hint` is masked (`a**@example.com`) — enough to
+         *     recognise someone you did invite, not enough to contact someone you did
+         *     not. Neither the referred address nor its user id is returned.
+         */
+        get: operations["getMyReferrals"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/onboarding/provision": {
         parameters: {
             query?: never;
@@ -2527,6 +2705,99 @@ export interface paths {
          *     Subject to `agent.create` control-plane consensus; see `approval_id`.
          */
         post: operations["provisionOnboarding"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/onboarding/guided/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Guided onboarding eligibility + status
+         * @description Whether this org is in the guided-onboarding rollout cohort, plus the
+         *     same welcome-bundle progress fields `GET /v1/org/onboarding/status`
+         *     reports. `eligible` decides whether the dashboard's redirect sends a
+         *     new, still-unprovisioned user to the guided flow or the existing
+         *     MCP-connect flow.
+         */
+        get: operations["getGuidedOnboardingStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/onboarding/guided/ask": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ask the guided onboarding assistant a question
+         * @description Scoped, one-shot Q&A for the guided wizard's "have a question?" panel.
+         *     Not tied to an agent (many questions arrive before one exists yet) and
+         *     not persisted as a conversation. The system prompt is fixed server-side
+         *     and refuses anything outside vaults/policies/runtimes/billing/channels —
+         *     never client-suppliable. Billed like any other Shroud LLM call: the
+         *     caller's own bearer token is forwarded so usage attributes to their org.
+         */
+        post: operations["guidedOnboardingAsk"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/onboarding/guided/trial/setup-intent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start a card-on-file trial runtime setup
+         * @description Creates a Stripe SetupIntent for the org's customer so the guided
+         *     onboarding wizard can collect a card with Stripe.js — no charge unless
+         *     the trial runtime is kept past its trial window.
+         */
+        post: operations["createTrialSetupIntent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/onboarding/guided/trial/runtime": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create a card-gated trial runtime
+         * @description Verifies the given SetupIntent succeeded, then delegates to the same
+         *     runtime-creation logic `POST /v1/runtimes` uses. Only reachable once
+         *     the guided onboarding wizard has a confirmed SetupIntent for the org.
+         */
+        post: operations["createTrialRuntime"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2691,23 +2962,6 @@ export interface paths {
         patch: operations["updateOrgEnvVar"];
         trace?: never;
     };
-    "/v1/org/env-vars/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Delete org shared environment variable */
-        delete: operations["deleteOrgEnvVar"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/v1/org/env-vars/{id}/link": {
         parameters: {
             query?: never;
@@ -2821,6 +3075,72 @@ export interface paths {
         get: operations["billingSubscription"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/staking/points": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Staking points for the signed-in user's wallet
+         * @description Points earned by staking, what has been redeemed here, and what is
+         *     left.
+         *
+         *     The two halves come from different places on purpose. `earned` is
+         *     read per request from the staking service, which recomputes it from
+         *     on-chain events; `spent` is this service's own append-only ledger.
+         *     `available` is the difference, floored at zero.
+         *
+         *     The wallet is the one on the account, proven by a SIWE signature at
+         *     sign-in — there is no way to ask about another address.
+         *
+         *     `can_redeem` is false until the account has a real, verified email:
+         *     a wallet signature proves possession of a key, not a reachable
+         *     person, and `redeem_blocked_reason` says what to do about it.
+         */
+        get: operations["getStakingPoints"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/staking/redeem": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Redeem staking points for plan time or credits
+         * @description Spends points from the wallet on the account.
+         *
+         *     `quantity` is **months** for `pro_months` and **points** for
+         *     `credits`; the response always states the cost actually charged.
+         *
+         *     Pro months extend an existing period rather than replacing it, so
+         *     redeeming twice does not discard the time already granted. They are
+         *     refused when the organisation has a Stripe subscription, or is on a
+         *     tier above Pro: a comped tier would overwrite the plan being paid
+         *     for and would never expire. Credits apply on top of a subscription
+         *     and are the right choice there.
+         *
+         *     Redemption serialises on the wallet's ledger, so two concurrent
+         *     requests cannot spend the same points.
+         */
+        post: operations["redeemStakingPoints"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4004,6 +4324,52 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/treasury/wallets/{chain}/sign-message": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Sign a message with a human wallet (EIP-191)
+         * @description `personal_sign` over the given text, hashed as `\x19Ethereum Signed Message:\n<len>` + message — what viem's `verifyMessage` and ethers' `verifyMessage` expect.
+         *
+         *     Human callers only; an agent signs with its own key via `POST /v1/agents/{agent_id}/sign`. Gated exactly as a send is: `X-Auth-Confirm` step-up scored as a Send action, wallet access policies (`WalletAction::Sign`), and a refusal for wallets whose key is split or passkey-owned — those have no server-side key and will not fall back to one.
+         *
+         *     EVM chains only.
+         */
+        post: operations["signTreasuryMessage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/treasury/wallets/{chain}/sign-typed-data": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Sign EIP-712 typed data with a human wallet
+         * @description Hashes and signs a full EIP-712 payload. Include `EIP712Domain` in `types` — viem and ethers synthesise that entry and omit it, and this hashes exactly what you send.
+         *
+         *     Same gates as `sign-message`.
+         */
+        post: operations["signTreasuryTypedData"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/treasury/wallets/{chain}/swap": {
         parameters: {
             query?: never;
@@ -4487,6 +4853,30 @@ export interface paths {
                 };
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/shroud/activity/today": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * An agent's inference spend since 00:00 UTC
+         * @description What the agent has spent today per the vault's priced activity rows, plus
+         *     requests and tokens and how many requests Shroud blocked for budget. Shroud
+         *     syncs its daily-budget counter from this so `daily_budget_usd` holds across
+         *     Shroud instances and restarts. Callable by the agent itself (its own id) or the
+         *     platform service key — the same gate as activity ingest.
+         */
+        get: operations["getAgentSpendToday"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -6221,6 +6611,49 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/platform/connections/{connectionId}/agents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add agents to a bootstrapped connection
+         * @description Provision an additional agent on a connection that has already been
+         *     bootstrapped, from a template belonging to the same app. `plt_` auth only.
+         *
+         *     One agent per call. A template declaring more than one agent is refused
+         *     with 400: each agent's API key is returned once and cannot be re-issued
+         *     to a platform app, so batching them would put several unrecoverable
+         *     credentials in a single response.
+         *
+         *     Bootstrap refuses a second run (409) because it also creates the vault,
+         *     the policies and the plan tier, none of which should happen twice. This
+         *     route applies only the agent portion of a template: its `agents`, their
+         *     per-agent `signing_keys`, `eoa` and `runtime`. `vault`, `policies`,
+         *     `automations` and `entitlements` in the spec are ignored, and new agents
+         *     attach to the vault the connection already has.
+         *
+         *     Configuration comes from a template rather than from fields on the
+         *     request so that the agent portion of a spec has exactly one reader,
+         *     shared with bootstrap.
+         *
+         *     Capped per connection by `max_agents_per_connection` on the platform app
+         *     (unset means a built-in default, not unlimited: an agent with signing
+         *     keys costs a KMS key per chain). The whole batch is checked before
+         *     anything is created, so a template that would overshoot is refused
+         *     rather than partly applied.
+         */
+        post: operations["addConnectionAgents"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/platform/connections/{connectionId}/agents/{agentId}": {
         parameters: {
             query?: never;
@@ -6948,6 +7381,69 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/auth/siwe/challenge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start wallet sign-in (SIWE)
+         * @description Returns the exact EIP-4361 message to sign, for signing in to the
+         *     dashboard with an Ethereum wallet.
+         *
+         *     The message is built server-side and returned whole: the domain and
+         *     the nonce are ours to decide, and a client that assembles its own
+         *     message is a client that can be talked into signing a different
+         *     one. Sign it unmodified and post it back to
+         *     `/v1/auth/siwe/verify`.
+         *
+         *     The nonce is single-use and valid for five minutes. Distinct from
+         *     `/v1/platform/siwe/challenge`, which needs a `plt_` caller and
+         *     issues nonces scoped to one platform app for *its* end users.
+         */
+        post: operations["siweLoginChallenge"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/siwe/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Complete wallet sign-in and get a JWT
+         * @description Verifies the signature over the challenge message and returns an
+         *     ordinary user JWT — the same token social login and email-OTP
+         *     produce.
+         *
+         *     First sign-in for an address creates a user and org. That user's
+         *     email starts synthetic (`email_pending: true`) and unverified: a
+         *     wallet signature proves possession of a key, not a reachable
+         *     person. Staking redemption refuses until a real address is added
+         *     and confirmed.
+         *
+         *     The wallet recovered from the signature is stored on the account
+         *     and is the identity staking points are counted against. It is
+         *     never accepted from a request body anywhere.
+         */
+        post: operations["siweLoginVerify"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/oauth/authorize": {
         parameters: {
             query?: never;
@@ -6969,6 +7465,39 @@ export interface paths {
          *     redirect URL with an error parameter.
          */
         post: operations["submitOAuthConsent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/x402/topup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * x402 ledger top-up (agent door)
+         * @description The wallet rail for Shroud (Shroud AI plan). Without `X-PAYMENT` the response is a
+         *     **402** quote (`x402Version`, `accepts[]` with `payTo`, `maxAmountRequired`, `resource`)
+         *     for `amount_usd` (default $1) of USDC on Base. With a signed EIP-3009 `X-PAYMENT`
+         *     the facilitator verifies it, the proof is claimed once, the payer wallet's org
+         *     ledger is credited in micro-USD, and the facilitator settles.
+         *
+         *     **Payment is the account.** An unknown wallet's first settled top-up provisions a
+         *     shadow org, one Shroud-enabled agent and one `sk-shroud-v1` router key keyed on the
+         *     wallet (returned once as `router_key`), after screening the wallet against the OFAC
+         *     SDN list (fails closed when the list is missing or stale) and the caller's region
+         *     against the custody geofence. Same wallet = same org on every later top-up. The
+         *     response always carries a ≤60 s `access_token` for the wallet's agent so the
+         *     gateway can serve the paid request immediately. The Shroud gateway drives this for
+         *     `Authorization: Bearer x402` requests and relays the quote or the result.
+         */
+        post: operations["x402Topup"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7007,6 +7536,14 @@ export interface paths {
          * Get authenticated user info (OIDC UserInfo)
          * @description Standard OIDC UserInfo endpoint. Returns claims about the authenticated user
          *     based on the granted scopes.
+         *
+         *     Scopes: `profile` for `name`, `email` for `email`, `wallet` for
+         *     `wallet_address`, and `referral` for `referral_code` and `referral_link`.
+         *     A non-OAuth user token sees every field, since it is the user's own data.
+         *
+         *     `referral` is separate from `profile` deliberately: a referral code is
+         *     something the holder is asked to spread, so an app has to request it by name
+         *     and the consent screen names it.
          */
         get: operations["getOAuthUserInfo"];
         put?: never;
@@ -7228,6 +7765,66 @@ export interface paths {
         post?: never;
         /** Delete a known token (admin only) */
         delete: operations["deleteKnownToken"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/stats/growth-timeseries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Time-bucketed usage series for one adoption/usage vertical (admin only)
+         * @description Gap-filled counts (24h → hourly, 7d/30d/90d → daily, 365d → weekly) for one of 15 adoption/usage verticals, plus a period-over-period delta. Backs both the live admin analytics dashboard and the weekly investor report — same source, two surfaces.
+         */
+        get: operations["adminGrowthTimeseries"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/stats/retention": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Logo retention over a trailing window (admin only)
+         * @description Percentage of organizations older than `window_days` that showed any platform activity (usage_events) in the trailing `window_days` — a simple, defensible retention proxy, not a full cohort matrix.
+         */
+        get: operations["adminRetention"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/llm-prices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Global LLM price card (admin only)
+         * @description The platform-wide price card with no org-level overrides applied — see `/v1/spend/ai/prices` for the org-resolved view.
+         */
+        get: operations["adminListLlmPrices"];
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -7634,7 +8231,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Trigger automation */
+        /**
+         * Trigger automation
+         * @description Start a run now. With an `idempotency_key` (body or `Idempotency-Key` header) the
+         *     same key returns the run already started for it (200) rather than a second run
+         *     (201). `input` is exposed to steps as `{{trigger.*}}`.
+         */
         post: operations["triggerAutomation"];
         delete?: never;
         options?: never;
@@ -7791,6 +8393,141 @@ export interface paths {
          *     Emits `automation.run.resumed`.
          */
         post: operations["resumeAutomationRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/automations/{automationId}/runs/{runId}/callback/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Continue a run parked on awaiting_callback
+         * @description Public, authenticated by the per-run token. A spec with an `awaiting_callback`
+         *     step gets the token at run start as `{{run.callback_url}}` / `{{run.callback_token}}`;
+         *     an earlier step hands the URL to the external system, the step parks the run
+         *     (`awaiting_callback`, up to its `timeout_secs`), and this POST continues it. The
+         *     JSON body becomes `{{resume.*}}`. 409 when the run is not (yet) parked on a
+         *     callback; 401 for a wrong token.
+         */
+        post: operations["automationRunCallback"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/automations/dry-run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Preview an unsaved workflow spec
+         * @description What a run would do, with nothing done: every step after template substitution
+         *     against a simulated context, its side effect, its `on_error` policy, templates
+         *     that would resolve to nothing, conditions, and the budget it would hit. Step
+         *     outputs are placeholders, so later steps' `{{steps.N.output…}}` show empty here.
+         */
+        post: operations["dryRunAutomationSpec"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/automations/{automationId}/dry-run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Preview a run of this automation
+         * @description Same as the unsaved preview, defaulting to the automation's current spec.
+         */
+        post: operations["dryRunAutomation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/automations/{automationId}/runs/{runId}/rerun": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Re-run from a step
+         * @description Start a new run seeded with this run's results up to `from_step` and continue from
+         *     there, on the spec version the original run executed. Human-only; the original
+         *     run must be finished. The new run has `trigger_source: rerun` and `parent_run_id`.
+         */
+        post: operations["rerunAutomationFromStep"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/automations/{automationId}/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List spec versions
+         * @description Every `workflow_spec` the automation has had, newest first. Version 1 is the
+         *     spec it was created with; every update that changes the spec publishes the
+         *     next one. Runs record the version they executed.
+         */
+        get: operations["listAutomationVersions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/automations/{automationId}/versions/{version}/rollback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Roll back to an earlier spec version
+         * @description Publishes the chosen version's spec as a new version and makes it current.
+         *     Human-only. A rollback that widens what the automation can do relative to the
+         *     live spec goes through the `automation.widen` control-plane consensus gate,
+         *     like an edit would.
+         */
+        post: operations["rollbackAutomationVersion"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9584,6 +10321,101 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/agents/{agent_id}/router-keys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List router keys
+         * @description Every router key of the agent, live and revoked, without secrets.
+         */
+        get: operations["listRouterKeys"];
+        put?: never;
+        /**
+         * Mint a router key (sk-shroud-v1)
+         * @description Creates an `sk-shroud-v1-<32>` static Bearer for the Shroud gateway, mapped to this
+         *     agent. A stock OpenAI or Anthropic SDK sends it as `Authorization: Bearer …` with
+         *     `base_url` set to the gateway; the gateway exchanges it key-only for the agent's
+         *     token. The plaintext key is returned **once**. Up to 20 live keys per agent.
+         *     Human users only; the agent must have `shroud_enabled: true`.
+         */
+        post: operations["createRouterKey"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/router-keys/{key_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Revoke a router key
+         * @description Revokes the key. The gateway stops accepting it within 60 s (router-key tokens
+         *     live at most that long and the gateway re-exchanges on expiry). Idempotent.
+         *     Human users only.
+         */
+        delete: operations["revokeRouterKey"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/tool-bindings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List secret → tool bindings */
+        get: operations["listToolBindings"];
+        put?: never;
+        /**
+         * Create a secret → tool binding (rehydration policy)
+         * @description Authorises the enclave to rehydrate the `⟦sk:…⟧` placeholder for `secret_path`
+         *     into `tool_name` at `arg_path` — and only when the call's destination host is one
+         *     of `destination_hosts`. Redaction replaces vault secrets in prompts with
+         *     deterministic placeholders the model can place but never read; a placeholder is
+         *     substituted back only inside an authorised tool-call argument, at the moment the
+         *     enclave performs the call (`execution_mode: "tee"`). No binding, wrong argument,
+         *     wrong host, bad checksum or an unknown tag is a 403 at execution time. Human users
+         *     only; up to 200 per agent.
+         */
+        post: operations["createToolBinding"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agents/{agent_id}/tool-bindings/{binding_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a secret → tool binding */
+        delete: operations["deleteToolBinding"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/agents/{agent_id}/oauth/connections": {
         parameters: {
             query?: never;
@@ -10026,6 +10858,8 @@ export interface paths {
         /**
          * Execute an approved action
          * @description Human-only. Marks the approval as executed after verifying signatures.
+         *
+         *     Executing mints the single-use token that satisfies the signing gate, so from 2026-10-11 it requires the same org role the consensus policy requires for approving. Where a policy sets approval.required_roles, a member whose role is not listed now gets 403 where it previously succeeded. Policies that do not set required_roles are unchanged.
          */
         post: operations["executePendingApproval"];
         delete?: never;
@@ -10813,6 +11647,170 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/marketing/unsubscribe": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Unsubscribe an address from offers and announcements
+         * @description Public and session-less by necessity: the link lives in an email, and an unsubscribe that asks the reader to log in first is one they abandon — they mark the next message as spam instead, which costs the sending domain far more. The `t` parameter is an HMAC over the address, which is what stops a stranger unsubscribing somebody else.
+         *
+         *     Offers and announcements only. Transactional mail — sign-in codes, approval requests, invitations, reports the recipient asked for — does not consult this flag and is unaffected; turning it off must never lock someone out of their account.
+         *
+         *     Idempotent, and the answer is the same whether or not the address has an account. "Stop emailing me" is always answered "done", and a 404 here would tell a caller holding a valid token which addresses are registered.
+         */
+        get: operations["marketing_unsubscribe"];
+        put?: never;
+        /**
+         * Unsubscribe (one-click)
+         * @description Identical to the GET. Present because `List-Unsubscribe-Post: List-Unsubscribe=One-Click` makes Gmail and Yahoo POST here without ever opening the page, and both require that header on bulk mail — an endpoint that only answered GET would look like a working unsubscribe to a person and a broken one to the providers scoring the domain.
+         */
+        post: operations["marketing_unsubscribe_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/connectors/suggest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Is there a connector for this credential?
+         * @description Asked before a secret is written, so the caller can offer to connect the service properly instead of filing a key that cannot do the job. A user stored an X bearer token, a consumer key and a consumer secret and asked their agent to post daily; none of the three can post, because X needs a user-context OAuth grant. Nothing said so until the agent failed.
+         *
+         *     Matches on both a provider name and a credential word, so `api-keys/x-bearer-token` suggests the X connector and `notes/slack-migration-plan` suggests nothing — a hint that fires on every path is one people learn to scroll past.
+         */
+        get: operations["suggest_connector"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/secret-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What your agents have asked you for
+         * @description User-authenticated. Open requests for the caller's org, newest first, excluding expired ones. Agents cannot call this — they read their own request by id, so one agent can never enumerate which credentials an org holds.
+         */
+        get: operations["list_secret_requests"];
+        put?: never;
+        /**
+         * Ask a human for a credential
+         * @description Agent-authenticated. The agent says what it needs and why; the human sees a secure field in the dashboard, stores the value straight into the vault over their own session, and the agent is later told **where** it went — never what it is.
+         *
+         *     This exists because the alternative is worse than it looks. Typing a credential into runtime chat persists it to the conversation, writes it into the agent's memory, and replays it to the model on every later turn: one paste, four copies, no way back.
+         *
+         *     One open request per agent per label: asking again with the same label refreshes the existing one rather than queueing a duplicate. Unanswered requests expire after 24 hours.
+         */
+        post: operations["create_secret_request"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/secret-requests/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Has my human answered yet?
+         * @description The asking agent's own view, and only its own — another agent's request reads as 404 rather than 403, so its existence is not disclosed. A fulfilled request returns a vault id and a path; the value is read separately with `get_secret`.
+         *
+         *     Expiry is computed on read, so a lapsed request cannot appear live because no sweeper has run.
+         */
+        get: operations["get_secret_request"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/secret-requests/{id}/fulfil": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Tell the agent where you put it
+         * @description User-authenticated. Takes a **location, never a value** — by the time this is called the secret is already in the vault, written by the browser with `PUT /v1/vaults/{vault_id}/secrets/{path}` over the user's own session. There is no field here that could carry a plaintext credential, and there should never be one.
+         *
+         *     Fulfilment also grants the asking agent read on exactly that path, and binds the vault to it if the agent has an explicit vault list. Without both, the user hands over a credential and the agent still gets a 403 — the failure this whole flow exists to remove.
+         */
+        post: operations["fulfil_secret_request"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/secret-requests/{id}/decline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * No, and stop asking
+         * @description User-authenticated. The agent's next poll returns `declined` with an instruction not to ask again for the same thing and to say plainly what it cannot do.
+         */
+        post: operations["decline_secret_request"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/billing/promo/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What a promotion code does to a plan
+         * @description Public, and deliberately so: a promo advertised on social media is read by people who have no account yet, and the price they were promised has to be on the pricing page before they make one. It resolves a Stripe promotion code and one configured plan price; no tenant data is reachable through it.
+         *
+         *     Distinct from `/v1/billing/promo/validate`, which answers for the `promo_codes` grants an authenticated org can redeem in place. This one describes a checkout discount, which needs a card and therefore has to go through `POST /v1/billing/subscribe` with `promo_code`.
+         */
+        get: operations["preview_promo"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/billing/promo/validate": {
         parameters: {
             query?: never;
@@ -10858,6 +11856,26 @@ export interface paths {
         put?: never;
         /** Receive completion events from fiat partners (MoonPay signed body or generic JSON). */
         post: operations["fiat_webhook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/tools/web-search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Platform-default web search fallback
+         * @description Called on the agent's own token (not a Shroud-internal callback). Used by the runtime `web_search` tool when an agent has no BRAVE_API_KEY/TAVILY_API_KEY/SERP_API_KEY/ONECLAW_WEB_SEARCH_BINDING of its own — proxies to a shared, platform-provided Brave Search key under a hard monthly platform-wide cap.
+         */
+        post: operations["agentWebSearch"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11328,6 +12346,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/runtimes/{runtime_id}/agent-token/renew": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runtime_id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Renew this runtime's own agent JWT before it expires
+         * @description Called by the runtime container itself, not by a human or an external client.
+         *     A runtime's `ONECLAW_AGENT_TOKEN` is a short-lived JWT that Cloud Run resolves from Secret Manager when the instance starts and never again, so a container that outlives the TTL loses its credential — and with it every 1claw tool — until it is restarted. This lets it replace the token in place instead.
+         *     Authenticated by the credential being renewed: the caller must present a still-valid runtime-bound agent JWT together with a matching `X-1Claw-Runtime-Id` header, and must be the agent that runtime is bound to. It grants nothing new — the same claims with a later expiry — and stops working the moment the token lapses, the token is revoked, the agent is suspended, or the runtime is no longer deployed. Exempt from the monthly request quota: upkeep of an already-paid-for runtime is not itself a billable request.
+         */
+        post: operations["renew_runtime_agent_token"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/otel/stream": {
         parameters: {
             query?: never;
@@ -11578,6 +12620,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/runtimes/provision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Provision an agent and its runtime in one call
+         * @description Creates (or reuses) the agent, its keys and default-vault grant, the runtime, and
+         *     starts it. Each step runs the same code as the individual endpoints, so the
+         *     `agent.create` consensus gate, plan caps, image allowlist and included-slot logic
+         *     apply exactly as one click at a time. Human-only. The new agent's API key is
+         *     returned once.
+         */
+        post: operations["provisionRuntime"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/runtimes/{runtime_id}/env/resolved": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The environment the container is started with
+         * @description Every variable, its source (`platform`, `env_public`, `vault_env`, `agent`,
+         *     `secret`) and which wins on a name collision. Vault-derived values and the minted
+         *     agent token are named, never shown. Human-only; nothing is minted.
+         */
+        get: operations["getRuntimeResolvedEnv"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/runtimes/{runtime_id}/rollback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Roll back to the previous image and restart
+         * @description Starts the runtime again on `previous_image_digest` (recorded at each start whose
+         *     resolved image differed). The image must still pass the allowlist. 409 when no
+         *     previous image is recorded.
+         */
+        post: operations["rollbackRuntime"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/runtimes/{runtime_id}/rebuild": {
         parameters: {
             query?: never;
@@ -11610,6 +12720,25 @@ export interface paths {
         put?: never;
         /** Force stop (best-effort) then start. Recovers stale `running` rows and proxy timeouts where the client never received the start response. */
         post: operations["restart_runtime"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/runtimes/{runtime_id}/enable-recommended-tools": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runtime_id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Enable the recommended tool set (image generation, web search, memory, Shroud, intents) on the runtime's agent. Human-only. */
+        post: operations["enable_recommended_tools"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11895,6 +13024,52 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        MyReferralsResponse: {
+            /**
+             * @description The caller's referral code, created on first read.
+             * @example 7f3a9c2b
+             */
+            code: string;
+            /**
+             * Format: uri
+             * @description The URL to share, built for the brand the request arrived on.
+             * @example https://1claw.co/?ref=7f3a9c2b
+             */
+            link: string;
+            /**
+             * Format: int64
+             * @description Countable signups attributed to this code, one per person.
+             */
+            total: number;
+            /**
+             * Format: int64
+             * @description Of those, the ones on a live paid subscription — what a contest settles
+             *     on. Always <= `total`.
+             */
+            qualified: number;
+            /**
+             * Format: date-time
+             * @description Echoed back when a window was requested, so a caller can confirm which window produced these numbers.
+             */
+            from?: string;
+            /** Format: date-time */
+            to?: string;
+            recent: components["schemas"]["ReferralRow"][];
+        };
+        ReferralRow: {
+            /**
+             * @description How the referred person signed up.
+             * @example email_otp
+             */
+            signup_method: string;
+            /** Format: date-time */
+            created_at: string;
+            /**
+             * @description Masked address — first character, then the domain.
+             * @example a**@example.com
+             */
+            referred_hint?: string | null;
+        };
         OtelTopology: {
             nodes: {
                 /** @description Namespaced by kind, e.g. `agent:<uuid>`. */
@@ -12835,6 +14010,8 @@ export interface components {
             card_max_order_usd?: string;
             /** @description Maximum cumulative USD spent ordering cards per rolling 24h window. */
             card_daily_limit_usd?: string;
+            /** @description One cap across ALL of this agent's x402 stablecoin spend — POST /v1/pay and card orders together. Calendar day, UTC. Omit for no cap. Applied **in addition to** the per-route caps, never instead of them: `tx_*` bounds signing and submitting, `pay_*` bounds POST /v1/pay, and `card_*` bounds card orders. None of those three bounds the others, so this is the only field that caps an agent's total stablecoin spend. */
+            usdc_daily_limit_usd?: string;
             /** @description Allowed x402 payTo recipients for card orders (empty = built-in Laso recipients). */
             card_payto_allowlist?: string[];
             /** @description Whether agents may reveal card details subject to per-card reveal policy. */
@@ -13030,6 +14207,8 @@ export interface components {
             card_max_order_usd?: string | null;
             /** @description Maximum cumulative USD spent ordering cards per rolling 24h window. null clears. */
             card_daily_limit_usd?: string | null;
+            /** @description One cap across ALL of this agent's x402 stablecoin spend — POST /v1/pay and card orders together. Calendar day, UTC. null clears it. Applied **in addition to** the per-route caps, never instead of them: `tx_*` bounds signing and submitting, `pay_*` bounds POST /v1/pay, and `card_*` bounds card orders. None of those three bounds the others, so this is the only field that caps an agent's total stablecoin spend. */
+            usdc_daily_limit_usd?: string | null;
             /** @description Allowed x402 payTo recipients for card orders (empty = built-in Laso recipients). */
             card_payto_allowlist?: string[];
             /** @description Whether agents may reveal card details subject to per-card reveal policy. */
@@ -13247,6 +14426,8 @@ export interface components {
             card_max_order_usd?: string;
             /** @description Maximum cumulative USD spent ordering cards per rolling 24h window. */
             card_daily_limit_usd?: string;
+            /** @description One cap across ALL of this agent's x402 stablecoin spend — POST /v1/pay and card orders together. Calendar day, UTC. Omit for no cap. Applied **in addition to** the per-route caps, never instead of them: `tx_*` bounds signing and submitting, `pay_*` bounds POST /v1/pay, and `card_*` bounds card orders. None of those three bounds the others, so this is the only field that caps an agent's total stablecoin spend. */
+            usdc_daily_limit_usd?: string;
             /** @description Allowed x402 payTo recipients for card orders (empty = built-in Laso recipients). */
             card_payto_allowlist?: string[];
             /** @description Whether agents may reveal card details subject to per-card reveal policy. */
@@ -13507,6 +14688,15 @@ export interface components {
             semantic_policy?: components["schemas"]["SemanticPolicy"];
             /** @description Number of days to retain flagged request bodies for replay/investigation */
             flagged_request_retention_days?: number;
+            /**
+             * @description How streamed LLM responses are inspected before release. `rolling` (default) releases text behind a tail buffer at least as long as the org's longest vault secret (capped at 256 bytes; longer secrets are matched by prefix); `holdback` buffers `streaming_holdback_chars` for full parity with buffered inspection. Tool-call deltas are always held until the call is complete.
+             * @enum {string}
+             */
+            streaming_inspection_mode?: "rolling" | "holdback";
+            /** @description Characters held back per stream in holdback mode (default 512) */
+            streaming_holdback_chars?: number;
+            /** @description Open streaming responses allowed per agent key (default 20; 429 with Retry-After beyond it) */
+            max_concurrent_streams?: number;
         };
         /** @description Unicode normalization and homoglyph detection settings */
         UnicodeNormalizationConfig: {
@@ -13952,6 +15142,66 @@ export interface components {
             public_key?: string;
             curve?: string;
         };
+        AddConnectionAgentsRequest: {
+            /**
+             * Format: uuid
+             * @description A template belonging to the same platform app. Only its `agents`
+             *     and their per-agent `signing_keys`, `eoa` and `runtime` are
+             *     applied.
+             */
+            template_id: string;
+            /**
+             * @description Substituted into the spec as `{{params.*}}`, same as at bootstrap.
+             *     Use it to name the agent after the account it signs for.
+             */
+            params?: {
+                [key: string]: unknown;
+            };
+        };
+        AddConnectionAgentsResponse: {
+            /** Format: uuid */
+            connection_id?: string;
+            agent_ids?: string[];
+            /**
+             * @description The first agent's key, kept so existing clients keep parsing.
+             *     Prefer `agent_api_keys`.
+             */
+            agent_api_key?: string;
+            /**
+             * @description The created agent and its one-time API key. Exactly one entry:
+             *     provisioning is one agent per call, because a key is returned
+             *     once and cannot be re-issued to a platform app, so a response
+             *     carrying several would put several unrecoverable credentials in
+             *     one payload. A template declaring more than one agent is
+             *     refused with 400. The singular `agent_api_key` is the same key.
+             */
+            agent_api_keys?: {
+                /** Format: uuid */
+                agent_id?: string;
+                api_key?: string;
+            }[];
+            agent_evm_address?: string;
+            /** @description Provisioned signing key details, same shape as the bootstrap summary. */
+            signing_keys?: {
+                chain?: string;
+                curve?: string;
+                public_key?: string;
+                address?: string;
+                /** Format: uuid */
+                agent_id?: string | null;
+            }[];
+            runtime_ids?: string[];
+            /**
+             * Format: int64
+             * @description Agents on this connection after the call.
+             */
+            agent_count?: number;
+            /**
+             * Format: int64
+             * @description The ceiling the call was checked against.
+             */
+            max_agents_per_connection?: number;
+        };
         /** @description At least one field is required. */
         PatchConnectionAgentRequest: {
             intents_api_enabled?: boolean;
@@ -13964,6 +15214,23 @@ export interface components {
              *     dashboard. Templates now honour the flag too.
              */
             memory_enabled?: boolean;
+            /**
+             * @description Raw/blind digest signing (`sign_digest`, `eip712_digest`),
+             *     off by default. The same gap as `memory_enabled` above, one
+             *     capability later: a template accepted `raw_signing_enabled`
+             *     and never read it, and this route had no field for it, so a
+             *     platform app that provisioned an agent for raw signing had
+             *     no way to switch it on. Reported from production.
+             *
+             *     This route is the only one that reaches an already
+             *     bootstrapped agent — it lives in the end user's own org, so
+             *     the platform app's own `PATCH /v1/agents/{agent_id}` returns
+             *     403, and the fleet bulk-patch refuses capability flags by
+             *     design. Enabling it is audited as
+             *     `platform.connection.agent_patch` with
+             *     `raw_signing_changed`.
+             */
+            raw_signing_enabled?: boolean;
             system_prompt?: string | null;
         };
         PatchConnectionAgentResponse: {
@@ -13972,6 +15239,7 @@ export interface components {
             intents_api_enabled?: boolean;
             execution_intents_enabled?: boolean;
             memory_enabled?: boolean;
+            raw_signing_enabled?: boolean;
             system_prompt?: string | null;
         };
         LeaseBankrKeyRequest: {
@@ -14355,6 +15623,13 @@ export interface components {
              *     retry passes its id here.
              */
             approval_id?: string;
+            /**
+             * @description Seeds `getting-started/**` instead of `examples/**` in the shared
+             *     `default` vault — the guided onboarding wizard's own sample content,
+             *     kept distinguishable from the MCP-connect developer flow's.
+             * @default false
+             */
+            guided: boolean;
         };
         OnboardingProvisionResponse: {
             /** Format: uuid */
@@ -14364,6 +15639,47 @@ export interface components {
             vault_id: string;
             mcp_stdio_config: Record<string, never>;
             verify_prompt: string;
+        };
+        GuidedOnboardingStatus: {
+            /**
+             * @description Whether this org is in the guided-onboarding rollout cohort —
+             *     decides whether the dashboard redirects a new user here or to
+             *     the MCP-connect flow.
+             */
+            eligible: boolean;
+        } & components["schemas"]["OnboardingStatus"];
+        GuidedAskRequest: {
+            question: string;
+            /** @description Accepted but not yet used to tailor the answer; reserved for later. */
+            step?: number;
+        };
+        GuidedAskResponse: {
+            answer: string;
+        };
+        TrialSetupIntentResponse: {
+            client_secret: string;
+            publishable_key: string;
+        };
+        CreateTrialRuntimeRequest: {
+            setup_intent_id: string;
+            /** Format: uuid */
+            agent_id: string;
+            template: string;
+            /** @description Defaults to CreateRuntimeRequest's own default ("small") when omitted. */
+            preset?: string;
+            name: string;
+            /**
+             * @description Keeps the runtime running indefinitely instead of auto-stopping after the
+             *     default idle window (maps to `idle_timeout_secs: 0`).
+             * @default false
+             */
+            always_on: boolean;
+            /**
+             * @description Non-secret runtime config — in practice just `LLM_PROVIDER`/`LLM_MODEL`
+             *     from the guided flow's model-choice step. Rejected if any key looks
+             *     secret-shaped (same `validate_env_public` the canonical runtime API uses).
+             */
+            env_public?: Record<string, never>;
         };
         AgentKeysVaultResponse: {
             /** Format: uuid */
@@ -14441,7 +15757,13 @@ export interface components {
             /** Format: date-time */
             period_end?: string;
             status?: string;
+            /** @description Derived (rounded down); the ledger unit is micro-USD */
             credit_balance_cents?: number;
+            /**
+             * Format: int64
+             * @description The ledger value. One inspected Shroud request costs 5,000 micro-USD ($0.005).
+             */
+            credit_balance_micro_usd?: number;
             credit_balance_usd?: string;
             overage_method?: string;
             usage?: {
@@ -14522,7 +15844,14 @@ export interface components {
             enabled?: boolean;
         };
         CreditBalanceResponse: {
+            /** @description Derived (rounded down); the ledger unit is micro-USD */
             balance_cents?: number;
+            /**
+             * Format: int64
+             * @description The ledger value (1 = $0.000001)
+             */
+            balance_micro_usd?: number;
+            /** @description Dollars at the ledger's precision (e.g. "4.995"), never fewer than two decimals */
             balance_usd?: string;
             expiring_within_90_days?: {
                 amount_cents?: number;
@@ -14595,7 +15924,7 @@ export interface components {
             /** @description GCE metadata identity JWT (verify against Google public keys) */
             identity_token: string;
             /** @description Confidential Computing claims extracted from the identity JWT */
-            confidential_claims?: components["schemas"]["ConfidentialClaims"];
+            confidential_claims?: components["schemas"]["ConfidentialClaims"] | null;
             verification: {
                 steps?: string[];
                 /** Format: uri */
@@ -15181,6 +16510,13 @@ export interface components {
             /** @enum {string} */
             auth_mode?: "silent" | "user_signin" | "configurable";
             max_connected_users?: number | null;
+            /**
+             * @description Agents one connection may hold, enforced by
+             *     `POST /v1/platform/connections/{connectionId}/agents`. `null`
+             *     clears the override back to the built-in default; it does not
+             *     mean unlimited.
+             */
+            max_agents_per_connection?: number | null;
             is_active?: boolean;
             /**
              * Format: date-time
@@ -15541,8 +16877,23 @@ export interface components {
                 policy_ids?: string[];
                 /** @description Chains with provisioned signing keys */
                 signing_key_chains?: string[];
-                /** @description One-time agent API key (ocv_ prefix). Store securely — not retrievable later. */
+                /**
+                 * @description First agent's one-time API key (ocv_ prefix). Kept for
+                 *     compatibility; prefer `agent_api_keys`, which covers every
+                 *     agent the template created.
+                 */
                 agent_api_key?: string | null;
+                /**
+                 * @description The created agent and its one-time API key. Exactly one entry:
+                 *     a template declaring more than one agent is refused with 400,
+                 *     because a key is returned once and cannot be re-issued to a
+                 *     platform app. Split such a template and bootstrap once per agent.
+                 */
+                agent_api_keys?: {
+                    /** Format: uuid */
+                    agent_id?: string;
+                    api_key?: string;
+                }[];
                 /** @description EOA address when provision_eoa is true in the template */
                 agent_evm_address?: string | null;
                 /** @description Provisioned signing key details (chain, address, public key) */
@@ -15837,6 +17188,51 @@ export interface components {
             /** Format: date-time */
             created_at: string;
         };
+        WalletSignature: {
+            /** @description 65-byte `0x`-prefixed signature, r‖s‖v. */
+            signature: string;
+            /** @description The signing wallet, so it can be passed straight to `verifyMessage`. */
+            address: string;
+            chain: string;
+        };
+        /** @description An agent's open ask, as the human sees it. Carries the request and, once fulfilled, a reference — never a value. */
+        SecretRequest: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            agent_id?: string | null;
+            agent_name?: string | null;
+            /** @description Written by the agent. Untrusted text — render it as text, never as markup. */
+            label: string;
+            purpose: string;
+            suggested_path?: string | null;
+            /** @enum {string} */
+            status: "pending" | "fulfilled" | "declined" | "expired";
+            /** @description Set on fulfilment. Where the secret went, not what it is. */
+            stored_path?: string | null;
+            /** Format: uuid */
+            vault_id?: string | null;
+            /** Format: date-time */
+            expires_at: string;
+            /** Format: date-time */
+            created_at: string;
+        };
+        /** @description The same request as the *agent* is allowed to see it: status, and once fulfilled where to look. Deliberately narrower than `SecretRequest` — no `fulfilled_by`, no timestamps, and no field anywhere that could hold a credential. */
+        SecretRequestAgentView: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            status: "pending" | "fulfilled" | "declined" | "expired";
+            /**
+             * Format: uuid
+             * @description Present only once fulfilled.
+             */
+            vault_id?: string | null;
+            /** @description Present only once fulfilled. Read the credential from here with `get_secret`. */
+            path?: string | null;
+            /** @description What to do about this status, in the agent's terms. */
+            next: string;
+        };
         ConnectorPreset: {
             /** @example gmail */
             slug: string;
@@ -15880,6 +17276,91 @@ export interface components {
             id_pointers: string[];
             /** @example 60 */
             min_interval_secs: number;
+        };
+        CreateRouterKeyRequest: {
+            /** @description Shown in lists; defaults to `default` */
+            name?: string;
+            /** @description Open streaming responses this key may hold at once (gateway default 20) */
+            max_concurrent_streams?: number;
+            /** @description Optional spend cap in USD, metered by the gateway */
+            spend_cap_usd?: number;
+        };
+        RouterKey: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            agent_id: string;
+            name: string;
+            /** @description First 20 characters (`sk-shroud-v1-` + 7) — enough to recognise, not to use */
+            key_prefix: string;
+            max_concurrent_streams?: number | null;
+            spend_cap_usd?: number | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            last_used_at?: string | null;
+            /** Format: date-time */
+            revoked_at?: string | null;
+        };
+        RouterKeyCreated: components["schemas"]["RouterKey"] & {
+            /**
+             * @description The plaintext `sk-shroud-v1-…` key. Returned once.
+             * @example sk-shroud-v1-Q2c5o0yQ3bHkT9m1vXz8Lw7nRp4aEf6u
+             */
+            router_key: string;
+            /**
+             * @description The Shroud gateway to point the SDK at
+             * @example https://shroud.1claw.co
+             */
+            base_url: string;
+        };
+        CreateToolBindingRequest: {
+            /** @description Vault path of the secret the placeholder stands for */
+            secret_path: string;
+            /** @description Tool the binding applies to (`http_request`, `run_sql`, …) or `*` */
+            tool_name: string;
+            /** @description JSON pointer into the tool's arguments (`/headers/Authorization`, `/body/*`) or `*` (default) */
+            arg_path?: string;
+            /** @description Hosts the rehydrated call may reach (`api.stripe.com`, `*.googleapis.com`); required */
+            destination_hosts: string[];
+        };
+        SecretToolBinding: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            org_id: string;
+            /** Format: uuid */
+            agent_id: string;
+            secret_path: string;
+            tool_name: string;
+            arg_path: string;
+            destination_hosts: string[];
+            /** Format: uuid */
+            created_by?: string | null;
+            /** Format: date-time */
+            created_at: string;
+        };
+        X402TopupResponse: {
+            /** @description Payer address (lower-case) */
+            wallet: string;
+            /** Format: uuid */
+            org_id: string;
+            /** Format: uuid */
+            agent_id: string;
+            /** Format: int64 */
+            credited_micro_usd: number;
+            /** Format: int64 */
+            balance_micro_usd: number;
+            balance_usd: string;
+            /** @description Present only on the top-up that provisioned the account (or re-minted a lost key). Shown once. */
+            router_key?: string;
+            /** @description A ≤60 s agent token for the wallet's agent (carries the `router_key` claim) */
+            access_token: string;
+            expires_in: number;
+            /** @description The Shroud gateway */
+            base_url: string;
+            /** @description True when this top-up created the account */
+            provisioned: boolean;
         };
         EventSubscription: {
             /** Format: uuid */
@@ -16032,6 +17513,20 @@ export interface components {
             email: string;
             name?: string | null;
             wallet_address?: string | null;
+            /**
+             * @description The user's referral code, returned only under the `referral` scope.
+             *     Minted on first read, so a user signing in to a partner site for the
+             *     first time still gets one.
+             * @example 7f3a9c2b
+             */
+            referral_code?: string | null;
+            /**
+             * @description The same code as a shareable URL, built for the brand the request
+             *     arrived on — returned so a host app never has to assemble it and pick
+             *     the wrong domain.
+             * @example https://1claw.co/?ref=7f3a9c2b
+             */
+            referral_link?: string | null;
         };
         CreateSpendPolicyRequest: {
             /**
@@ -16684,11 +18179,6 @@ export interface components {
              * @default false
              */
             dry_run: boolean;
-            /**
-             * Format: uuid
-             * @description Internal — resume execution after human approval (server-injected).
-             */
-            resume_after_approval_id?: string;
         };
         ExecutionApprovalRequired: {
             /** @enum {string} */
@@ -16826,6 +18316,298 @@ export interface components {
                 [key: string]: unknown;
             };
             is_active?: boolean;
+            /**
+             * Format: uuid
+             * @description Control-plane approval authorising a widening change (adding a step that
+             *     moves funds or reaches the network, raising or removing a `budget` cap).
+             *     Required only when the org's consensus policy gates `automation.widen`.
+             */
+            approval_id?: string;
+            /** @description Note recorded on the new spec version. */
+            version_note?: string;
+            /**
+             * @description Inbound signature scheme for a webhook-triggered automation. `stripe`
+             *     (`Stripe-Signature: t=…,v1=…` over `<t>.<body>`), `github`
+             *     (`X-Hub-Signature-256: sha256=…` over the body) or `hmac_sha256`
+             *     (`<header>: <hex|base64>` over the body). The secret is stored encrypted
+             *     and never returned; `null` removes the scheme. With a scheme set, an
+             *     unsigned or mis-signed delivery starts nothing.
+             */
+            webhook_signature?: {
+                /** @enum {string} */
+                scheme?: "stripe" | "github" | "hmac_sha256";
+                secret?: string;
+                /** @description Header carrying the signature (defaults per scheme). */
+                header?: string;
+                /**
+                 * @description Timestamp tolerance for schemes that carry one (stripe).
+                 * @default 300
+                 */
+                tolerance_secs: number;
+            } | null;
+        };
+        AutomationVersionResponse: {
+            version: number;
+            /** @description SHA-256 of the canonical (sorted-key) JSON of the spec. */
+            spec_hash: string;
+            workflow_spec: {
+                [key: string]: unknown;
+            }[] | {
+                [key: string]: unknown;
+            };
+            created_by_type: string;
+            note?: string | null;
+            /** Format: date-time */
+            created_at: string;
+            current: boolean;
+        };
+        AutomationVersionListResponse: {
+            current_version: number;
+            versions: components["schemas"]["AutomationVersionResponse"][];
+        };
+        RollbackAutomationRequest: {
+            note?: string;
+            /**
+             * Format: uuid
+             * @description Control-plane approval when rolling back to a wider spec.
+             */
+            approval_id?: string;
+        };
+        LlmModelPrice: {
+            /** Format: uuid */
+            id: string;
+            /**
+             * Format: uuid
+             * @description Null for a global row.
+             */
+            org_id?: string | null;
+            provider: string;
+            model_pattern: string;
+            /** Format: int64 */
+            input_micro_usd_per_mtok: number;
+            /** Format: int64 */
+            output_micro_usd_per_mtok: number;
+            source: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        AiSpendTotals: {
+            cost_usd?: number;
+            /** Format: int64 */
+            tokens_input?: number;
+            /** Format: int64 */
+            tokens_output?: number;
+            /** Format: int64 */
+            tokens?: number;
+            /** Format: int64 */
+            requests?: number;
+            /** Format: int64 */
+            blocked?: number;
+            /** Format: int64 */
+            unpriced_requests?: number;
+            /** Format: int64 */
+            agents?: number;
+            /** Format: int64 */
+            models?: number;
+            avg_cost_per_day?: number;
+            cost_per_request?: number;
+            cost_per_mtok?: number;
+        };
+        AiSpend: {
+            /** Format: date-time */
+            generated_at: string;
+            window: {
+                /** Format: date-time */
+                from?: string;
+                /** Format: date-time */
+                to?: string;
+                interval?: string;
+                /** Format: date-time */
+                previous_from?: string;
+                /** Format: date-time */
+                previous_to?: string;
+                days?: number;
+            };
+            totals: components["schemas"]["AiSpendTotals"];
+            previous: components["schemas"]["AiSpendTotals"];
+            series: {
+                /** Format: date-time */
+                bucket?: string;
+                provider?: string;
+                cost_usd?: number;
+                /** Format: int64 */
+                tokens?: number;
+                /** Format: int64 */
+                requests?: number;
+            }[];
+            by_provider: {
+                provider?: string;
+                cost_usd?: number;
+                /** Format: int64 */
+                tokens?: number;
+                /** Format: int64 */
+                requests?: number;
+                previous_cost_usd?: number;
+                share_pct?: number;
+                trend_pct?: number | null;
+            }[];
+            by_model: {
+                provider?: string;
+                model?: string;
+                cost_usd?: number;
+                /** Format: int64 */
+                tokens_input?: number;
+                /** Format: int64 */
+                tokens_output?: number;
+                /** Format: int64 */
+                requests?: number;
+                previous_cost_usd?: number;
+                priced?: boolean;
+                share_pct?: number;
+                trend_pct?: number | null;
+            }[];
+            by_agent: {
+                /** Format: uuid */
+                agent_id?: string;
+                agent_name?: string;
+                is_active?: boolean;
+                cost_usd?: number;
+                /** Format: int64 */
+                tokens?: number;
+                /** Format: int64 */
+                requests?: number;
+                /** Format: int64 */
+                blocked?: number;
+                top_model?: string | null;
+                top_provider?: string | null;
+                previous_cost_usd?: number;
+                /** Format: date-time */
+                last_request_at?: string | null;
+                daily_budget_usd?: number | null;
+                today_cost_usd?: number;
+                /** Format: int64 */
+                blocked_by_budget?: number;
+                /** Format: int64 */
+                max_tokens_per_request?: number | null;
+                /** Format: int64 */
+                max_requests_per_day?: number | null;
+                share_pct?: number;
+                trend_pct?: number | null;
+                budget_used_pct?: number | null;
+            }[];
+            limits: {
+                /** Format: int64 */
+                agents_with_daily_budget?: number;
+                /** Format: int64 */
+                agents_over_80pct?: number;
+                /** Format: int64 */
+                agents_at_cap?: number;
+                /** Format: int64 */
+                blocked_by_budget?: number;
+                router_keys?: {
+                    /** Format: uuid */
+                    key_id?: string;
+                    /** Format: uuid */
+                    agent_id?: string;
+                    agent_name?: string;
+                    name?: string;
+                    spent_usd?: number;
+                    cap_usd?: number | null;
+                    /** Format: date-time */
+                    last_used_at?: string | null;
+                }[];
+                credit_balance_usd?: number;
+                inspection_fees_usd?: number;
+                billing_tier?: string;
+            };
+        };
+        OrgOverview: {
+            /** Format: date-time */
+            generated_at: string;
+            window_hours: number;
+            /** @description vaults, secrets, agents_total, agents_active, child_agents, runtimes_total, runtimes_running, automations_total, automations_active, bindings, policies, treasury_wallets, signing_keys, platform_apps, connected_apps, team_members */
+            inventory: {
+                [key: string]: number;
+            };
+            /** @description audit_events, secret_reads, secret_writes, policy_denials, executions, execution_failures, transactions, transactions_failed, shroud_requests, shroud_blocked, shroud_redacted, shroud_injections, automation_runs, automation_runs_failed, automation_runs_parked, approvals_pending, approvals_decided, consensus_pending, risk_events, threats_open, api_requests */
+            activity: {
+                [key: string]: number;
+            };
+            spend: {
+                inference_usd?: number;
+                inference_tokens?: number;
+                execution_cost_cents?: number;
+                automation_cost_cents?: number;
+                credit_balance_micro_usd?: number;
+                billing_tier?: string;
+            };
+            /** @description secrets_expiring_7d, stale_agents, agents_without_policy, automations_failing, runtimes_errored, approvals_overdue, agents_suspended */
+            health: {
+                [key: string]: number;
+            };
+            trend: {
+                /** Format: date */
+                day?: string;
+                audit_events?: number;
+                denials?: number;
+                shroud_requests?: number;
+                shroud_blocked?: number;
+                automation_runs?: number;
+                transactions?: number;
+            }[];
+        };
+        DryRunRequest: {
+            /** @description Spec to preview (required on the unsaved-spec route). */
+            workflow_spec?: {
+                [key: string]: unknown;
+            }[] | {
+                [key: string]: unknown;
+            };
+            /** @description Simulated trigger payload (`{{trigger.*}}`). */
+            input?: {
+                [key: string]: unknown;
+            };
+        };
+        DryRunResponse: {
+            /** @description True when there are no warnings. */
+            ok: boolean;
+            error?: string;
+            warnings?: string[];
+            /** @description How many steps park the run. */
+            parks?: number;
+            budget?: {
+                [key: string]: unknown;
+            };
+            steps?: {
+                index: number;
+                name?: string | null;
+                type: string;
+                known: boolean;
+                /** @description The step after template substitution. */
+                resolved: {
+                    [key: string]: unknown;
+                };
+                skipped_by?: string | null;
+                effect: string;
+                on_error: {
+                    action?: string;
+                    max_attempts?: number;
+                    backoff_secs?: number;
+                };
+                unresolved_templates: string[];
+                budget_exceeded?: string | null;
+            }[];
+        };
+        TriggerAutomationRequest: {
+            /** @description Exposed to steps as `{{trigger.*}}`. */
+            input?: {
+                [key: string]: unknown;
+            };
+            /**
+             * @description Same key twice for one automation returns the existing run (200) instead
+             *     of starting a second (201). `Idempotency-Key` header is equivalent.
+             */
+            idempotency_key?: string;
         };
         AutomationResponse: {
             /** Format: uuid */
@@ -16867,6 +18649,10 @@ export interface components {
             created_at: string;
             /** Format: date-time */
             updated_at: string;
+            /** @description Current `automation_versions` version. */
+            spec_version?: number;
+            /** @description Inbound signature scheme name, never the secret. */
+            webhook_signature_scheme?: string | null;
         };
         AutomationCreatedResponse: components["schemas"]["AutomationResponse"] & {
             /** @description Full POST URL including token (one-time on create) */
@@ -16903,8 +18689,29 @@ export interface components {
             automation_id: string;
             /** Format: uuid */
             agent_id: string;
-            /** @enum {string} */
-            status: "running" | "success" | "failed" | "timed_out" | "cancelled" | "awaiting_approval";
+            /**
+             * @description `awaiting_approval`, `waiting` (a `wait_until` park) and `awaiting_callback`
+             *     are parked states: the run's clock is stopped and it continues when the
+             *     approval is decided, the wake time passes, or the callback URL is posted to.
+             * @enum {string}
+             */
+            status: "running" | "success" | "completed_with_skips" | "failed" | "timed_out" | "cancelled" | "awaiting_approval" | "waiting" | "awaiting_callback";
+            /** @enum {string|null} */
+            paused_reason?: "approval" | "wait_until" | "callback" | null;
+            paused_at_step?: number | null;
+            /** Format: uuid */
+            paused_approval_id?: string | null;
+            /** Format: date-time */
+            paused_until?: string | null;
+            /** Format: date-time */
+            paused_expires_at?: string | null;
+            spec_version?: number | null;
+            idempotency_key?: string | null;
+            /**
+             * Format: uuid
+             * @description Set when a `call_automation` step started this run.
+             */
+            parent_run_id?: string | null;
             step_results?: unknown;
             error?: string | null;
             trigger_source?: string | null;
@@ -16979,6 +18786,17 @@ export interface components {
             shell_max_session_minutes?: number;
         };
         UpdateRuntimeRequest: {
+            /**
+             * @description Scheduled start/stop: start the container when `start_cron` fires (IANA
+             *     `timezone`, default UTC) and stop it `stop_after_secs` later (60–86400; null
+             *     leaves it to the idle reconciler). `null` clears the schedule.
+             */
+            schedule?: {
+                start_cron?: string;
+                /** @default UTC */
+                timezone: string;
+                stop_after_secs?: number | null;
+            } | null;
             name?: string;
             template?: string;
             preset?: string;
@@ -16999,6 +18817,16 @@ export interface components {
             shell_max_session_minutes?: number;
         };
         RuntimeResponse: {
+            previous_image_digest?: string | null;
+            /** @description Resolved image (digest form when the provider reports one); runtime-minted agent tokens carry it as `runtime_image`, which access policies can require via `conditions.runtime_image_in`. */
+            image_digest?: string | null;
+            schedule?: {
+                [key: string]: unknown;
+            } | null;
+            /** Format: date-time */
+            next_scheduled_start_at?: string | null;
+            /** Format: date-time */
+            scheduled_stop_at?: string | null;
             /** Format: uuid */
             id: string;
             name: string;
@@ -17284,8 +19112,11 @@ export interface components {
             };
             slash_commands_enabled?: boolean;
             voice_transcription_enabled?: boolean;
+            /** @description External sender IDs permitted to trigger the agent and to run admin slash commands. An empty array clears it; omitting the field leaves it unchanged. */
             sender_allowlist?: string[];
             auto_respond_enabled?: boolean;
+            /** @description External sender ID treated as the channel owner for admin slash commands. Merged into channel metadata, which is where the slash-command authorizer reads it from. Set this or `sender_allowlist` to authorize admin commands. An explicit `null` revokes admin by removing the key; omitting the field leaves the current admin unchanged. Revoking is durable on a channel that has already received a message — the first-contact claim fires only when a channel has no prior inbound message. */
+            owner_sender_id?: string | null;
         };
         ChannelResponse: {
             /** Format: uuid */
@@ -18478,6 +20309,40 @@ export interface components {
         };
         ShamirKekVerifyCodeResponse: {
             valid?: boolean;
+        };
+        GrowthCountBucket: {
+            /** Format: date-time */
+            bucket: string;
+            count: number;
+        };
+        GrowthTimeseriesResponse: {
+            vertical: string;
+            period: string;
+            /** @enum {string} */
+            bucket_unit: "hour" | "day" | "week";
+            points: components["schemas"]["GrowthCountBucket"][];
+            total: number;
+            prior_total: number;
+            /** @description Null when both the current and prior totals are 0. */
+            delta_pct?: number | null;
+            /** @description A known limitation worth surfacing for this vertical (e.g. a source table with no org_id to exclude test-fixture activity from). Null for the clean verticals. */
+            notes?: string | null;
+        };
+        RetentionResponse: {
+            window_days: number;
+            cohort_orgs: number;
+            retained_orgs: number;
+            /** @description Null when there is no cohort yet (platform younger than the window). */
+            retention_pct?: number | null;
+        };
+        WebSearchResult: {
+            title: string;
+            url: string;
+            snippet: string;
+        };
+        WebSearchResponse: {
+            results: components["schemas"]["WebSearchResult"][];
+            provider: string;
         };
     };
     responses: {
@@ -22392,7 +24257,11 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
-            /** @description Guardrail violation or permission denied */
+            /**
+             * @description Guardrail violation or permission denied.
+             *
+             *     Note on resuming an approved execution: there is no request field for it. A client cannot name the approval to resume under. Between 2026-10-11 and 2026-10-12 a resume_after_approval_id was accepted and verified against an approved, agent-bound, unused approval; verifying it bound the approval but not the request body the approval was granted for, so the field was removed from the wire entirely. Approved executions resume server-side from the stored approval payload, so the body that runs is the body a human saw.
+             */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -22547,7 +24416,7 @@ export interface operations {
                 "application/json": {
                     /** @enum {string} */
                     tier: "unverified" | "platform_reviewed" | "identity_verified" | "enterprise";
-                    /** @description Internal review notes */
+                    /** @description Internal review notes, never public */
                     notes?: string | null;
                 };
             };
@@ -22864,6 +24733,189 @@ export interface operations {
             };
         };
     };
+    getAiSpend: {
+        parameters: {
+            query?: {
+                from?: string;
+                to?: string;
+                interval?: "day" | "week" | "month";
+                agent_id?: string;
+                provider?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Spend */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiSpend"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    exportAiSpendCsv: {
+        parameters: {
+            query?: {
+                from?: string;
+                to?: string;
+                agent_id?: string;
+                provider?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description CSV */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    listLlmPrices: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Prices */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        prices: components["schemas"]["LlmModelPrice"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    upsertLlmPrice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @example anthropic */
+                    provider: string;
+                    /** @example claude-sonnet-5% */
+                    model_pattern: string;
+                    /** @example 3 */
+                    input_usd_per_mtok: number;
+                    /** @example 15 */
+                    output_usd_per_mtok: number;
+                };
+            };
+        };
+        responses: {
+            /** @description The override */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LlmModelPrice"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    deleteLlmPrice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Removed */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    repriceAiSpend: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Count */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        repriced?: number;
+                    };
+                };
+            };
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    getOrgOverview: {
+        parameters: {
+            query?: {
+                hours?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Overview */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrgOverview"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
     listOrgMembers: {
         parameters: {
             query?: never;
@@ -22931,6 +24983,47 @@ export interface operations {
             };
         };
     };
+    getMyReferrals: {
+        parameters: {
+            query?: {
+                /**
+                 * @description Start of a half-open window `[from, to)` on when the referral was made.
+                 *     Same boundary rule as the admin leaderboard, so the two cannot disagree
+                 *     about a referral landing on the edge. Omit for no lower bound.
+                 */
+                from?: string;
+                /**
+                 * @description End of the window, exclusive. A contest run "through the 31st" passes the
+                 *     1st of the next month. Omit for no upper bound.
+                 */
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The caller's referral code, link and signup count */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyReferralsResponse"];
+                };
+            };
+            /** @description The caller is an agent, not a person. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
     provisionOnboarding: {
         parameters: {
             query?: never;
@@ -22951,6 +25044,94 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OnboardingProvisionResponse"];
+                };
+            };
+        };
+    };
+    getGuidedOnboardingStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Guided onboarding status */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GuidedOnboardingStatus"];
+                };
+            };
+        };
+    };
+    guidedOnboardingAsk: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GuidedAskRequest"];
+            };
+        };
+        responses: {
+            /** @description Assistant's answer */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GuidedAskResponse"];
+                };
+            };
+        };
+    };
+    createTrialSetupIntent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description SetupIntent client secret */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrialSetupIntentResponse"];
+                };
+            };
+        };
+    };
+    createTrialRuntime: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTrialRuntimeRequest"];
+            };
+        };
+        responses: {
+            /** @description Created runtime */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RuntimeResponse"];
                 };
             };
         };
@@ -23266,26 +25447,6 @@ export interface operations {
             404: components["responses"]["NotFound"];
         };
     };
-    deleteOrgEnvVar: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Deleted */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
     linkOrgEnvVar: {
         parameters: {
             query?: never;
@@ -23437,6 +25598,151 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["SubscriptionResponse"];
                 };
+            };
+        };
+    };
+    getStakingPoints: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Points and rates */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        wallet_address?: string;
+                        /** Format: int64 */
+                        earned?: number;
+                        /** Format: int64 */
+                        spent?: number;
+                        /** Format: int64 */
+                        available?: number;
+                        can_redeem?: boolean;
+                        redeem_blocked_reason?: string | null;
+                        rates?: {
+                            points_per_pro_month?: number;
+                            micro_usd_per_point?: number;
+                            points_per_day_per_100m_tokens?: number;
+                            max_pro_months_per_redemption?: number;
+                        };
+                        recent?: {
+                            /** Format: uuid */
+                            id?: string;
+                            wallet_address?: string;
+                            /** Format: int64 */
+                            points_spent?: number;
+                            /** @enum {string} */
+                            reward_type?: "pro_months" | "credits";
+                            reward_detail?: Record<string, never>;
+                            /** Format: date-time */
+                            created_at?: string;
+                        }[];
+                    };
+                };
+            };
+            /** @description No wallet linked to this account */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Only a signed-in person can read staking points */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /**
+             * @description The staking service could not report points. Deliberately not
+             *     reported as zero — that would tell a staker their earnings
+             *     had vanished.
+             */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    redeemStakingPoints: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    reward_type: "pro_months" | "credits";
+                    /**
+                     * Format: int64
+                     * @description Months for pro_months; points for credits
+                     */
+                    quantity: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Redeemed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        redemption_id?: string;
+                        /** Format: int64 */
+                        points_spent?: number;
+                        /** Format: int64 */
+                        remaining_available?: number;
+                        reward_type?: string;
+                        reward_detail?: Record<string, never>;
+                    };
+                };
+            };
+            /** @description Not enough points, or no wallet linked */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A real verified email is required before redeeming */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /**
+             * @description Pro months refused because the organisation's billing is owned
+             *     by Stripe, or its tier is above Pro. Redeem credits instead.
+             */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The staking service could not report points; nothing was charged */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -24513,7 +26819,7 @@ export interface operations {
             content: {
                 "application/json": {
                     to: string;
-                    /** @description Major units */
+                    /** @description Major units, e.g. "0.5". */
                     value: string;
                     memo?: string;
                 };
@@ -24927,7 +27233,7 @@ export interface operations {
                 "application/json": {
                     to: string;
                     value_wei: string;
-                    /** @description Hex calldata */
+                    /** @description Hex calldata, optional. */
                     data?: string;
                 };
             };
@@ -25053,7 +27359,7 @@ export interface operations {
                     agent_id: string;
                     /** @description ERC-20 contract; omit for the native token. */
                     token?: string;
-                    /** @description Base units */
+                    /** @description Base units, decimal string, ≤ 2^96-1. */
                     allowance_amount: string;
                     /**
                      * @description Reset period in minutes.
@@ -25119,7 +27425,7 @@ export interface operations {
             content: {
                 "application/json": {
                     to: string;
-                    /** @description Base units */
+                    /** @description Base units, decimal string. */
                     amount: string;
                     /** @description ERC-20 contract; omit for the native token. */
                     token?: string;
@@ -25368,6 +27674,111 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+        };
+    };
+    signTreasuryMessage: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Account password, or a `rat_` token from `POST /v1/auth/reauth/complete`. */
+                "X-Auth-Confirm": string;
+            };
+            path: {
+                chain: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @example Sign in to Example at 2026-10-01T10:00:00Z */
+                    message: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Signature */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WalletSignature"];
+                };
+            };
+            /** @description Empty or oversized message, or a non-EVM chain */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Agent caller, missing or insufficient step-up, denied by a wallet access policy, or a self-custody wallet the server cannot sign for. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No wallet on that chain for this user */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    signTreasuryTypedData: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Auth-Confirm": string;
+            };
+            path: {
+                chain: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description `types`, `primaryType`, `domain`, `message`. */
+                    typed_data: Record<string, never>;
+                };
+            };
+        };
+        responses: {
+            /** @description Signature */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WalletSignature"];
+                };
+            };
+            /** @description Malformed EIP-712 payload, or a non-EVM chain */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Same refusals as sign-message */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No wallet on that chain for this user */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     swapFromTreasuryWallet: {
@@ -25976,6 +28387,41 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+        };
+    };
+    getAgentSpendToday: {
+        parameters: {
+            query: {
+                agent_id: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Today's spend */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        agent_id?: string;
+                        /** @example 2026-09-21 */
+                        day?: string;
+                        cost_usd?: number;
+                        /** Format: int64 */
+                        requests?: number;
+                        /** Format: int64 */
+                        tokens?: number;
+                        /** Format: int64 */
+                        blocked_by_budget?: number;
+                    };
+                };
+            };
+            403: components["responses"]["Forbidden"];
         };
     };
     transferPlatformAppOwnership: {
@@ -26908,6 +29354,47 @@ export interface operations {
             };
             /** @description Multiple agents — agent_id required */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    addConnectionAgents: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connectionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddConnectionAgentsRequest"];
+            };
+        };
+        responses: {
+            /** @description Agents provisioned */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AddConnectionAgentsResponse"];
+                };
+            };
+            /** @description Connection not bootstrapped yet, or the template provisions no agents */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Past the per-connection agent cap */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -28119,6 +30606,112 @@ export interface operations {
             };
         };
     };
+    siweLoginChallenge: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * @description 0x-prefixed 20-byte Ethereum address
+                     * @example 0x0000000000000000000000000000000000000001
+                     */
+                    address: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Message to sign */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description Sign this verbatim */
+                        message?: string;
+                        nonce?: string;
+                        expires_in_secs?: number;
+                    };
+                };
+            };
+            /** @description Not a valid Ethereum address */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    siweLoginVerify: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description The challenge message, unmodified */
+                    message: string;
+                    /** @description Hex signature over the message */
+                    signature: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Authenticated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        token?: string;
+                        /** Format: uuid */
+                        user_id?: string;
+                        /** Format: uuid */
+                        org_id?: string;
+                        wallet_address?: string;
+                        is_new_user?: boolean;
+                        /**
+                         * @description True while the account email is still the synthetic
+                         *     wallet address. Redemption is blocked until a real
+                         *     one is verified.
+                         */
+                        email_pending?: boolean;
+                    };
+                };
+            };
+            /** @description Expired or reused challenge, or a message signed for another domain */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Signature does not match the address in the message */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     getOAuthConsent: {
         parameters: {
             query: {
@@ -28200,6 +30793,59 @@ export interface operations {
             };
             /** @description Invalid request */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    x402Topup: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Base64 x402 payment payload (EIP-3009 USDC authorization on Base) */
+                "X-PAYMENT"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Whole dollars to add to the ledger (default 1) */
+                    amount_usd?: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Credited */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["X402TopupResponse"];
+                };
+            };
+            /** @description Payment required — the quote to sign, or why the payment was refused */
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentRequirement"];
+                };
+            };
+            /** @description The wallet is sanctioned or the region is fenced; no account is opened */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The sanctions list is unavailable (fails closed) */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -28408,7 +31054,7 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        verdict?: components["schemas"]["RiskVerdict"];
+                        verdict?: components["schemas"]["RiskVerdict"] | null;
                     };
                 };
             };
@@ -28582,6 +31228,77 @@ export interface operations {
             403: components["responses"]["Forbidden"];
         };
     };
+    adminGrowthTimeseries: {
+        parameters: {
+            query: {
+                vertical: "signups_orgs" | "signups_users" | "subscriptions_new" | "subscriptions_churned" | "shroud_usage" | "shroud_security" | "intents_execution" | "intents_transactions" | "vault_usage" | "runtime_usage" | "memory_usage" | "automations" | "embedded_wallets_created" | "embedded_wallets_used" | "platform_api";
+                period?: "24h" | "7d" | "30d" | "90d" | "365d";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Time-bucketed series for the requested vertical */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GrowthTimeseriesResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    adminRetention: {
+        parameters: {
+            query?: {
+                window_days?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Retention over the requested window */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RetentionResponse"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    adminListLlmPrices: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Prices */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        prices: components["schemas"]["LlmModelPrice"][];
+                    };
+                };
+            };
+            403: components["responses"]["Forbidden"];
+        };
+    };
     updatePaySettings: {
         parameters: {
             query?: never;
@@ -28637,7 +31354,7 @@ export interface operations {
                     "application/json": components["schemas"]["PayPrepareResponse"];
                 };
             };
-            /** @description Not a usable 402 challenge */
+            /** @description Not a usable 402 challenge, or a non-USDC asset */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -28680,7 +31397,7 @@ export interface operations {
                     "application/json": components["schemas"]["PaySignResponse"];
                 };
             };
-            /** @description Policy refused */
+            /** @description Policy refused, or the required authorization was absent */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -28736,7 +31453,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Not a human caller */
+            /** @description Not a human caller, grant mode disabled, or over the agent's maximum */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -28769,7 +31486,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Not a human caller */
+            /** @description Not a human caller, grant mode disabled, or terms exceed the agent's maximum */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -28835,14 +31552,14 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Quote and status */
+            /** @description Quote and status, rendered from the stored preimage */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
-            /** @description Not a human caller */
+            /** @description Not a human caller, or the session was raised for someone else */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -28898,7 +31615,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Not found */
+            /** @description Not found, or already revoked */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -29290,10 +32007,23 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["TriggerAutomationRequest"];
+            };
+        };
         responses: {
-            /** @description Automation triggered */
+            /** @description An earlier run with the same idempotency key */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AutomationRunResponse"];
+                };
+            };
+            /** @description Run started */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -29517,6 +32247,181 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AutomationRunResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    automationRunCallback: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                automationId: string;
+                runId: string;
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        responses: {
+            /** @description The run, continuing */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AutomationRunResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    dryRunAutomationSpec: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DryRunRequest"];
+            };
+        };
+        responses: {
+            /** @description Preview */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DryRunResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    dryRunAutomation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                automationId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["DryRunRequest"];
+            };
+        };
+        responses: {
+            /** @description Preview */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DryRunResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    rerunAutomationFromStep: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                automationId: string;
+                runId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /**
+                     * @description Zero-based step index to start from.
+                     * @default 0
+                     */
+                    from_step?: number;
+                };
+            };
+        };
+        responses: {
+            /** @description The new run */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AutomationRunResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listAutomationVersions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                automationId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Versions */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AutomationVersionListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    rollbackAutomationVersion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                automationId: string;
+                version: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["RollbackAutomationRequest"];
+            };
+        };
+        responses: {
+            /** @description The automation with the rolled-back spec current */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AutomationResponse"];
                 };
             };
             401: components["responses"]["Unauthorized"];
@@ -32134,6 +35039,171 @@ export interface operations {
             404: components["responses"]["NotFound"];
         };
     };
+    listRouterKeys: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Router keys */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        keys: components["schemas"]["RouterKey"][];
+                    };
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createRouterKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["CreateRouterKeyRequest"];
+            };
+        };
+        responses: {
+            /** @description Router key created (plaintext returned once) */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RouterKeyCreated"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    revokeRouterKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+                key_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Revoked */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RouterKey"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listToolBindings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bindings */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        bindings: components["schemas"]["SecretToolBinding"][];
+                    };
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createToolBinding: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateToolBindingRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SecretToolBinding"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            /** @description A binding for this secret, tool and argument already exists */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    deleteToolBinding: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: components["parameters"]["AgentId"];
+                binding_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
     listOAuthConnections: {
         parameters: {
             query?: never;
@@ -34521,6 +37591,381 @@ export interface operations {
             };
         };
     };
+    marketing_unsubscribe: {
+        parameters: {
+            query: {
+                email: string;
+                /** @description HMAC over the address, from the link. */
+                t: string;
+                /** @description Campaign the link came from. Recorded, not trusted. */
+                c?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Unsubscribed (or already was) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        unsubscribed: boolean;
+                        email: string;
+                        message: string;
+                    };
+                };
+            };
+            /** @description The link's signature did not verify */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    marketing_unsubscribe_post: {
+        parameters: {
+            query: {
+                email: string;
+                /** @description HMAC over the address, from the link. */
+                t: string;
+                /** @description Campaign the link came from. Recorded, not trusted. */
+                c?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Unsubscribed (or already was) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        unsubscribed: boolean;
+                        email: string;
+                        message: string;
+                    };
+                };
+            };
+            /** @description The link's signature did not verify */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    suggest_connector: {
+        parameters: {
+            query: {
+                /** @description The secret path about to be written. */
+                path: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The matching connector, or null. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        preset: components["schemas"]["ConnectorPreset"] | null;
+                    };
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_secret_requests: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Open requests */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        requests: components["schemas"]["SecretRequest"][];
+                    };
+                };
+            };
+            /** @description Called by an agent */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    create_secret_request: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @example X API access token */
+                    label: string;
+                    /**
+                     * @description Shown to the person being asked. They are handing over a secret and need to know what for.
+                     * @example To post the daily update to X on your behalf.
+                     */
+                    purpose: string;
+                    /**
+                     * @description A suggestion only — the human picks the vault and may change the path.
+                     * @example api-keys/x-access-token
+                     */
+                    suggested_path?: string | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Asked. Poll the status route; do not ask in conversation. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        id: string;
+                        /** @example pending */
+                        status: string;
+                        /** Format: date-time */
+                        expires_at: string;
+                        next: string;
+                    };
+                };
+            };
+            /** @description Missing label or purpose, or an invalid suggested path */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not an agent. A person storing a credential uses the vault directly. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_secret_request: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Status and, once fulfilled, where to look */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SecretRequestAgentView"];
+                };
+            };
+            /** @description No such request, or it belongs to another agent */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    fulfil_secret_request: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    vault_id: string;
+                    /** @example api-keys/x-access-token */
+                    path: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Fulfilled */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example fulfilled */
+                        status: string;
+                        path: string;
+                        /** Format: uuid */
+                        vault_id: string;
+                        /** @description False when the secret was stored but the read grant could not be written — the agent will need access granted by hand. */
+                        granted_read: boolean;
+                        /** @description True when the agent had to be bound to a vault it was not bound to before. Its access is correct from now on, but a JWT carries the `vault_ids` it was minted with, so a token the agent already holds is refused until it re-mints. Answering into a vault the agent already reaches avoids this. */
+                        bound_new_vault?: boolean;
+                    };
+                };
+            };
+            /** @description Already answered, expired, an invalid path, or nothing is stored at that path — the location the agent is sent to has to be real. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Called by an agent */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such request, or no such vault in this org */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    decline_secret_request: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Declined */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example declined */
+                        status: string;
+                    };
+                };
+            };
+            /** @description Already answered */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Called by an agent */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    preview_promo: {
+        parameters: {
+            query: {
+                /** @description The promotion code, as advertised. */
+                code: string;
+                tier?: "pro" | "team" | "business";
+                interval?: "monthly" | "annual";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The offer, or why the code cannot be used. A code that does not apply answers 200 with `valid: false` and a message, not an error status — "this code is not for annual billing" is an answer, not a failure. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        valid: boolean;
+                        /** @description The code as Stripe stores it, not the caller's casing. */
+                        code?: string | null;
+                        /** @description The offer in one sentence, derived from the coupon — e.g. "$5/mo for your first 6 months, then $29/mo". Rendered rather than composed by the client, so a page cannot advertise terms different from the ones charged. */
+                        headline?: string | null;
+                        tier: string;
+                        interval: string;
+                        list_cents?: number | null;
+                        /** @description What the first invoice comes to, after the discount. */
+                        first_cents?: number | null;
+                        /** @description How many invoices the discount covers. */
+                        duration_months?: number | null;
+                        /**
+                         * Format: date-time
+                         * @description Last moment the code can be redeemed. Someone who subscribes before this keeps the discount for its full length.
+                         */
+                        expires_at?: string | null;
+                        message?: string | null;
+                    };
+                };
+            };
+            /** @description Unknown tier or interval */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     validate_promo: {
         parameters: {
             query?: never;
@@ -34645,6 +38090,44 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    agentWebSearch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    query: string;
+                    /** @default 5 */
+                    num_results?: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Search results */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebSearchResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            /** @description Called on a non-agent token */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
             };
         };
     };
@@ -36023,6 +39506,61 @@ export interface operations {
             };
         };
     };
+    renew_runtime_agent_token: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runtime_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A fresh access token */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        access_token?: string;
+                        expires_in?: number;
+                        /** @example Bearer */
+                        token_type?: string;
+                    };
+                };
+            };
+            /** @description The runtime is not deployed, so it has nothing to renew */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthenticated, or the token presented has already expired */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not an agent caller */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such runtime, or it is not bound to this agent */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     stream_otel_signals: {
         parameters: {
             query?: {
@@ -36191,7 +39729,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Endpoint refused (scheme */
+            /** @description Endpoint refused (scheme, credentials, private or unresolvable host), reserved header, or enabling with no endpoint */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -36243,7 +39781,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description Not configured */
+            /** @description Not configured, or the send failed */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -36633,6 +40171,127 @@ export interface operations {
             };
         };
     };
+    provisionRuntime: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    name: string;
+                    template?: string;
+                    /** @default small */
+                    preset?: string;
+                    /** @description Either `id` (existing) or `name` (create). */
+                    agent: {
+                        /** Format: uuid */
+                        id?: string;
+                        name?: string;
+                        description?: string;
+                    };
+                    env_public?: {
+                        [key: string]: string;
+                    };
+                    expose_http?: boolean;
+                    source_repo?: string;
+                    startup_command?: string;
+                    environment?: string;
+                    /** @default true */
+                    start?: boolean;
+                    /** Format: uuid */
+                    approval_id?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Provisioned */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        runtime: components["schemas"]["RuntimeResponse"];
+                        /** Format: uuid */
+                        agent_id: string;
+                        /** @description Only when the agent was created here; shown once. */
+                        agent_api_key?: string;
+                        /** Format: uuid */
+                        vault_id?: string;
+                        started: boolean;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    getRuntimeResolvedEnv: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runtime_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Resolved environment */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        runtime_id?: string;
+                        environment?: string;
+                        restart_required_for_changes?: boolean;
+                        entries?: {
+                            key?: string;
+                            /** @enum {string} */
+                            source?: "platform" | "env_public" | "vault_env" | "agent" | "secret";
+                            value?: string;
+                            masked?: boolean;
+                            overrides?: string | null;
+                        }[];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    rollbackRuntime: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runtime_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Restarting on the previous image */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RuntimeResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
     rebuild_runtime: {
         parameters: {
             query?: never;
@@ -36675,6 +40334,47 @@ export interface operations {
         };
     };
     restart_runtime: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runtime_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden, or the plan does not include this */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    enable_recommended_tools: {
         parameters: {
             query?: never;
             header?: never;
