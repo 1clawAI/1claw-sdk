@@ -15434,8 +15434,11 @@ export interface components {
             chain_id?: number;
             to?: string;
             value_wei?: string;
-            /** @enum {string} */
-            status?: "pending" | "signed" | "sign_only" | "broadcast" | "failed" | "simulation_failed";
+            /**
+             * @description `broadcast` means the RPC accepted the raw transaction; it does not mean the transaction mined. The receipt reconciler resolves it to `confirmed`, `reverted` or `dropped` once the chain answers. `reverted` mined and failed on-chain (nonce consumed, gas paid); `dropped` never mined and never will (the sender's nonce has moved past it), so no value moved and no gas was paid. Non-EVM chains reach `confirmed`/`reverted` but never `dropped`, because the absence of a transaction there cannot be distinguished from a node having pruned it.
+             * @enum {string}
+             */
+            status?: "pending" | "signed" | "sign_only" | "broadcast" | "confirmed" | "reverted" | "dropped" | "failed" | "simulation_failed";
             /** @description Raw signed transaction hex. On GET list and GET by id, this property is omitted by default (absent from the response). Pass `include_signed_tx=true` on those endpoints to include it. Always present on the initial POST submit response. */
             signed_tx?: string | null;
             tx_hash?: string;
@@ -15450,6 +15453,20 @@ export interface components {
             tenderly_dashboard_url?: string;
             max_fee_per_gas?: string;
             max_priority_fee_per_gas?: string;
+            /** @description Sender, learned from the chain by the receipt reconciler. */
+            from_address?: string;
+            /** @description Block (EVM), slot (Solana) or ledger index (XRP) the transaction settled in. Absent until it settles. */
+            block_number?: number;
+            /**
+             * Format: date-time
+             * @description When settlement was observed. Absent for a `dropped` transaction, which never settled.
+             */
+            confirmed_at?: string;
+            /**
+             * Format: date-time
+             * @description Last time the reconciler asked the chain about this transaction. Set while `status` is still `broadcast` means we looked and could not tell yet, as distinct from nobody having looked.
+             */
+            reconciled_at?: string;
         };
         TransactionListResponse: {
             transactions?: components["schemas"]["TransactionResponse"][];

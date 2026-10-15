@@ -1576,7 +1576,29 @@ export interface TransactionResponse {
     chain_id: number;
     to: string;
     value_wei: string;
-    status: "pending" | "signed" | "sign_only" | "broadcast" | "failed" | "simulation_failed";
+    /**
+     * `broadcast` means the RPC accepted the raw transaction, not that it mined.
+     * The receipt reconciler resolves it to one of:
+     *  - `confirmed` — mined and succeeded.
+     *  - `reverted`  — mined and failed on-chain. The nonce was consumed and gas
+     *                  was paid, so this is settled, unlike `failed`, which means
+     *                  the transaction was never broadcast at all.
+     *  - `dropped`   — never mined and never will: the sender's nonce has moved
+     *                  past it. No value moved and no gas was paid.
+     *
+     * Non-EVM chains reach `confirmed`/`reverted` but never `dropped`, because
+     * absence there cannot be told apart from a node having pruned its history.
+     */
+    status:
+        | "pending"
+        | "signed"
+        | "sign_only"
+        | "broadcast"
+        | "confirmed"
+        | "reverted"
+        | "dropped"
+        | "failed"
+        | "simulation_failed";
     /** Raw signed tx hex. Omitted on list/get unless request used includeSignedTx: true. Always present on submit response. */
     signed_tx?: string;
     tx_hash?: string;
@@ -1587,6 +1609,15 @@ export interface TransactionResponse {
     simulation_status?: string;
     max_fee_per_gas?: string;
     max_priority_fee_per_gas?: string;
+    /** Sender, learned from the chain by the receipt reconciler. */
+    from_address?: string;
+    /** Block (EVM), slot (Solana) or ledger index (XRP) this settled in. */
+    block_number?: number;
+    /** When settlement was observed. Absent for `dropped`, which never settled. */
+    confirmed_at?: string;
+    /** Last time the reconciler asked the chain. Set while still `broadcast`
+     *  means we looked and could not tell yet, not that nobody looked. */
+    reconciled_at?: string;
 }
 
 export interface TransactionListResponse {
