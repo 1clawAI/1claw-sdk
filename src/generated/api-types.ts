@@ -3758,10 +3758,16 @@ export interface paths {
         /**
          * Threshold signing, round 1
          * @description Needs `X-Passkey-Token` from a tx-assert with `action: tss_sign` and
-         *     `tx_digest` = hex SHA-256 of `message`. The message must be a decodable
-         *     Solana transaction message; every transfer destination in it is checked
-         *     against the OFAC SDN list before the vault commits. Returns the vault's
-         *     signing commitments; nonces are single-use and expire with the session.
+         *     `tx_digest` = hex SHA-256 of `message`. The message must be exactly one
+         *     returned by `POST /v1/treasury/wallets/{chain}/tss/prepare` for this key,
+         *     within the prepared session's lifetime; any other message is refused
+         *     with 403. It must also be a shape this path signs (for Solana: System
+         *     transfers from the wallet, optionally with a memo, the wallet as the
+         *     only signer, legacy message); anything else, such as a token approval
+         *     or an authority change, is refused with 400. Every transfer destination
+         *     is checked against the OFAC SDN list before the vault commits. Returns
+         *     the vault's signing commitments; nonces are single-use and expire with
+         *     the session.
          */
         post: operations["tssSignBegin"];
         delete?: never;
@@ -3832,9 +3838,12 @@ export interface paths {
         put?: never;
         /**
          * Broadcast a threshold-signed send
-         * @description Verifies the signature under the wallet's public key over exactly this
-         *     message, checks `to` is a transfer destination inside it, assembles the
-         *     transaction and submits it. Audited as `treasury_wallet.send`.
+         * @description The message must be one returned by `tss/prepare`. Verifies the signature
+         *     under the wallet's public key over exactly this message, checks the
+         *     prepared destination is a transfer inside it, assembles the transaction
+         *     and submits it. `to` and `value_base_units` must match what was
+         *     prepared; the spend is recorded from the prepared values. Audited as
+         *     `treasury_wallet.send`.
          */
         post: operations["tssTreasuryBroadcast"];
         delete?: never;
@@ -31248,7 +31257,7 @@ export interface operations {
     adminGrowthTimeseries: {
         parameters: {
             query: {
-                vertical: "signups_orgs" | "signups_users" | "subscriptions_new" | "subscriptions_churned" | "shroud_usage" | "shroud_security" | "intents_execution" | "intents_transactions" | "vault_usage" | "runtime_usage" | "memory_usage" | "automations" | "embedded_wallets_created" | "embedded_wallets_used" | "platform_api";
+                vertical: "signups_orgs" | "signups_users" | "subscriptions_new" | "subscriptions_churned" | "shroud_usage" | "shroud_security" | "intents_execution" | "intents_transactions" | "vault_usage" | "runtime_usage" | "memory_usage" | "automations" | "agent_wallets_created" | "embedded_wallets_created" | "embedded_wallets_used" | "platform_api";
                 period?: "24h" | "7d" | "30d" | "90d" | "365d";
             };
             header?: never;
