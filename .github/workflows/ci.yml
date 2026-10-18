@@ -20,4 +20,11 @@ jobs:
 
             - run: npm run build
 
+            # The spec-coverage test reads ../openapi-spec/openapi.json, the
+            # sibling submodule in the monorepo layout. A standalone clone of
+            # this repo has no sibling, so CI was red on every push since
+            # 10-13. The spec repo is public; a shallow clone is enough.
+            - name: Check out the OpenAPI spec beside the SDK
+              run: git clone --depth 1 https://github.com/1clawAI/1claw-openapi-spec.git ../openapi-spec
+
             - run: npm test
