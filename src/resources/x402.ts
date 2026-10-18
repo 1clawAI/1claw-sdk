@@ -115,14 +115,8 @@ export class X402Resource {
         signer?: X402Signer,
     ): Promise<OneclawResponse<SecretResponse>> {
         const path = `/v1/vaults/${vaultId}/secrets/${key}`;
-        const url = `${this.http.getBaseUrl()}${path}`;
-        const headers: Record<string, string> = {
-            "Content-Type": "application/json",
-        };
-        const token = this.http.getToken();
-        if (token) headers["Authorization"] = `Bearer ${token}`;
-
-        const firstAttempt = await fetch(url, { method: "GET", headers });
+        // Use authenticated transport without triggering its automatic payment flow.
+        const firstAttempt = await this.http.rawRequest("GET", path);
 
         if (firstAttempt.status !== 402) {
             if (!firstAttempt.ok) {
@@ -143,9 +137,8 @@ export class X402Resource {
         const requirement = (await firstAttempt.json()) as PaymentRequirement;
         const paymentHeader = await this.pay(requirement, signer);
 
-        const retry = await fetch(url, {
-            method: "GET",
-            headers: { ...headers, "X-PAYMENT": paymentHeader },
+        const retry = await this.http.rawRequest("GET", path, {
+            headers: { "X-PAYMENT": paymentHeader },
         });
 
         if (!retry.ok) {
