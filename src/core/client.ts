@@ -17,6 +17,7 @@ import { X402Resource } from "../resources/x402";
 import { TreasuryResource } from "../resources/treasury";
 import { SigningKeysResource } from "../resources/signing-keys";
 import { TreasuryWalletsResource } from "../resources/treasury-wallets";
+import { KeyCustodyResource } from "../resources/key-custody";
 import { PlatformResource, type InspectContentRequest, type InspectContentResponse } from "../resources/platform";
 import { OtelResource } from "../resources/otel";
 import { DevicesResource } from "../resources/devices";
@@ -108,6 +109,8 @@ export class OneclawClient {
     readonly bindings: BindingsResource;
     /** Treasury wallets — multi-chain wallet generation for human users. */
     readonly treasuryWallets: TreasuryWalletsResource;
+    /** Self-custody keys: 2-of-3 FROST wallets, Tron multisig, EVM Safes, wrapped shares, recovery kits. Human users only. */
+    readonly keyCustody: KeyCustodyResource;
     /** Platform API — build multi-tenant apps on top of 1Claw. */
     readonly platform: PlatformResource;
     /** Control-plane telemetry — topology, threats, posture, metrics, flows, live stream. Human users only. */
@@ -201,6 +204,7 @@ export class OneclawClient {
         this.signingKeys = new SigningKeysResource(this.http);
         this.bindings = new BindingsResource(this.http);
         this.treasuryWallets = new TreasuryWalletsResource(this.http);
+        this.keyCustody = new KeyCustodyResource(this.http);
         this.platform = new PlatformResource(this.http);
         this.otel = new OtelResource(this.http);
         this.devices = new DevicesResource(this.http);

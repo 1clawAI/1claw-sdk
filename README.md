@@ -1,4 +1,4 @@
-# @1claw/sdk (v0.61.0)
+# @1claw/sdk (v0.63.0)
 
 > ⭐ **Star [1clawAI/agent-templates](https://github.com/1clawAI/agent-templates)** — ready-to-run agent templates wired to 1Claw. It is our single starred repo.
 
@@ -1225,6 +1225,42 @@ if (provisioned.agent_api_key) {
     console.log("save this key:", provisioned.agent_api_key);
 }
 ```
+
+## v0.63: Self-custody keys
+
+`client.keyCustody` covers the HTTP side of self-custody: 2-of-3 FROST wallets
+(`client_tss`: keygen, sign, share refresh, wrapped shares, recovery kit, restore),
+Tron 2-of-3 native multisig and EVM 2-of-3 Safes (`client_multisig`, beta). The
+device side (FROST rounds, wrapping shares under the passkey PRF, the recovery
+kit) runs in the browser with `@1claw/tss-wasm`; these methods carry its output.
+Methods that take `passkeyToken` send `X-Passkey-Token`; those that take
+`authConfirm` send `X-Auth-Confirm`. Request and response types come from the
+OpenAPI spec. Human users only.
+
+```typescript
+const { data: chains } = await client.keyCustody.getTssChains();
+
+// Prepare runs wallet access, sanctions, spend policy, transaction policy and
+// treasury_send consensus. A consensus hold answers 202.
+let res = await client.keyCustody.treasuryPrepare("solana", { to, value: "0.5" });
+if (res.meta?.status === 202) {
+    const { pending_approval_id } = res.data as { pending_approval_id: string };
+    // ...once approved:
+    res = await client.keyCustody.treasuryPrepare("solana", {
+        to,
+        value: "0.5",
+        approval_id: pending_approval_id,
+    });
+}
+
+// Adding a second wrap needs a re-auth token for purpose "tss.key.wrap_add".
+await client.keyCustody.rewrapClientShare(keyId, wrap, reauthToken);
+
+// Kit coverage is recorded only from a kit proof.
+await client.keyCustody.confirmKit(keyId, { generation, group_public_key, kit_proof });
+```
+
+`api-types.ts` is regenerated from `@1claw/openapi-spec` 0.61.76.
 
 ## OpenAPI Types
 

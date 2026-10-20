@@ -1033,6 +1033,10 @@ export interface paths {
          * Enable CMEK on a vault
          * @description Enable client-side encryption on a vault. Requires Business or Enterprise plan.
          *     Only the key's SHA-256 fingerprint is stored — the key never touches the server.
+         *
+         *     Refused with 400 on the signing-key vaults (`__agent-keys`,
+         *     `__treasury-keys`): the server signs with the keys they hold, and a key it
+         *     cannot open without the customer would break every signature.
          */
         post: operations["enableCmek"];
         /**
@@ -1060,6 +1064,11 @@ export interface paths {
          * @description Re-encrypts all secrets from the old CMEK key to the new one.
          *     Keys are passed in headers (TLS-only) and exist in server memory
          *     only during the rotation. Batched in groups of 100 secrets.
+         *
+         *     Refused with 400 on the signing-key vaults (`__agent-keys`,
+         *     `__treasury-keys`): a rotation rewrites ciphertext in place, which the
+         *     key escrow would not pick up, leaving the escrowed copy sealed under the
+         *     retired key.
          */
         post: operations["rotateCmek"];
         delete?: never;
@@ -1434,7 +1443,26 @@ export interface paths {
         delete: operations["deleteAgent"];
         options?: never;
         head?: never;
-        /** Update an agent */
+        /**
+         * Update an agent
+         * @description Human users only. Control-plane consensus on `agent.update` runs first:
+         *     when the org requires it the call answers 202 `pending_approval`, and the
+         *     same PATCH with `approval_id` set to the approved `pending_approval_id`
+         *     proceeds.
+         *
+         *     A change to any transaction guardrail needs a step-up: `X-Auth-Confirm`
+         *     with a re-auth token for purpose `security.guardrail.edit` or the account
+         *     password. Since 2026-10-18 that includes `raw_signing_enabled` and
+         *     `raw_signing_policy`, because blind signing bypasses every other
+         *     guardrail; before, enabling it was a plain `agent.update`. The step-up
+         *     applies whenever the value actually changes, tightening included. A
+         *     widening (turning raw signing on, or moving `raw_signing_policy` from
+         *     `deny` toward `approve` or `allow`) is queued for human approval when the
+         *     org requires approval for guardrail changes: the call answers 202
+         *     `awaiting_approval` and the change is applied by the server when that
+         *     approval is approved. Spend-cap fields record a revision and can queue,
+         *     but do not need the step-up.
+         */
         patch: operations["updateAgent"];
         trace?: never;
     };
@@ -1458,7 +1486,8 @@ export interface paths {
          *     inherits the parent's vault access policies (policy lookups include the
          *     parent's rows) and guardrails; does not count against the plan's agent cap
          *     (capped at 50 per parent); and cannot have children of its own. Human-only.
-         *     Audited as `agent.child_created`.
+         *     When the parent has 1Claw Pay or cards enabled, only an org owner or admin
+         *     may create a child (403 otherwise). Audited as `agent.child_created`.
          */
         post: operations["createChildAgent"];
         delete?: never;
@@ -1654,7 +1683,17 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Rotate a signing key for a chain */
+        /**
+         * Rotate a signing key for a chain
+         * @description Human users only. Generates a new server-held key for the chain and
+         *     retires the old one. A self-custody (`client_tss`) agent key cannot be
+         *     rotated: anyone other than its owner gets 403, and its owner gets 409
+         *     (rotating would replace it with a server key; deactivate it as its owner
+         *     and create the replacement you want). Gated by control-plane consensus as
+         *     `signing_key.rotate` (202 with `pending_approval_id`; call again with
+         *     `?approval_id=`). The approval is spent only after the new key is stored
+         *     and escrowed.
+         */
         post: operations["rotateSigningKey"];
         delete?: never;
         options?: never;
@@ -1672,7 +1711,14 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Deactivate a signing key for a chain */
+        /**
+         * Deactivate a signing key for a chain
+         * @description Human users only. A self-custody (`client_tss`) agent key can be
+         *     deactivated only by its owner (the user who holds shares 2 and 3);
+         *     anyone else gets 403. Gated by control-plane consensus as
+         *     `signing_key.deactivate` (202 with `pending_approval_id`; call again
+         *     with `?approval_id=`).
+         */
         delete: operations["deactivateSigningKey"];
         options?: never;
         head?: never;
@@ -2159,7 +2205,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Test binding connectivity */
+        /**
+         * Test binding connectivity
+         * @description Runs the binding's connectivity check with its stored credential and the
+         *     same URL, host and TLS rules as execute (for `postgres` / `mysql`, see
+         *     the sslmode rule on `binding_type`). `error` is scrubbed the same way an
+         *     execute error is: credential values (including their base64 and
+         *     percent-encoded forms) are redacted and request URLs are stripped.
+         */
         post: operations["testBinding"];
         delete?: never;
         options?: never;
@@ -3613,11 +3666,22 @@ export interface paths {
          * Store the customer's wrapped share of a threshold key
          * @description Stores ciphertext the vault cannot open: the customer's share of a
          *     2-party threshold signing key, wrapped in the browser under the
-         *     passkey's WebAuthn PRF output (`passkey_prf`, one wrap per credential)
-         *     or under a recovery code (`recovery_code`, one per key). The vault
-         *     keeps the blob and its salt and returns them only to the owning user.
-         *     Human users only; the passkey must have reported PRF support at
-         *     registration. Idempotent per (key, credential).
+         *     passkey's WebAuthn PRF output (`passkey_prf`, one wrap per credential
+         *     and share generation). `recovery_code` wraps are refused: the recovery
+         *     code seals the offline kit in the browser. The vault keeps the blob and
+         *     its salt and returns them only to the owning user. Human users only;
+         *     the passkey must have reported PRF support at registration.
+         *
+         *     A stored wrap is never overwritten: if a wrap for this credential and
+         *     generation already exists the call answers 409. To replace it, delete
+         *     the old wrap first (`DELETE /v1/keys/{key_id}/client-share/{share_id}`,
+         *     which needs re-authentication).
+         *
+         *     Owner only. The first wrap of a share generation (part of creating the
+         *     key, or of a refresh) needs no step-up. Any later wrap for that
+         *     generation adds another way to open the share, so it needs
+         *     `X-Auth-Confirm` (purpose `tss.key.wrap_add`, strong factor), the same
+         *     as `…/client-share/rewrap`; without it the call answers 403.
          */
         put: operations["putClientKeyShare"];
         post?: never;
@@ -3643,7 +3707,15 @@ export interface paths {
          * @description Same write as `PUT …/client-share`, for a key that already has at
          *     least one wrap: the browser, holding the share in memory during a
          *     passkey session, re-wraps it under a newly added passkey's PRF
-         *     output or under the recovery code. 409 if no wrap exists yet.
+         *     output. Owner only. 409 if no wrap exists yet, or if a wrap for
+         *     this credential and generation already exists (delete it first,
+         *     with re-authentication, to replace it).
+         *
+         *     Needs `X-Auth-Confirm`: a single-use re-auth token from
+         *     `POST /v1/auth/reauth/complete` with purpose `tss.key.wrap_add`, or the
+         *     account password. Strong factor: once a passkey (usable on this domain)
+         *     or TOTP is enrolled, the confirmation must use one of them and a
+         *     password is refused. Without it the call answers 403.
          */
         post: operations["rewrapClientKeyShare"];
         delete?: never;
@@ -3670,8 +3742,224 @@ export interface paths {
          * @description Deletes a single wrap. Wraps tied to a passkey are also removed when
          *     that passkey is deleted. Removing the last wrap of a `client_tss` key
          *     makes the key unrecoverable — the vault holds only its own share.
+         *
+         *     Owner only, and needs `X-Auth-Confirm`: a single-use re-auth token
+         *     from `POST /v1/auth/reauth/complete` with purpose `tss.key.wrap_delete`,
+         *     or the account password. Strong factor: once a passkey (usable on this
+         *     domain) or TOTP is enrolled, the confirmation must use one of them and
+         *     a password is refused. Audited `client_share.deleted`.
          */
         delete: operations["deleteClientKeyShare"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/keys/tss/chains": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Chains you can create a self-custody wallet on
+         * @description `chains` is what this organization can create now; `supported` is every
+         *     chain the threshold path implements. XRP and Cardano roll out as a beta.
+         *     Only creation is gated: an existing key always signs, restores, refreshes
+         *     and recovers offline. `multisig_chains` / `multisig_supported` are the
+         *     same for native 2-of-3 multisig wallets (Tron, `client_multisig`), behind
+         *     the same rollout flags, and `multisig_safe_chains` for 2-of-3 Safes on EVM.
+         */
+        get: operations["getTssChains"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/keys/tss/prf-salt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The account's master-wrap PRF salt
+         * @description The per-account WebAuthn PRF salt for the `client_tss` master wrap,
+         *     created on first use and stable after. Evaluate the passkey PRF over it,
+         *     then HKDF a wrap key per (key_id, share index). A public input: it
+         *     derives nothing without the passkey. Human users only.
+         */
+        get: operations["getTssPrfSalt"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/keys/{key_id}/kit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm a recovery kit for the key's current share generation
+         * @description The owner attests they hold the offline recovery kit for this 2-of-3 key at
+         *     its current share generation (after a refresh, or re-checking a kit they
+         *     have). The kit and the recovery code never reach 1Claw. The vault checks
+         *     the public key and generation it is bound to, and `kit_proof`: a proof,
+         *     made in the browser from the opened kit, that the kit holds share 3 of the
+         *     key's current generation (a kit from before a refresh is refused, since the
+         *     group key alone cannot tell old shares from new). Audited `kit.downloaded`.
+         */
+        post: operations["confirmTssKit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/keys/{key_id}/client-share/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Restore a lost device share from the recovery kit
+         * @description For an owner who lost every passkey holding the device share. The browser
+         *     opens the kit with the recovery code locally, re-wraps share 2 under a new
+         *     passkey (master wrap), and uploads only that wrap. Needs `X-Auth-Confirm`
+         *     (a re-auth token with purpose `tss.key.restore`, or the password). Audited
+         *     `tss_key.recovered_via_code`; the owner is emailed. No waiting period: the
+         *     kit plus the code can already spend without 1Claw.
+         */
+        post: operations["restoreTssShareFromKit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/keys/{key_id}/tss/refresh/begin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Begin a share refresh
+         * @description Proactive refresh of a 2-of-3 key: the same three participants mint new
+         *     shares of the same group key (same address) with a dealerless refresh DKG,
+         *     and old shares stop combining with new ones. Needs `X-Passkey-Token` from a
+         *     tx-assert with `action: tss_keygen` and `tx_digest` = hex SHA-256 of
+         *     `refresh:{key_id}`. 409 while an earlier refresh waits to be committed or
+         *     aborted.
+         */
+        post: operations["tssRefreshBegin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/keys/{key_id}/tss/refresh/round2": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Share refresh, round 2
+         * @description Same shapes as keygen round 2: round-1 packages from participants 2 and 3.
+         */
+        post: operations["tssRefreshRound2"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/keys/{key_id}/tss/refresh/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Share refresh, phase 1 done
+         * @description The vault stores its new share for the next generation as pending. Nothing
+         *     live changes: the old shares, wraps and kit keep working until commit.
+         *     Next, wrap the new device share for `generation` (PUT client-share with
+         *     `generation`), seal and save a new kit, then commit.
+         */
+        post: operations["tssRefreshComplete"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/keys/{key_id}/tss/refresh/commit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Commit a share refresh
+         * @description One transaction: requires a passkey wrap of the new device share, then moves
+         *     the key onto the new generation (and kit coverage) and deletes every old
+         *     wrap, runtime holder wraps included (re-provision runtimes after). Audited
+         *     `tss_key.resharded`.
+         */
+        post: operations["tssRefreshCommit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/keys/{key_id}/tss/refresh/abort": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Abort a pending share refresh
+         * @description Discards the pending share and wraps. The old set stayed live throughout.
+         */
+        post: operations["tssRefreshAbort"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -3817,6 +4105,10 @@ export interface paths {
          *     declared destination, fetches a recent blockhash and returns the
          *     unsigned transaction message. Sign it with `/v1/keys/{key_id}/tss/sign/*`
          *     and submit with `…/tss/broadcast`.
+         *     It then runs the same Cedar/OPA transaction policy (action `submit`) and
+         *     `treasury_send` M-of-N consensus a server-custody treasury send runs; the
+         *     vault co-signs this send, so an org rule that would stop a server send
+         *     stops it too.
          */
         post: operations["tssTreasuryPrepare"];
         delete?: never;
@@ -3846,6 +4138,309 @@ export interface paths {
          *     `treasury_wallet.send`.
          */
         post: operations["tssTreasuryBroadcast"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/treasury/multisig/wallets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create a Tron 2-of-3 native multisig wallet (client_multisig)
+         * @description Beta (same rollout flags as self-custody creation; see
+         *     `GET /v1/keys/tss/chains` `multisig_chains`). The page generates the
+         *     device key D and the recovery key R, proves possession of each, and
+         *     seals both into the offline recovery kit before calling this; the vault
+         *     adds its own key V (escrowed) and records the wallet as
+         *     `pending_activation`. The address is D's, so until activation the
+         *     customer alone controls it. Each proof is a 65-byte recoverable ECDSA
+         *     signature (r ‖ s ‖ v, low-S) over
+         *     sha256("1claw-multisig-pop-v1" ‖ user_id (16 bytes) ‖ chain ‖ 0x00 ‖ role
+         *     ‖ 0x00 ‖ public key bytes), role `device` or `recovery`. Needs a passkey
+         *     with PRF (D is then wrapped under it, `PUT /v1/keys/{key_id}/client-share`).
+         *     Creation never records kit coverage: confirm the kit afterwards with
+         *     `POST /v1/keys/{key_id}/kit` and R's kit proof. Owner only. Audited
+         *     `treasury_wallet.multisig_created`.
+         */
+        post: operations["createMultisigWallet"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/treasury/wallets/{chain}/multisig/activation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                chain: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Prepare the activation of a multisig wallet
+         * @description Once the wallet is backed up (a passkey holds D and the kit is
+         *     confirmed) and its address holds at least 101 TRX
+         *     (`activation_min_sun`), builds the AccountPermissionUpdate that installs
+         *     owner = 2-of-3 and active = 2-of-3 (transfers and contract calls only)
+         *     over V, D and R, from a reference block, and returns its raw bytes. The
+         *     network burns a 100 TRX fee when it lands. The device decodes and checks
+         *     the raw itself, then signs it with D (the account's sole owner until
+         *     then) and calls `activation/complete`. 409 when already active or not
+         *     funded.
+         */
+        post: operations["prepareMultisigActivation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/treasury/wallets/{chain}/multisig/activation/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                chain: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Broadcast a multisig wallet's signed activation
+         * @description `raw` must be exactly what `activation` prepared and `device_signature`
+         *     D's signature over sha256(raw). Needs `X-Passkey-Token` from a passkey
+         *     assertion bound to action `tss_sign` and the hex sha256 of `raw`. The
+         *     vault re-checks the raw, broadcasts it with D's signature alone, and
+         *     waits a few blocks for the permissions to appear; poll
+         *     `activation/status` if it answers `pending_activation`. A second submit
+         *     of the same prepared raw is 409. Audited
+         *     `treasury_wallet.multisig_activation_sent` then
+         *     `treasury_wallet.multisig_activated`.
+         */
+        post: operations["completeMultisigActivation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/treasury/wallets/{chain}/multisig/activation/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                chain: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Re-check a multisig wallet's activation on chain
+         * @description For a `pending_activation` wallet, reads the account from the network
+         *     and marks the wallet `active` once its owner and active permissions are
+         *     exactly the 2-of-3 over the wallet's keys. Returns the wallet either way.
+         */
+        post: operations["getMultisigActivationStatus"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/treasury/wallets/{chain}/multisig/prepare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                chain: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Build a TRX transfer from an active multisig wallet
+         * @description Runs the owner's send gates (wallet access, the sanctions screen on the
+         *     destination, spend policies), then builds a native transfer under the
+         *     active permission (Permission_id 2) from a reference block and returns
+         *     its raw bytes, `to` and `value_base_units` (sun). The device decodes and
+         *     checks the raw, confirms it pays exactly what was asked, signs with D,
+         *     and calls `multisig/broadcast`. 409 until the wallet is active.
+         *     It then runs the same Cedar/OPA transaction policy (action `submit`) and
+         *     `treasury_send` M-of-N consensus a server-custody treasury send runs; the
+         *     vault co-signs this send, so an org rule that would stop a server send
+         *     stops it too.
+         */
+        post: operations["prepareMultisigSend"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/treasury/wallets/{chain}/multisig/broadcast": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                chain: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Co-sign and broadcast a multisig transfer
+         * @description `raw` must be a transfer this wallet prepared (and not yet submitted),
+         *     `device_signature` D's signature over sha256(raw), and `X-Passkey-Token`
+         *     a passkey assertion bound to `tss_sign` and the hex sha256 of `raw`. The
+         *     vault re-checks the raw against what was prepared, adds its own
+         *     signature last, and broadcasts D + V. The vault's key never signs
+         *     alone. Audited `treasury_wallet.send`; fires `wallet.transfer.sent`.
+         */
+        post: operations["broadcastMultisigSend"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/treasury/multisig-safes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List your 2-of-3 Safes
+         * @description The caller's active 2-of-3 Safes, each with its owners and backup state. Owner only.
+         */
+        get: operations["listMultisigSafes"];
+        put?: never;
+        /**
+         * Create a 2-of-3 Safe on EVM (client_multisig)
+         * @description Beta (same rollout flags as self-custody creation; see
+         *     `GET /v1/keys/tss/chains` `multisig_safe_chains`). A Safe v1.4.1 with
+         *     owners V (the vault's key, generated here and escrowed), D (the device
+         *     key, wrapped under the customer's passkey) and R (the recovery kit's
+         *     key), in that order, threshold 2: `Safe.setup` with no module or signer
+         *     configuration and the pinned fallback handler. The page generates D and
+         *     R and proves possession of each: a 65-byte recoverable ECDSA signature
+         *     (r ‖ s ‖ v, low-S) over sha256("1claw-multisig-pop-v1" ‖ user_id (16
+         *     bytes) ‖ chain ‖ 0x00 ‖ role ‖ 0x00 ‖ public key bytes), role `device` or
+         *     `recovery`, chain the EVM chain. The vault records the counterfactual
+         *     (CREATE2) address, salt keccak256("1claw-multisig-safe-v1" ‖ user_id ‖
+         *     safe_id)[0..8] (big-endian, top bit clear); the Safe is deployed with the
+         *     first send. The page re-derives the address from the three owners and
+         *     the ids and refuses a mismatch, then wraps D (`PUT
+         *     /v1/keys/{safe_id}/client-share`), seals the recovery kit and confirms it
+         *     (`POST /v1/keys/{safe_id}/kit`). One Safe per chain per user. Needs a
+         *     passkey with PRF. Owner only. Audited `multisig_safe.created`.
+         */
+        post: operations["createMultisigSafe"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/treasury/multisig-safes/{safe_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                safe_id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Retire an undeployed, empty 2-of-3 Safe
+         * @description Retires a Safe that was never deployed and holds nothing on chain, so a
+         *     Safe whose recovery kit was never saved does not block its chain. Refused
+         *     (409) once the Safe has code or any balance.
+         */
+        delete: operations["retireMultisigSafe"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/treasury/multisig-safes/{safe_id}/prepare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                safe_id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Prepare a native transfer from a 2-of-3 Safe
+         * @description Runs the owner's send gates (wallet access, the sanctions screen on the
+         *     destination, spend policies, Cedar/OPA transaction policy and
+         *     `treasury_send` M-of-N consensus), then fixes a SafeTx: a native transfer (no calldata,
+         *     operation 0, positive value, not to the Safe itself) at the Safe's
+         *     current nonce (0 while undeployed). Returns its EIP-712 SafeTx hash (Safe
+         *     v1.4.1 domain: chainId and verifyingContract; gas fields zero). The
+         *     device recomputes the hash from the fields, confirms it pays exactly what
+         *     was asked, signs it with D after a passkey touch bound to it, and calls
+         *     `execute`. ERC-20 and contract calls are refused on this path.
+         */
+        post: operations["prepareMultisigSafeSend"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/treasury/multisig-safes/{safe_id}/execute": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                safe_id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Co-sign and relay a prepared 2-of-3 Safe transfer
+         * @description `safe_tx_hash` must be a transfer this Safe prepared (and not yet
+         *     submitted) and `device_signature` D's signature over it. Needs
+         *     `X-Passkey-Token` from a passkey assertion bound to action `tss_sign` and
+         *     the SafeTx hash (lowercase hex, no 0x). The vault reads the destination,
+         *     amount and nonce from the prepared row, recomputes the hash, re-runs the
+         *     sanctions screen on the destination, checks D's signature and the
+         *     on-chain nonce, records the send in the spend ledger at its value (so it
+         *     counts toward daily caps), adds V's signature last, and relays:
+         *     the owner's server-custody Ethereum treasury wallet (not an owner) pays
+         *     gas, deploying the Safe through the pinned factory first if needed, then
+         *     submitting `execTransaction`. 400 when that wallet lacks gas on the
+         *     chain; 409 if the nonce moved or the transaction was already submitted.
+         *     Audited `multisig_safe.executed`; fires `wallet.transfer.sent`.
+         */
+        post: operations["executeMultisigSafeSend"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3921,11 +4516,31 @@ export interface paths {
         put?: never;
         /**
          * Agent declares a send from a delegated client_tss wallet
-         * @description Runs the agent's guardrails (chains, allowlists, caps, daily limits,
-         *     approval policy) and the sanctions screen on the declared call, builds
-         *     the unsigned message and records it as a prepared intent. Only a
-         *     prepared message can enter `/tss/sign/begin`. Requires a treasury
-         *     delegation and a share provisioned to the agent's runtime.
+         * @description The only gate on an agent threshold signature: sign/complete hands the
+         *     signature to the agent, which could broadcast it without 1Claw, so
+         *     everything `POST /v1/agents/{agent_id}/transactions` checks before
+         *     signing is checked here, in this order: the agent's guardrails (chains,
+         *     allowlists, per-transaction and daily caps), the sanctions screen, the
+         *     human approval policy (or the resume of an approved one), Cedar/OPA
+         *     transaction policy, and M-of-N consensus (action `submit_transaction`).
+         *     Then it builds the unsigned message, writes a `prepared` row to the
+         *     transaction ledger (so daily caps count it from this moment) and
+         *     records the prepared intent. Only a prepared message can enter
+         *     `/tss/sign/begin`, and sign/complete and broadcast refuse (403) a
+         *     prepare that recorded no ledger row. Requires a treasury delegation and
+         *     a share provisioned to the agent's runtime.
+         *
+         *     Two 202 outcomes, neither of which builds a message:
+         *
+         *     - Human approval (`status: awaiting_approval`): a ledger row is written
+         *       as `awaiting_approval` and an approval with action
+         *       `agent_tss_transaction` is created. Once a human approves it, call
+         *       prepare again with the same `key_id`, `to` and `value` and
+         *       `resume_tx_id` set to the returned `transaction_id`. Rejecting the
+         *       approval marks the row `rejected`.
+         *     - M-of-N consensus (`status: pending_approval`): call prepare again with
+         *       the same transfer and `approval_id` set to the returned
+         *       `pending_approval_id` once the approval is granted.
          */
         post: operations["agentTssPrepare"];
         delete?: never;
@@ -3967,7 +4582,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Agent threshold signing, round 2 */
+        /**
+         * Agent threshold signing, round 2
+         * @description Billed as a signature before signing. The signing session must trace back
+         *     to a prepare that wrote a `prepared` ledger row; one that did not is
+         *     refused with 403 ("prepare it again"). On success the row moves to
+         *     `signed`, so it keeps counting toward daily caps whether or not the
+         *     agent broadcasts through 1Claw.
+         */
         post: operations["agentTssSignComplete"];
         delete?: never;
         options?: never;
@@ -3989,9 +4611,12 @@ export interface paths {
         /**
          * Broadcast an agent's threshold-signed send
          * @description Verifies the signature under the wallet key, checks the message is the
-         *     prepared one, re-runs the agent's guardrails, records the transaction
-         *     (daily limits count it) and submits. Audited as `treasury_wallet.send`
-         *     with `via: runtime_share_holder`.
+         *     prepared one and that the prepared destination is a transfer inside it,
+         *     and submits. Guardrails are not re-run here: they ran at prepare, and
+         *     the ledger row written there has counted toward daily limits since. A
+         *     prepare that recorded no ledger row is refused with 403. The broadcast
+         *     updates that row with the transaction hash. Audited as
+         *     `treasury_wallet.send` with `via: runtime_share_holder`.
          */
         post: operations["agentTssBroadcast"];
         delete?: never;
@@ -4282,6 +4907,16 @@ export interface paths {
          * @description Generates a new keypair, deactivates the old wallet, and creates a
          *     new active wallet. The old private key version is retained in the
          *     vault for audit. Counts toward wallet quota (does not require a paid plan).
+         *     Human users only.
+         *
+         *     Rotation generates a 1Claw-held (server) key, so a self-custody
+         *     (`client_tss`) wallet is refused with 409 (use a share refresh,
+         *     `POST /v1/keys/{key_id}/tss/refresh/begin`, to change its shares), and
+         *     the org's custody policy applies as it does on create (403 where new
+         *     server keys are no longer issued). Gated by control-plane consensus as
+         *     `treasury_wallet.rotate`: when the org requires it the call answers 202
+         *     with `pending_approval_id`; call again with `?approval_id=` once approved.
+         *     The approval is spent only after the new key is stored and escrowed.
          */
         post: operations["rotateTreasuryWallet"];
         delete?: never;
@@ -5681,6 +6316,10 @@ export interface paths {
         /**
          * Bootstrap resources for a connected user
          * @description Executes a template to create vault, agent, and policies for the connected user. Returns a claim URL and token for the user to claim their resources.
+         *
+         *     A template agent with raw signing turned on is created with
+         *     `raw_signing_enabled: true` and `raw_signing_policy: approve`, so each raw
+         *     signature waits for a human approval until the end user changes the policy.
          */
         post: {
             parameters: {
@@ -6655,6 +7294,12 @@ export interface paths {
          *     keys costs a KMS key per chain). The whole batch is checked before
          *     anything is created, so a template that would overshoot is refused
          *     rather than partly applied.
+         *
+         *     Agents added here always start with `raw_signing_enabled: false`, even if
+         *     the template's agent asks for raw signing: no end user consented on this
+         *     call. The end user turns it on through
+         *     `PATCH /v1/platform/connections/{connectionId}/agents/{agentId}` with
+         *     their re-auth token.
          */
         post: operations["addConnectionAgents"];
         delete?: never;
@@ -6682,6 +7327,18 @@ export interface paths {
          * @description Platform-scoped agent update for connected end-users. Allows enabling Intents API,
          *     Execution Intents, and updating the default system prompt without human dashboard access.
          *     Agent must be provisioned on the connection. plt_ auth only.
+         *
+         *     `raw_signing_enabled: false` is applied directly. `raw_signing_enabled: true` on an
+         *     agent that does not already have it is not a platform privilege: the call must carry
+         *     `X-Auth-Confirm` with a re-auth token (`rat_...`) the end user obtained for purpose
+         *     `security.guardrail.edit` (a password is refused on this route), and the enable runs
+         *     through the end user's own `PATCH /v1/agents/{agent_id}` path in their org. That
+         *     applies control-plane consensus on `agent.update` (202 `pending_approval`; retry with
+         *     `approval_id`), the guardrail step-up, and the widening approval queue when the org
+         *     requires approval for guardrail changes (202 `awaiting_approval`). The enable leaves
+         *     `raw_signing_policy` at `approve` unless the end user already chose `approve` or
+         *     `deny`. Audited `platform.connection.raw_signing_enable` with outcome `applied` or
+         *     `queued`.
          */
         patch: operations["patchConnectionAgent"];
         trace?: never;
@@ -7854,7 +8511,24 @@ export interface paths {
         head?: never;
         /**
          * Set an agent's payment guardrails
-         * @description Human callers only. These are the numbers every payment decision is measured against — the per-payment cap, the daily limit, the recipient allowlist, whether a passkey is required at all, and whether the agent may hold a spending grant. An agent that could set them would be setting its own ceiling. Omitted fields are left alone; values can currently be set but not cleared.
+         * @description Human owners and admins only. These are the numbers every payment
+         *     decision is measured against: the per-payment cap, the daily limit,
+         *     the recipient allowlist, whether a passkey is required at all, and
+         *     whether the agent may hold a spending grant. An agent that could set
+         *     them would be setting its own ceiling.
+         *
+         *     Omitted fields are left alone; `null` clears a cap, the allowlist or
+         *     the grant TTL. A change that widens anything (raising or clearing a
+         *     cap, turning pay or grant mode on, turning a passkey or approval
+         *     requirement off, a longer grant TTL, or naming a recipient that is not
+         *     already on the allowlist) needs `X-Auth-Confirm` with a re-auth token
+         *     for purpose `security.agent_pay_guardrails.widen` (strong factor: a
+         *     password is refused once a passkey or TOTP is enrolled). Tightening
+         *     needs no step-up. Audited `agent.pay_guardrails_updated`.
+         *
+         *     No allowlist is not a wildcard: `null` and `[]` are enforced alike, so
+         *     an agent with `pay_require_passkey: false` and no allowlist can pay no
+         *     one unattended.
          */
         patch: operations["updatePaySettings"];
         trace?: never;
@@ -7910,7 +8584,7 @@ export interface paths {
         put?: never;
         /**
          * Prepare a spending grant (step one of two)
-         * @description Fixes the grant terms and a server-side nonce and returns the `grant_digest` the person must assert over with a passkey (`action=x402_grant`). Then call `POST .../pay/grants` with the same terms, the digest, and the passkey token. Preparations are single-use, bound to the caller and agent, and expire after ten minutes. The nonce never leaves the server, so the digest cannot be recomputed for different terms. Human callers only; terms are validated against the agent's maximum cap and window here as well.
+         * @description Fixes the grant terms and a server-side nonce and returns the `grant_digest` the person must assert over with a passkey (`action=x402_grant`). Then call `POST .../pay/grants` with the same terms, the digest, and the passkey token. Preparations are single-use, bound to the caller and agent, and expire after ten minutes. The nonce never leaves the server, so the digest cannot be recomputed for different terms. Human callers only; terms are validated against the agent's maximum cap and window here as well. Owners and admins only.
          */
         post: operations["preparePayGrant"];
         delete?: never;
@@ -7930,7 +8604,7 @@ export interface paths {
         put?: never;
         /**
          * Create a spending grant
-         * @description Human callers only. Requires a passkey assertion over the digest of exactly these terms, and stays within the agent's own maximum cap and window — a grant is a delegation inside the limits already set, not a way around them.
+         * @description Human owners and admins only. Requires a passkey assertion over the digest of exactly these terms, and stays within the agent's own maximum cap and window — a grant is a delegation inside the limits already set, not a way around them.
          */
         post: operations["createPayGrant"];
         delete?: never;
@@ -13146,7 +13820,12 @@ export interface components {
             pay_enabled?: boolean;
             pay_max_usd?: string | null;
             pay_daily_limit_usd?: string | null;
-            /** @description Recipients an unattended agent may pay. Null is not a wildcard — for an unattended agent it means no one. */
+            /**
+             * @description Recipients an unattended agent may pay. Null is not a wildcard:
+             *     it is enforced exactly like `[]`, so for an unattended agent it
+             *     means no one. An agent that requires a passkey or an approval can
+             *     pay any recipient a person approves, payment by payment.
+             */
             pay_payto_allowlist?: string[] | null;
             /** @description Defaults true. Turning it off is what "unattended" means. */
             pay_require_passkey?: boolean;
@@ -14142,7 +14821,12 @@ export interface components {
             };
             /** @description Default policy applied to EIP-712 signing requests. */
             eip712_default_policy?: string;
-            /** @description Allow this agent to sign raw digests. */
+            /**
+             * @description Allow this agent to sign raw digests (blind signing; bypasses transaction
+             *     guardrails). A change needs the guardrail step-up (`X-Auth-Confirm`, purpose
+             *     `security.guardrail.edit`); turning it on is a widening and queues when the
+             *     org requires approval for guardrail changes.
+             */
             raw_signing_enabled?: boolean;
             /** @description Default LLM provider for automations and Shroud. */
             default_llm_provider?: string | null;
@@ -14267,7 +14951,9 @@ export interface components {
             /** @description Rolling 24h USD spend cap. Null clears. */
             tx_daily_limit_usd?: string | null;
             /**
-             * @description Raw digest signing policy.
+             * @description Raw digest signing policy. A change needs the guardrail step-up
+             *     (`X-Auth-Confirm`, purpose `security.guardrail.edit`); moving toward `allow`
+             *     is a widening and queues when the org requires approval for guardrail changes.
              * @enum {string}
              */
             raw_signing_policy?: "allow" | "deny" | "approve";
@@ -14338,7 +15024,11 @@ export interface components {
             };
             /**
              * Format: uuid
-             * @description Approved policy_change id when applying a queued guardrail widening. Resubmit PATCH with this field after the approval has been approved via POST /v1/approvals/{approval_id}/decide.
+             * @description Completes a control-plane consensus gate on `agent.update`: the
+             *     `pending_approval_id` of an earlier 202, once approved. It does not
+             *     apply a queued guardrail widening and cannot bypass the widening
+             *     queue: a queued widening is applied by the server when its approval
+             *     is approved, with nothing to resubmit.
              */
             approval_id?: string;
         };
@@ -15124,10 +15814,17 @@ export interface components {
             rotated_at?: string | null;
             /**
              * @description `server` — 1claw holds the whole private key and can sign alone.
-             *     `client_tss` — 2-party threshold key; the customer's passkey share is required.
+             *     `client_tss` — 2-of-3 threshold key; its human owner holds shares 2 and 3.
              * @enum {string}
              */
             custody?: "server" | "client_tss";
+            /**
+             * Format: uuid
+             * @description `client_tss` only: the human who can back up, provision and restore the key.
+             */
+            owner_user_id?: string;
+            /** @description `client_tss` only (list): the key's backup state, as on treasury wallets. */
+            backup?: Record<string, never>;
         };
         SigningKeyListResponse: {
             keys?: components["schemas"]["SigningKeyResponse"][];
@@ -15231,15 +15928,24 @@ export interface components {
              *     platform app that provisioned an agent for raw signing had
              *     no way to switch it on. Reported from production.
              *
-             *     This route is the only one that reaches an already
-             *     bootstrapped agent — it lives in the end user's own org, so
-             *     the platform app's own `PATCH /v1/agents/{agent_id}` returns
-             *     403, and the fleet bulk-patch refuses capability flags by
-             *     design. Enabling it is audited as
-             *     `platform.connection.agent_patch` with
-             *     `raw_signing_changed`.
+             *     `false` is applied directly. `true` (on an agent that does not
+             *     already have it) needs the end user's consent: `X-Auth-Confirm`
+             *     with their re-auth token for purpose `security.guardrail.edit`.
+             *     It is applied through the end user's own agent update path, so
+             *     control-plane consensus and the guardrail widening queue apply
+             *     and the call can answer 202. Without the token: 403. The enable
+             *     sets `raw_signing_policy` to `approve` unless the end user
+             *     already chose `approve` or `deny`. Audited as
+             *     `platform.connection.raw_signing_enable`.
              */
             raw_signing_enabled?: boolean;
+            /**
+             * Format: uuid
+             * @description Completes a control-plane consensus gate (`agent.update`) for a
+             *     raw signing enable: the `pending_approval_id` of an earlier 202,
+             *     once approved.
+             */
+            approval_id?: string;
             system_prompt?: string | null;
         };
         PatchConnectionAgentResponse: {
@@ -16228,17 +16934,189 @@ export interface components {
             created_at?: string;
             /**
              * @description `server` — 1claw holds the whole private key and can sign alone.
-             *     `client_tss` — 2-party threshold key; the customer's passkey share is required.
+             *     `client_tss` — threshold key (2-of-3: 1Claw, the customer's passkey, the
+             *     customer's offline recovery kit); 1Claw cannot sign alone.
+             *     `client_multisig`: native 2-of-3 multisig (Tron), three ordinary keys
+             *     (1Claw's, the passkey-held device key, the kit's recovery key) and the
+             *     chain's own account permissions; the address is the device key's.
              * @enum {string}
              */
-            custody?: "server" | "client_tss";
+            custody?: "server" | "client_tss" | "client_multisig";
             /**
-             * @description `client_tss` only (list responses). Wraps of the customer's share under
-             *     their own credentials — passkey PRF or recovery code; runtime holder
-             *     wraps are not counted. Below 2 the wallet should not be funded: one
-             *     lost credential would lose the share.
+             * @description `client_tss` only (list responses). Passkey wraps of the customer's
+             *     share; runtime holder wraps are not counted. Superseded by `backup`.
              */
             owner_wraps?: number;
+            /**
+             * @description `client_tss` only (list responses). Whether the key is backed up and
+             *     what it still needs. A 2-of-3 key needs a passkey wrap and a recovery
+             *     kit confirmed for its current share generation. Agents and runtimes
+             *     refuse a key that is not backed up; the owner can always move funds out.
+             */
+            backup?: {
+                /** @enum {string} */
+                threshold?: "2of2" | "2of3";
+                passkey_wraps?: number;
+                recovery_code_wraps?: number;
+                generation?: number;
+                kit_generation?: number | null;
+                kit_covered?: boolean;
+                backed_up?: boolean;
+                missing?: string[];
+            };
+            /**
+             * @description `client_multisig` only. `pending_activation` until the 2-of-3 account
+             *     permissions are confirmed on chain.
+             * @enum {string}
+             */
+            multisig_status?: "pending_activation" | "active";
+            /** @description `client_multisig` only: the three keys' addresses and public keys. */
+            multisig_keys?: components["schemas"]["MultisigKeys"];
+        };
+        MultisigKeyInfo: {
+            /** @description Base58check Tron address, or a lowercase 0x EVM address for a Safe's owners. */
+            address: string;
+            /** @description Hex SEC1 public key (33 or 65 bytes). */
+            public_key: string;
+        };
+        MultisigKeys: {
+            /** @description Always 2. */
+            threshold: number;
+            vault: components["schemas"]["MultisigKeyInfo"];
+            device: components["schemas"]["MultisigKeyInfo"];
+            recovery: components["schemas"]["MultisigKeyInfo"];
+        };
+        CreateMultisigWalletRequest: {
+            /** @enum {string} */
+            chain: "tron" | "tron-nile" | "tron-shasta";
+            /** @description Hex SEC1 public key of D (the account key). */
+            device_public_key: string;
+            /** @description Hex SEC1 public key of R (kit only). */
+            recovery_public_key: string;
+            /** @description Hex 65-byte signature by D over its proof-of-possession digest. */
+            device_proof: string;
+            /** @description Hex 65-byte signature by R over its proof-of-possession digest. */
+            recovery_proof: string;
+        };
+        MultisigWalletResponse: {
+            /** Format: uuid */
+            key_id: string;
+            chain: string;
+            /** @description The account address (D's). */
+            address: string;
+            /** @enum {string} */
+            custody: "client_multisig";
+            /** @enum {string} */
+            status: "pending_activation" | "active";
+            keys: components["schemas"]["MultisigKeys"];
+            /**
+             * Format: int64
+             * @description What the account must hold before activation (101 TRX), in sun.
+             */
+            activation_min_sun: number;
+        };
+        MultisigPreparedRaw: {
+            /** Format: uuid */
+            key_id: string;
+            chain: string;
+            /**
+             * @description Base64 `Transaction.raw` protobuf bytes, built by the vault in
+             *     canonical form. Decode and check them before signing.
+             */
+            raw: string;
+            /** @description Hex sha256(raw), the digest each key signs and the passkey binds. */
+            txid: string;
+            /** @enum {string} */
+            kind: "activation" | "transfer";
+            /** @description Transfers only. */
+            to?: string;
+            /** @description Transfers only; sun. */
+            value_base_units?: string;
+            /**
+             * Format: int64
+             * @description When the raw expires (10 minutes after its reference block).
+             */
+            expires_at_ms: number;
+        };
+        MultisigSignedRawRequest: {
+            /** @description Base64 raw bytes exactly as prepared. */
+            raw: string;
+            /** @description Hex 65-byte recoverable ECDSA signature (r ‖ s ‖ v, low-S) by D over sha256(raw). */
+            device_signature: string;
+        };
+        CreateMultisigSafeRequest: {
+            /** @enum {string} */
+            chain: "base" | "optimism" | "arbitrum" | "polygon" | "ethereum" | "base-sepolia" | "sepolia";
+            /** @description Hex SEC1 public key of D (wrapped under the passkey). */
+            device_public_key: string;
+            /** @description Hex SEC1 public key of R (kit only). */
+            recovery_public_key: string;
+            /** @description Hex 65-byte signature by D over its proof-of-possession digest (chain = this EVM chain). */
+            device_proof: string;
+            /** @description Hex 65-byte signature by R over its proof-of-possession digest. */
+            recovery_proof: string;
+        };
+        MultisigSafeResponse: {
+            /** Format: uuid */
+            id: string;
+            chain: string;
+            /** Format: int64 */
+            chain_id: number;
+            /** @description Lowercase 0x counterfactual (CREATE2) address. */
+            safe_address: string;
+            /** @enum {string} */
+            custody: "client_multisig";
+            /** @description `pending` until the first send deploys the Safe and contract code is seen at the address, then `deployed`. */
+            deploy_status: string;
+            /** @description V, D and R (lowercase 0x EVM addresses and hex SEC1 public keys), threshold 2. */
+            owners: components["schemas"]["MultisigKeys"];
+            /** @description Always 2. */
+            threshold: number;
+            /** @description Whether a passkey holds D and a recovery kit is confirmed. */
+            backup: {
+                /** @enum {string} */
+                threshold?: "2of2" | "2of3";
+                passkey_wraps?: number;
+                recovery_code_wraps?: number;
+                generation?: number;
+                kit_generation?: number | null;
+                kit_covered?: boolean;
+                backed_up?: boolean;
+                missing?: string[];
+            };
+        };
+        MultisigSafePrepared: {
+            /** Format: uuid */
+            id: string;
+            /** Format: int64 */
+            chain_id: number;
+            safe_address: string;
+            /** @description Lowercase 0x destination. */
+            to: string;
+            value_wei: string;
+            /**
+             * Format: int64
+             * @description The Safe nonce the SafeTx uses (0 while undeployed).
+             */
+            nonce: number;
+            /** @description Hex EIP-712 SafeTx hash; what D signs and the passkey token binds. */
+            safe_tx_hash: string;
+            deployed: boolean;
+        };
+        MultisigSafeExecuteResponse: {
+            chain: string;
+            safe_address: string;
+            to: string;
+            value_wei: string;
+            safe_tx_hash: string;
+            /** @description The factory deployment, when this send deployed the Safe. */
+            deploy_tx_hash?: string | null;
+            /** @description The relayed `execTransaction`. */
+            tx_hash: string;
+            /** @enum {string} */
+            custody: "client_multisig";
+            /** @description The gas payer (the owner's Ethereum treasury wallet). */
+            relayer: string;
         };
         TreasuryWalletListResponse: {
             wallets?: components["schemas"]["TreasuryWalletResponse"][];
@@ -16302,6 +17180,11 @@ export interface components {
             status: string;
             /** @description UserOperation hash (only present for gasless sends via paymaster) */
             user_op_hash?: string;
+            /**
+             * @description Raw signed transaction, non-EVM only (hex for Bitcoin and Cardano,
+             *     base64 for Solana and for a Tron multisig `Transaction`).
+             */
+            raw_tx?: string;
         };
         TreasuryWalletSwapRequest: {
             /** @description Address of the token to sell (or "native" for ETH) */
@@ -17790,9 +18673,11 @@ export interface components {
         PutClientShareRequest: {
             /**
              * @description Sidecar wraps are stored through `PUT /v1/keys/{key_id}/client-share/holder`.
+             *     `recovery_code` is refused: the recovery code seals the offline kit in the
+             *     browser, and 1Claw holds nothing it can open.
              * @enum {string}
              */
-            wrap_kind: "passkey_prf" | "recovery_code";
+            wrap_kind: "passkey_prf";
             /**
              * Format: uuid
              * @description Required for `passkey_prf`; the passkey id from `GET /v1/auth/passkeys`.
@@ -17800,8 +18685,26 @@ export interface components {
             credential_id?: string | null;
             /** @description Base64 ciphertext (≤ 4 KiB). Opaque to the vault. */
             wrapped_share: string;
-            /** @description Base64 PRF salt, 16–64 random bytes, one per key. */
+            /**
+             * @description Base64 PRF salt, 16–64 bytes. For `wrap_version` 2, the account's salt
+             *     from `GET /v1/keys/tss/prf-salt`; for 1, random per key.
+             */
             salt: string;
+            /**
+             * @description Share generation this wrap holds. Defaults to the key's current one;
+             *     during a refresh, the pending one (the new device share).
+             */
+            generation?: number;
+            /**
+             * @description 1 = per-key salt (keys created before the master wrap). 2 = the
+             *     per-account master wrap: account PRF salt, wrap key HKDF'd per
+             *     (key_id, share index). Every passkey wrap of one key must use the
+             *     same salt and version (409 otherwise), so any of the user's passkeys
+             *     opens it with one touch.
+             * @default 1
+             * @enum {integer}
+             */
+            wrap_version: 1 | 2;
         };
         ClientShareResponse: {
             /** Format: uuid */
@@ -17820,6 +18723,9 @@ export interface components {
             wrapped_share?: string;
             /** @description Base64. */
             salt?: string;
+            /** @enum {integer} */
+            wrap_version?: 1 | 2;
+            generation?: number;
             /** Format: date-time */
             created_at?: string;
             /** Format: date-time */
@@ -17917,6 +18823,10 @@ export interface components {
             key_id?: string;
             /** @enum {string} */
             key_kind?: "agent_signing_key" | "treasury_wallet";
+            /** @description The key's live share generation; only its wraps sign. */
+            generation?: number;
+            /** @description A refresh waiting to be committed or aborted. */
+            pending_generation?: number | null;
             /**
              * @description `server` — 1claw holds the whole private key and can sign alone.
              *     `client_tss` — 2-party threshold key; the customer's share is required.
@@ -18077,7 +18987,16 @@ export interface components {
         };
         CreateBindingRequest: {
             name: string;
-            /** @enum {string} */
+            /**
+             * @description `postgres` / `mysql`: the connection URL must set
+             *     `sslmode=verify-full` (Postgres) or `ssl-mode=VERIFY_IDENTITY`
+             *     (MySQL) for TLS, or `sslmode=disable` / `ssl-mode=DISABLED` for a
+             *     plaintext connection pinned to the resolved public IP. Any other
+             *     mode, including leaving it unset (the drivers default to
+             *     `prefer`), is refused with 400 when the binding is executed or
+             *     tested.
+             * @enum {string}
+             */
             binding_type: "http" | "graphql" | "postgres" | "mysql" | "redis" | "grpc" | "smtp" | "cloud_sdk" | "s3" | "custom";
             config?: {
                 [key: string]: unknown;
@@ -18102,7 +19021,11 @@ export interface components {
             credential_source?: components["schemas"]["CredentialSource"];
             /**
              * Format: uuid
-             * @description Approved policy_change id when applying a queued binding guardrail widening. Resubmit PATCH with this field after approval via POST /v1/approvals/{approval_id}/decide.
+             * @description Recorded on the guardrail revision row for reference. It does not
+             *     gate or bypass anything: a binding guardrail widening always queues
+             *     when the org requires approval, and the server applies it when the
+             *     approval is approved via POST /v1/approvals/{approval_id}/decide,
+             *     with nothing to resubmit.
              */
             approval_id?: string;
         };
@@ -18123,7 +19046,14 @@ export interface components {
             max_request_bytes: number;
             /** @description Max upstream response body bytes (default 1 MiB, hard cap 4 MiB). */
             max_response_bytes?: number;
-            /** @description Agent-supplied headers permitted in execute params. Defaults to content-type, accept, user-agent, idempotency-key. */
+            /**
+             * @description Agent-supplied headers permitted in execute params (http, graphql,
+             *     custom and grpc bindings); any other agent header is dropped.
+             *     Defaults to content-type, accept, user-agent, idempotency-key. On
+             *     grpc bindings the `grpc-*` and `connect-*` protocol headers (for
+             *     example `Connect-Protocol-Version`, `grpc-timeout`) always pass,
+             *     except names containing `auth` or `host`.
+             */
             allowed_request_headers?: string[];
             /**
              * @description GraphQL only — when false, mutation operations return 403 guardrail_violation.
@@ -18216,15 +19146,59 @@ export interface components {
             /** Format: date-time */
             expires_at?: string | null;
         };
+        TssPrepareResponse: {
+            /** Format: uuid */
+            key_id: string;
+            chain: string;
+            from: string;
+            to: string;
+            value_base_units: string;
+            /** @description The chain's freshness value the message was built against. */
+            recent_blockhash: string;
+            /** @description Base64 unsigned transaction message; what `/tss/sign/begin` takes. */
+            message: string;
+            /** @description Hex SHA-256 of the message. */
+            message_digest: string;
+            /**
+             * Format: uuid
+             * @description The `prepared` ledger row an agent prepare wrote. Present on an agent
+             *     prepare; absent on a user's own treasury prepare.
+             */
+            transaction_id?: string;
+        };
+        TssPrepareAwaitingApproval: {
+            /** @enum {string} */
+            status: "awaiting_approval";
+            /**
+             * Format: uuid
+             * @description The ledger row parked as `awaiting_approval`. Pass it back as `resume_tx_id`.
+             */
+            transaction_id: string;
+            /**
+             * Format: uuid
+             * @description The human approval (action `agent_tss_transaction`) to decide.
+             */
+            approval_id: string;
+            message: string;
+        };
+        /**
+         * @description A held transaction. The tx_approval_policy hold carries `transaction_id`
+         *     and `approval_id`; a simulation-revert hold (`simulation_failure_policy:
+         *     approve`) carries `message` and `simulation_status` instead.
+         */
         TxAwaitingApproval: {
             /** @enum {string} */
             status: "awaiting_approval";
+            /**
+             * Format: uuid
+             * @description The ledger row parked as `awaiting_approval`.
+             */
+            transaction_id?: string;
             /** Format: uuid */
-            approval_id: string;
-            /** Format: uuid */
-            tx_id?: string | null;
-            /** Format: date-time */
-            expires_at?: string | null;
+            approval_id?: string;
+            message?: string;
+            /** @enum {string} */
+            simulation_status?: "reverted";
         };
         ExecuteResponse: {
             /** Format: uuid */
@@ -19888,6 +20862,60 @@ export interface components {
             webhook_url_host?: string;
             platform_events?: string[];
             org_webhooks_note?: string;
+        };
+        TssSignBeginResponse: {
+            /** Format: uuid */
+            session_id: string;
+            /** Format: uuid */
+            key_id: string;
+            /** @description Hex SHA-256 of the message; what the passkey token was bound to. */
+            message_digest: string;
+            /** @description Base64 FROST signing commitments from the vault (first payload). */
+            server_commitments: string;
+            chain: string;
+            /** @description The wallet the transaction must spend from. */
+            wallet_address: string;
+            /**
+             * @description Base64 bytes the threshold signature covers, derived from the message by the
+             *     chain's rule (Solana: the message; XRPL: its signing data; Cardano: blake2b-256
+             *     of the body; Bitcoin: the first input's BIP341 sighash). The device derives them
+             *     itself and refuses on mismatch.
+             */
+            signing_payload: string;
+            /**
+             * @description Every payload (Base64), one per input for a Bitcoin transaction;
+             *     `signing_payload` is the first. The device signs each with its own round.
+             */
+            signing_payloads: string[];
+            /** @description The vault's commitments, one per payload; `server_commitments` is the first. */
+            server_commitments_all: string[];
+            /** Format: date-time */
+            expires_at: string;
+        };
+        TssSignCompleteRequest: {
+            /** Format: uuid */
+            session_id: string;
+            /** @description Base64 FROST signing commitments from the client. */
+            client_commitments: string;
+            /** @description Base64 FROST signature share from the client. */
+            client_signature_share: string;
+            /**
+             * @description One per payload, in order, when the transaction has several (Bitcoin
+             *     inputs). The single fields are then ignored.
+             */
+            client_commitments_all?: string[];
+            /** @description One per payload, in order, alongside `client_commitments_all`. */
+            client_signature_shares_all?: string[];
+        };
+        TssSignCompleteResponse: {
+            /** Format: uuid */
+            key_id: string;
+            message_digest: string;
+            /** @description Base64 64-byte signature over the (first) payload: Ed25519, or BIP340 for a Taproot key. */
+            signature: string;
+            signature_hex: string;
+            /** @description Every signature (Base64), one per payload; `signature` is the first. */
+            signatures: string[];
         };
         SubmitPendingApprovalResponse: {
             /** Format: uuid */
@@ -22895,7 +23923,14 @@ export interface operations {
     updateAgent: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description Required when the request changes a transaction guardrail, including
+                 *     `raw_signing_enabled` and `raw_signing_policy`: a re-auth token for purpose
+                 *     `security.guardrail.edit`, or the account password.
+                 */
+                "X-Auth-Confirm"?: string;
+            };
             path: {
                 agent_id: components["parameters"]["AgentId"];
             };
@@ -22917,19 +23952,23 @@ export interface operations {
                 };
             };
             /**
-             * @description Guardrail widening queued for human approval. The change is not
-             *     applied until approved via POST /v1/approvals/{approval_id}/decide.
-             *     Resubmit this PATCH with `approval_id` set to the returned value
-             *     after approval to apply the widening.
+             * @description Held. `awaiting_approval`: a guardrail widening queued for human
+             *     approval; the server applies it when the approval is approved via
+             *     POST /v1/approvals/{approval_id}/decide, with no resubmission.
+             *     `pending_approval`: control-plane consensus on `agent.update`;
+             *     resubmit this PATCH with `approval_id` set to `pending_approval_id`
+             *     once approved.
              */
             202: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GuardrailWideningQueuedResponse"];
+                    "application/json": components["schemas"]["GuardrailWideningQueuedResponse"] | components["schemas"]["SubmitPendingApprovalResponse"];
                 };
             };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
         };
     };
@@ -23137,7 +24176,15 @@ export interface operations {
                     "application/json": components["schemas"]["TransactionResponse"];
                 };
             };
-            /** @description Transaction held for human approval (graduated tx_approval_policy) */
+            /**
+             * @description Transaction held for human approval (graduated tx_approval_policy).
+             *     Do not resubmit: when the approval is approved the server signs (and
+             *     broadcasts) the stored request itself. Poll
+             *     `GET /v1/approvals/{approval_id}` or the transaction. There is no
+             *     request field for resuming; a `resume_tx_id` in the body is ignored.
+             *     (The self-custody `POST /v1/agents/{agent_id}/tss/prepare` is the
+             *     exception: it does take `resume_tx_id`, because the agent co-signs.)
+             */
             202: {
                 headers: {
                     [name: string]: unknown;
@@ -23333,7 +24380,10 @@ export interface operations {
     };
     rotateSigningKey: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description An approved `signing_key.rotate` consensus approval (from an earlier 202). */
+                approval_id?: string;
+            };
             header?: never;
             path: {
                 agent_id: components["parameters"]["AgentId"];
@@ -23352,12 +24402,34 @@ export interface operations {
                     "application/json": components["schemas"]["SigningKeyResponse"];
                 };
             };
+            /** @description The org requires M-of-N consensus on `signing_key.rotate`. Nothing was rotated. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubmitPendingApprovalResponse"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            /** @description The active key is a self-custody (`client_tss`) key; rotating would replace it with a server key. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
         };
     };
     deactivateSigningKey: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description An approved `signing_key.deactivate` consensus approval (from an earlier 202). */
+                approval_id?: string;
+            };
             header?: never;
             path: {
                 agent_id: components["parameters"]["AgentId"];
@@ -23367,6 +24439,15 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description The org requires M-of-N consensus on `signing_key.deactivate`. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubmitPendingApprovalResponse"];
+                };
+            };
             /** @description Key deactivated */
             204: {
                 headers: {
@@ -23374,6 +24455,7 @@ export interface operations {
                 };
                 content?: never;
             };
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
         };
     };
@@ -24170,9 +25252,9 @@ export interface operations {
                 };
             };
             /**
-             * @description Binding guardrail widening queued for human approval. Resubmit
-             *     PATCH with `approval_id` after approval via
-             *     POST /v1/approvals/{approval_id}/decide.
+             * @description Binding guardrail widening queued for human approval. The server
+             *     applies it when the approval is approved via
+             *     POST /v1/approvals/{approval_id}/decide; there is nothing to resubmit.
              */
             202: {
                 headers: {
@@ -24199,7 +25281,11 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Connection test timeout in milliseconds */
+                    /**
+                     * @description Connection test timeout in milliseconds. Default 5000; values
+                     *     outside 1000..30000 are clamped into that range, not refused.
+                     * @default 5000
+                     */
                     timeout_ms?: number;
                 };
             };
@@ -26527,7 +27613,16 @@ export interface operations {
     putClientKeyShare: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description Single-use re-auth token from `POST /v1/auth/reauth/complete` with
+                 *     purpose `tss.key.wrap_add`, or the account password. Strong factor:
+                 *     once a passkey (usable on this domain) or TOTP is enrolled, the
+                 *     confirmation must use one of them and a password is refused.
+                 *     Required only when the key already has a wrap for this generation.
+                 */
+                "X-Auth-Confirm"?: string;
+            };
             path: {
                 /** @description A treasury wallet id or an agent signing key id owned by the caller's org */
                 key_id: string;
@@ -26553,12 +27648,27 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            /**
+             * @description A wrap for this credential and generation already exists, the
+             *     generation is neither the key's current nor its pending one, or
+             *     the salt or wrap version disagrees with the key's other passkey wraps.
+             */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
         };
     };
     rewrapClientKeyShare: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                "X-Auth-Confirm": string;
+            };
             path: {
                 key_id: string;
             };
@@ -26589,7 +27699,9 @@ export interface operations {
     deleteClientKeyShare: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                "X-Auth-Confirm": string;
+            };
             path: {
                 key_id: string;
                 share_id: string;
@@ -26605,9 +27717,336 @@ export interface operations {
                 };
                 content?: never;
             };
+            400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+        };
+    };
+    getTssChains: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Chains */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        chains?: string[];
+                        supported?: string[];
+                        /** @description Native multisig chains this organization can create a wallet on now. */
+                        multisig_chains?: string[];
+                        /** @description Every chain the native multisig path implements (`tron`, `tron-nile`, `tron-shasta`). */
+                        multisig_supported?: string[];
+                        /**
+                         * @description EVM chains this organization can create a 2-of-3 Safe on now
+                         *     (beta; chains with a pinned Safe v1.4.1 deployment).
+                         */
+                        multisig_safe_chains?: string[];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    getTssPrfSalt: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The salt */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description Base64, 32 bytes. */
+                        salt?: string;
+                        /** @example 2 */
+                        wrap_version?: number;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    confirmTssKit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    generation: number;
+                    /** @description Hex, from the kit entry. */
+                    group_public_key: string;
+                    /**
+                     * @description Base64 Schnorr proof of possession of the kit's share 3 for
+                     *     `generation` (`@1claw/tss-wasm` `kit_share_proof`). For a
+                     *     `client_multisig` wallet: hex 65-byte signature by the kit's
+                     *     recovery key over sha256("1claw-multisig-kit-v1" ‖ device
+                     *     address ‖ generation as i32 big-endian)
+                     *     (`multisig_kit_proof`), and `group_public_key` is the device
+                     *     public key. For a 2-of-3 Safe (`key_id` = the Safe's id) the
+                     *     device address is the device owner's lowercase 0x EVM address.
+                     *     Missing, malformed or not matching: 400.
+                     */
+                    kit_proof: string;
+                };
+            };
+        };
+        responses: {
+            /** @description The key's backup state after confirming */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    restoreTssShareFromKit: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Auth-Confirm": string;
+            };
+            path: {
+                key_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    credential_id: string;
+                    /** @description Base64, opaque. */
+                    wrapped_share: string;
+                    /** @description Base64 account PRF salt. */
+                    salt: string;
+                    /** @description Hex, from the kit entry. */
+                    group_public_key: string;
+                    /**
+                     * @description Base64 Schnorr proof of possession of the kit's share 3 for the
+                     *     key's current share generation (`@1claw/tss-wasm`
+                     *     `kit_share_proof`). An older generation's kit would restore a
+                     *     dead share, so it is refused with 400, as is a missing proof.
+                     *     For a `client_multisig` wallet or 2-of-3 Safe: the recovery
+                     *     key's hex signature over the kit digest (`multisig_kit_proof`),
+                     *     with the device public key as `group_public_key`.
+                     */
+                    kit_proof: string;
+                };
+            };
+        };
+        responses: {
+            /** @description The new wrap */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClientShareResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    tssRefreshBegin: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Passkey-Token": string;
+            };
+            path: {
+                key_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Session opened; the vault's refresh round-1 package */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        session_id?: string;
+                        generation?: number;
+                        server_round1?: string;
+                        /** Format: date-time */
+                        expires_at?: string;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    tssRefreshRound2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    session_id: string;
+                    client_round1: string;
+                    recovery_round1: string;
+                };
+            };
+        };
+        responses: {
+            /** @description The vault's round-2 packages */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        session_id?: string;
+                        server_round2?: string;
+                        server_round2_for_recovery?: string;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    tssRefreshComplete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    session_id: string;
+                    client_round2: string;
+                    recovery_round2: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Pending */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        key_id?: string;
+                        generation?: number;
+                        public_key_package?: string;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    tssRefreshCommit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    generation: number;
+                    /** @description Hex group public key of the new kit the owner saved. */
+                    kit_group_public_key: string;
+                    /**
+                     * @description Base64 Schnorr proof of possession of the new kit's share 3 for
+                     *     `generation` (`@1claw/tss-wasm` `kit_share_proof`). The group key
+                     *     is unchanged by a refresh, so only this proof tells the new kit
+                     *     from the old one. Missing or not matching: 400.
+                     */
+                    kit_proof: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Committed; the key's backup state */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    tssRefreshAbort: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Aborted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
         };
     };
     tssKeygenBegin: {
@@ -26621,7 +28060,7 @@ export interface operations {
             content: {
                 "application/json": {
                     /** @enum {string} */
-                    chain: "solana";
+                    chain: "solana" | "xrp" | "xrp-testnet" | "cardano" | "cardano-preprod";
                     /**
                      * @description Re-key ceremony: replace the active server-custody wallet on
                      *     this chain. On `complete` its balance is swept to the new
@@ -26630,6 +28069,33 @@ export interface operations {
                      * @default false
                      */
                     replace_existing?: boolean;
+                    /**
+                     * @description `agent_signing_key` creates a self-custody signing key for
+                     *     `agent_id`: shares 2 and 3 are the caller's, the agent co-signs
+                     *     only through a runtime share holder the caller provisions, and
+                     *     only the caller can back it up or restore it (audited
+                     *     `signing_key.recovered`, webhook of the same name).
+                     * @default treasury_wallet
+                     * @enum {string}
+                     */
+                    key_kind?: "treasury_wallet" | "agent_signing_key";
+                    /**
+                     * Format: uuid
+                     * @description Required for `agent_signing_key`.
+                     */
+                    agent_id?: string;
+                    /**
+                     * Format: uuid
+                     * @description Re-key only. A re-key moves the whole balance into a key whose
+                     *     shares 2 and 3 sit on the customer's kit, so it is gated as an
+                     *     export, at begin and before the device makes a kit: wallet
+                     *     access (`export` and `send`) on the old wallet, the
+                     *     `treasury_wallet.export` control-plane consensus policy, and the
+                     *     activity policy for `export`. When consensus is required the call
+                     *     answers 202 with `pending_approval_id`; once approved, call begin
+                     *     again with that id here.
+                     */
+                    approval_id?: string;
                 };
             };
         };
@@ -26649,11 +28115,36 @@ export interface operations {
                         server_identifier?: number;
                         /** @example 2 */
                         client_identifier?: number;
+                        /**
+                         * @description The device runs both `client_identifier` (its everyday share)
+                         *     and `recovery_identifier` (the share that goes only into the
+                         *     customer's offline recovery kit). 2-of-3: any two shares sign;
+                         *     the vault alone cannot.
+                         * @example 3
+                         */
+                        recovery_identifier?: number;
+                        /** @example 2 */
+                        min_signers?: number;
+                        /** @example 3 */
+                        max_signers?: number;
                         /** @description Base64 FROST DKG round-1 package. */
                         server_round1?: string;
                         /** Format: date-time */
                         expires_at?: string;
                     };
+                };
+            };
+            /**
+             * @description Re-key only: the org requires M-of-N consensus on
+             *     `treasury_wallet.export`. Nothing was started; call again with
+             *     `approval_id` once the approval is granted.
+             */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubmitPendingApprovalResponse"];
                 };
             };
             400: components["responses"]["BadRequest"];
@@ -26674,13 +28165,15 @@ export interface operations {
                 "application/json": {
                     /** Format: uuid */
                     session_id: string;
-                    /** @description Base64 FROST DKG round-1 package from the browser. */
+                    /** @description Base64 FROST DKG round-1 package from participant 2 (the device share). */
                     client_round1: string;
+                    /** @description Base64 FROST DKG round-1 package from participant 3 (the recovery share), also run on the device. */
+                    recovery_round1: string;
                 };
             };
         };
         responses: {
-            /** @description The vault's round-2 package, addressed to the caller */
+            /** @description The vault's round-2 packages, one for each device participant */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -26689,7 +28182,10 @@ export interface operations {
                     "application/json": {
                         /** Format: uuid */
                         session_id?: string;
+                        /** @description Addressed to participant 2. */
                         server_round2?: string;
+                        /** @description Addressed to participant 3. */
+                        server_round2_for_recovery?: string;
                     };
                 };
             };
@@ -26713,8 +28209,25 @@ export interface operations {
                 "application/json": {
                     /** Format: uuid */
                     session_id: string;
-                    /** @description Base64 FROST DKG round-2 package from the browser, addressed to the vault. */
+                    /** @description Base64 FROST DKG round-2 package from participant 2, addressed to the vault. */
                     client_round2: string;
+                    /** @description Base64 FROST DKG round-2 package from participant 3, addressed to the vault. */
+                    recovery_round2: string;
+                    /**
+                     * @description Hex group public key the device sealed its offline recovery kit
+                     *     for, before this call. The vault commits the key (and sweeps a
+                     *     re-keyed wallet into it) only if it matches, and records kit
+                     *     coverage for share generation 1.
+                     */
+                    kit_group_public_key: string;
+                    /**
+                     * @description Base64 Schnorr proof of possession of share 3 for generation 1
+                     *     (`@1claw/tss-wasm` `kit_share_proof`), proving the page that
+                     *     sealed the kit held this key's recovery share. Required
+                     *     alongside `kit_group_public_key`: missing, malformed or not
+                     *     matching is a 400 and no key is created.
+                     */
+                    kit_proof: string;
                 };
             };
         };
@@ -26772,16 +28285,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        /** Format: uuid */
-                        session_id?: string;
-                        /** Format: uuid */
-                        key_id?: string;
-                        message_digest?: string;
-                        server_commitments?: string;
-                        /** Format: date-time */
-                        expires_at?: string;
-                    };
+                    "application/json": components["schemas"]["TssSignBeginResponse"];
                 };
             };
             400: components["responses"]["BadRequest"];
@@ -26801,12 +28305,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": {
-                    /** Format: uuid */
-                    session_id: string;
-                    client_commitments: string;
-                    client_signature_share: string;
-                };
+                "application/json": components["schemas"]["TssSignCompleteRequest"];
             };
         };
         responses: {
@@ -26816,14 +28315,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        /** Format: uuid */
-                        key_id?: string;
-                        message_digest?: string;
-                        /** @description Base64 64-byte Ed25519 signature. */
-                        signature?: string;
-                        signature_hex?: string;
-                    };
+                    "application/json": components["schemas"]["TssSignCompleteResponse"];
                 };
             };
             400: components["responses"]["BadRequest"];
@@ -26848,6 +28340,12 @@ export interface operations {
                     /** @description Major units, e.g. "0.5". */
                     value: string;
                     memo?: string;
+                    /**
+                     * Format: uuid
+                     * @description An approved `treasury_send` M-of-N consensus approval for this
+                     *     exact send (the `pending_approval_id` of an earlier 202).
+                     */
+                    approval_id?: string;
                 };
             };
         };
@@ -26871,6 +28369,20 @@ export interface operations {
                     };
                 };
             };
+            /**
+             * @description The org's `treasury_send` consensus policy holds this send for
+             *     M-of-N approval. Nothing is built. Once approved, call prepare
+             *     again with the same transfer and `approval_id` set to
+             *     `pending_approval_id`.
+             */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubmitPendingApprovalResponse"];
+                };
+            };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
@@ -26891,6 +28403,12 @@ export interface operations {
                 "application/json": {
                     message: string;
                     signature: string;
+                    /**
+                     * @description Every signature from `sign/complete` (`signatures`), when the
+                     *     transaction has several payloads (Bitcoin inputs). `signature`
+                     *     is then the first.
+                     */
+                    signatures?: string[];
                     to: string;
                     value_base_units: string;
                 };
@@ -26909,6 +28427,376 @@ export interface operations {
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             404: components["responses"]["NotFound"];
+        };
+    };
+    createMultisigWallet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateMultisigWalletRequest"];
+            };
+        };
+        responses: {
+            /** @description The wallet, pending activation */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MultisigWalletResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    prepareMultisigActivation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                chain: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The raw permission update to sign */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MultisigPreparedRaw"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    completeMultisigActivation: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Passkey-Token": string;
+            };
+            path: {
+                chain: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MultisigSignedRawRequest"];
+            };
+        };
+        responses: {
+            /** @description The wallet after broadcasting */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MultisigWalletResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    getMultisigActivationStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                chain: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The wallet */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MultisigWalletResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    prepareMultisigSend: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                chain: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description Base58check Tron address. */
+                    to: string;
+                    /** @description TRX (major units) as a decimal string, e.g. "1.5". */
+                    value: string;
+                    /**
+                     * Format: uuid
+                     * @description An approved `treasury_send` M-of-N consensus approval for this
+                     *     exact send (the `pending_approval_id` of an earlier 202).
+                     */
+                    approval_id?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description The raw transfer to sign */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MultisigPreparedRaw"];
+                };
+            };
+            /**
+             * @description The org's `treasury_send` consensus policy holds this send for
+             *     M-of-N approval. Nothing is built. Once approved, call prepare
+             *     again with the same transfer and `approval_id` set to
+             *     `pending_approval_id`.
+             */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubmitPendingApprovalResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    broadcastMultisigSend: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Passkey-Token": string;
+            };
+            path: {
+                chain: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MultisigSignedRawRequest"];
+            };
+        };
+        responses: {
+            /** @description Broadcast */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TreasuryWalletSendResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    listMultisigSafes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Safes */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        safes: components["schemas"]["MultisigSafeResponse"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    createMultisigSafe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateMultisigSafeRequest"];
+            };
+        };
+        responses: {
+            /** @description The Safe (counterfactual until the first send) */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MultisigSafeResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    retireMultisigSafe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                safe_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Retired */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    prepareMultisigSafeSend: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                safe_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description 0x EVM address. */
+                    to: string;
+                    /** @description Amount in wei, as a decimal string. */
+                    value_wei: string;
+                    /**
+                     * Format: uuid
+                     * @description An approved `treasury_send` M-of-N consensus approval for this
+                     *     exact send (the `pending_approval_id` of an earlier 202).
+                     */
+                    approval_id?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description The prepared SafeTx */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MultisigSafePrepared"];
+                };
+            };
+            /**
+             * @description The org's `treasury_send` consensus policy holds this send for
+             *     M-of-N approval. Nothing is built. Once approved, call prepare
+             *     again with the same transfer and `approval_id` set to
+             *     `pending_approval_id`.
+             */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubmitPendingApprovalResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    executeMultisigSafeSend: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Passkey-Token": string;
+            };
+            path: {
+                safe_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description Hex SafeTx hash from `prepare`. */
+                    safe_tx_hash: string;
+                    /** @description Hex 65-byte recoverable ECDSA signature (r ‖ s ‖ v, low-S, v 0/1 or 27/28) by D over the SafeTx hash. */
+                    device_signature: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Relayed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MultisigSafeExecuteResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
         };
     };
     getTssHolder: {
@@ -27053,16 +28941,47 @@ export interface operations {
                     /** @description Major units. */
                     value: string;
                     memo?: string;
+                    /**
+                     * Format: uuid
+                     * @description An approved M-of-N consensus approval for this exact transfer
+                     *     (the `pending_approval_id` of an earlier 202). The approval is
+                     *     bound to `key_id`, `chain`, `to`, `value` and `memo`.
+                     */
+                    approval_id?: string;
+                    /**
+                     * Format: uuid
+                     * @description The `transaction_id` of an earlier prepare that was parked on
+                     *     human approval (202 `awaiting_approval`). The transaction must
+                     *     still be `awaiting_approval`, belong to this agent, match this
+                     *     transfer, and its approval must be approved; resuming spends
+                     *     that approval.
+                     */
+                    resume_tx_id?: string;
                 };
             };
         };
         responses: {
-            /** @description Unsigned message */
+            /** @description Unsigned message, recorded as a prepared intent with a ledger row */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["TssPrepareResponse"];
+                };
+            };
+            /**
+             * @description Held for approval. `awaiting_approval` = human approval (resume with
+             *     `resume_tx_id`); `pending_approval` = M-of-N consensus (retry with
+             *     `approval_id`).
+             */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TssPrepareAwaitingApproval"] | components["schemas"]["SubmitPendingApprovalResponse"];
+                };
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
@@ -27094,8 +29013,11 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["TssSignBeginResponse"];
+                };
             };
+            400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
@@ -27112,12 +29034,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": {
-                    /** Format: uuid */
-                    session_id: string;
-                    client_commitments: string;
-                    client_signature_share: string;
-                };
+                "application/json": components["schemas"]["TssSignCompleteRequest"];
             };
         };
         responses: {
@@ -27126,10 +29043,13 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["TssSignCompleteResponse"];
+                };
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
         };
@@ -27150,6 +29070,12 @@ export interface operations {
                     key_id: string;
                     message: string;
                     signature: string;
+                    /**
+                     * @description Every signature from `sign/complete` (`signatures`), when the
+                     *     transaction has several payloads (Bitcoin inputs). `signature`
+                     *     is then the first.
+                     */
+                    signatures?: string[];
                 };
             };
         };
@@ -27617,7 +29543,10 @@ export interface operations {
     };
     rotateTreasuryWallet: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description An approved `treasury_wallet.rotate` consensus approval (from an earlier 202). */
+                approval_id?: string;
+            };
             header?: never;
             path: {
                 chain: string;
@@ -27635,10 +29564,28 @@ export interface operations {
                     "application/json": components["schemas"]["TreasuryWalletResponse"];
                 };
             };
+            /** @description The org requires M-of-N consensus on `treasury_wallet.rotate`. Nothing was rotated. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubmitPendingApprovalResponse"];
+                };
+            };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            /** @description The wallet is a self-custody (`client_tss`) wallet; rotating would replace it with a server key. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
         };
     };
     getTreasuryWalletBalance: {
@@ -29432,21 +31379,39 @@ export interface operations {
     postConnectionAgent: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Same as on PATCH; required only to turn `raw_signing_enabled` on. */
+                "X-Auth-Confirm"?: string;
+            };
             path: {
                 connectionId: string;
                 agentId: string;
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchConnectionAgentRequest"];
+            };
+        };
         responses: {
             /** @description Agent updated */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["PatchConnectionAgentResponse"];
+                };
+            };
+            /** @description Raw signing enable held for approval; see PATCH. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubmitPendingApprovalResponse"] | components["schemas"]["GuardrailWideningQueuedResponse"];
+                };
             };
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
@@ -29455,7 +31420,13 @@ export interface operations {
     patchConnectionAgent: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /**
+                 * @description Required only to turn `raw_signing_enabled` on: the end user's re-auth token
+                 *     for purpose `security.guardrail.edit`.
+                 */
+                "X-Auth-Confirm"?: string;
+            };
             path: {
                 connectionId: string;
                 agentId: string;
@@ -29475,6 +31446,19 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PatchConnectionAgentResponse"];
+                };
+            };
+            /**
+             * @description Raw signing enable held: `pending_approval` (control-plane consensus on
+             *     `agent.update`; retry with `approval_id`) or `awaiting_approval` (the
+             *     org's guardrail widening queue). No other field in the request was applied.
+             */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubmitPendingApprovalResponse"] | components["schemas"]["GuardrailWideningQueuedResponse"];
                 };
             };
             400: components["responses"]["BadRequest"];
@@ -31328,7 +33312,10 @@ export interface operations {
     updatePaySettings: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Required for a widening change; see above. */
+                "X-Auth-Confirm"?: string;
+            };
             path: {
                 agent_id: components["parameters"]["AgentId"];
             };
@@ -31347,7 +33334,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Not a human caller */
+            /** @description Not a human caller, not an owner or admin, or a widening change without a valid step-up token */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -31479,7 +33466,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Not a human caller, grant mode disabled, or over the agent's maximum */
+            /** @description Not a human owner or admin, grant mode disabled, or over the agent's maximum */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -31512,7 +33499,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Not a human caller, grant mode disabled, or terms exceed the agent's maximum */
+            /** @description Not a human owner or admin, grant mode disabled, or terms exceed the agent's maximum */
             403: {
                 headers: {
                     [name: string]: unknown;
