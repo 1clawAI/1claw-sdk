@@ -181,7 +181,12 @@ export class OneclawClient {
             // and awaited the same way (HttpClient.pendingInitialAuth) so a
             // request fired immediately after construction can't race it
             // either.
-            if (!config.apiKey.startsWith("ocv_")) {
+            // plt_ keys are platform keys — used directly as the Bearer
+            // token (set in HttpClient), never exchanged.
+            if (
+                !config.apiKey.startsWith("ocv_") &&
+                !config.apiKey.startsWith("plt_")
+            ) {
                 this.http.authenticateWithApiKey(config.apiKey);
             }
         }

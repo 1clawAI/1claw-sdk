@@ -17143,12 +17143,17 @@ export interface components {
         TreasuryWalletSendRequest: {
             /** @description Destination address (0x-prefixed) */
             to: string;
-            /** @description Value in wei (or major-unit decimal string for non-EVM) */
+            /** @description Value in wei (or major-unit decimal string for non-EVM). `value` is accepted as an alias. */
             value_wei: string;
+            /**
+             * Format: uuid
+             * @description ID of an approved consensus approval, sent when resubmitting a send that required one.
+             */
+            approval_id?: string;
             /** @description Hex-encoded calldata (optional) */
             data?: string;
-            /** @description Gas limit override */
-            gas_limit?: number;
+            /** @description Gas limit override (decimal string) */
+            gas_limit?: string;
             /**
              * @description When true, submits as a gasless (ERC-4337) transaction via Pimlico paymaster. The paymaster sponsors the gas cost.
              * @default false
@@ -18392,6 +18397,18 @@ export interface components {
             email: string;
             /** @description Ethereum address if auto_provision_chains included an EVM chain */
             wallet_address?: string | null;
+            /** @description Set when the account has MFA enabled. `token` is then empty; finish at `POST /v1/auth/mfa/verify` with `mfa_token`. */
+            mfa_required?: boolean;
+            mfa_token?: string;
+            /** @description `"totp"` or `"passkey"` */
+            mfa_method?: string;
+            /** @description Returned with 409 when the user belongs to a different org than the platform app. `token` is empty. */
+            link_required?: {
+                status: string;
+                reason: string;
+                authorize_url: string;
+                app_slug: string;
+            };
         };
         OAuthConsentResponse: {
             app_name: string;
@@ -18598,7 +18615,9 @@ export interface components {
             /** Format: uuid */
             id: string;
             /** Format: uuid */
-            platform_app_id: string;
+            org_id: string;
+            /** Format: uuid */
+            platform_app_id?: string | null;
             /** Format: uuid */
             user_id?: string | null;
             to_allowlist?: string[];
@@ -18616,8 +18635,11 @@ export interface components {
             human_factor_auth?: {
                 [key: string]: unknown;
             } | null;
+            is_active: boolean;
             /** Format: date-time */
             created_at: string;
+            /** Format: date-time */
+            updated_at: string;
         };
         HumanFactorAuthPolicy: {
             /** @enum {string} */
@@ -32416,6 +32438,14 @@ export interface operations {
                     id_token: string;
                     /** @description Required for Discord — must match the redirect URI used in the OAuth flow */
                     oauth_redirect_uri?: string;
+                    /** @description Required for Discord. HMAC-signed state parameter (`timestamp.hmac_hex`). */
+                    oauth_state?: string;
+                    /**
+                     * Format: uuid
+                     * @description Platform app context for embedded social login (cross-org consent flow).
+                     */
+                    platform_app_id?: string;
+                    referral_code?: string;
                     auto_provision_chains?: string[];
                 };
             };
@@ -32426,14 +32456,18 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["EmailOtpVerifyResponse"];
+                };
             };
             /** @description New user created */
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["EmailOtpVerifyResponse"];
+                };
             };
             /** @description Invalid or unverified token */
             401: {

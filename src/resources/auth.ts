@@ -1,5 +1,6 @@
 import type { HttpClient } from "../core/http";
 import type {
+    LinkRequiredInfo,
     TokenRequest,
     AgentTokenRequest,
     UserApiKeyTokenRequest,
@@ -96,30 +97,43 @@ export interface EmailOtpVerifyRequest {
     code: string;
     platform_app_id?: string;
     auto_provision_chains?: string[];
+    /** Create an account for an unknown address. Absent or false means sign-in only. */
+    allow_signup?: boolean;
+    referral_code?: string;
 }
 
+/**
+ * Response from email-OTP verify and social login. `token` is the session
+ * JWT; it is an empty string when `mfa_required` is set (finish at
+ * `/v1/auth/mfa/verify` with `mfa_token`) or when `link_required` is set.
+ */
 export interface EmailOtpVerifyResponse {
-    access_token: string;
-    token_type: string;
+    token: string;
     user_id: string;
     org_id: string;
-    is_new: boolean;
+    is_new_user: boolean;
+    email: string;
+    wallet_address: string | null;
+    mfa_required?: boolean;
+    mfa_token?: string;
+    mfa_method?: string;
+    /** Set with a 409 when the user belongs to a different org than the platform app. */
+    link_required?: LinkRequiredInfo;
 }
 
 export interface SocialLoginRequest {
     provider: string;
     id_token: string;
     auto_provision_chains?: string[];
+    /** Required for Discord: the redirect URI used in the OAuth request. */
     oauth_redirect_uri?: string;
+    /** Required for Discord: HMAC-signed state (`timestamp.hmac_hex`). */
+    oauth_state?: string;
+    platform_app_id?: string;
+    referral_code?: string;
 }
 
-export interface SocialLoginResponse {
-    access_token: string;
-    token_type: string;
-    user_id: string;
-    org_id: string;
-    is_new: boolean;
-}
+export type SocialLoginResponse = EmailOtpVerifyResponse;
 
 export interface OAuthTokenRequest {
     grant_type?: string;
@@ -420,8 +434,8 @@ export class AuthResource {
             "/v1/auth/email-otp/verify",
             { body: params, skipAuth: true },
         );
-        if (res.data?.access_token) {
-            this.http.setToken(res.data.access_token);
+        if (res.data?.token) {
+            this.http.setToken(res.data.token);
         }
         return res;
     }
@@ -438,8 +452,8 @@ export class AuthResource {
             "/v1/auth/social-login",
             { body: params, skipAuth: true },
         );
-        if (res.data?.access_token) {
-            this.http.setToken(res.data.access_token);
+        if (res.data?.token) {
+            this.http.setToken(res.data.token);
         }
         return res;
     }

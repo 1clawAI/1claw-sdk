@@ -84,6 +84,22 @@ describe("OneclawClient", () => {
         expect(url).toContain("/v1/auth/api-key-token");
     });
 
+    it("uses a plt_ apiKey directly as the Bearer token (no exchange)", async () => {
+        const fetcher = mockFetch(200, { vaults: [] });
+        globalThis.fetch = fetcher;
+
+        const client = new OneclawClient({
+            baseUrl: "https://api.test",
+            apiKey: "plt_live_abc",
+        });
+        await client.vault.list();
+
+        expect(fetcher).toHaveBeenCalledOnce();
+        const [url, init] = fetcher.mock.calls[0];
+        expect(url).toBe("https://api.test/v1/vaults");
+        expect(init.headers["Authorization"]).toBe("Bearer plt_live_abc");
+    });
+
     it("skips auto-auth when token is already provided", () => {
         const fetcher = mockFetch(200, {});
         globalThis.fetch = fetcher;

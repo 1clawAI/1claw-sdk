@@ -15,6 +15,7 @@ import { AuthResource } from "../resources/auth";
 import { ApiKeysResource } from "../resources/api-keys";
 import { TreasuryResource } from "../resources/treasury";
 import { ChannelsResource } from "../resources/channels";
+import { TreasuryWalletsResource } from "../resources/treasury-wallets";
 
 const BASE = "https://api.test";
 const originalFetch = globalThis.fetch;
@@ -618,6 +619,56 @@ describe("AuthResource", () => {
         expect(http.getToken()).toBe("key-jwt");
     });
 
+    it("verifyEmailOtp stores the token field the vault returns", async () => {
+        globalThis.fetch = mockFetch(200, {
+            token: "otp-jwt",
+            user_id: "u-1",
+            org_id: "o-1",
+            is_new_user: false,
+            email: "a@b.co",
+            wallet_address: null,
+        });
+        const http = makeHttp("");
+        const res = await new AuthResource(http).verifyEmailOtp({ email: "a@b.co", code: "123456" });
+        expect(lastCall().url).toBe(`${BASE}/v1/auth/email-otp/verify`);
+        expect(http.getToken()).toBe("otp-jwt");
+        expect(res.data?.token).toBe("otp-jwt");
+    });
+
+    it("verifyEmailOtp leaves the token alone when MFA is required", async () => {
+        globalThis.fetch = mockFetch(200, {
+            token: "",
+            user_id: "u-1",
+            org_id: "o-1",
+            is_new_user: false,
+            email: "a@b.co",
+            wallet_address: null,
+            mfa_required: true,
+            mfa_token: "mfa-1",
+            mfa_method: "totp",
+        });
+        const http = makeHttp("prior");
+        const res = await new AuthResource(http).verifyEmailOtp({ email: "a@b.co", code: "123456" });
+        expect(http.getToken()).toBe("prior");
+        expect(res.data?.mfa_token).toBe("mfa-1");
+    });
+
+    it("socialLogin stores the token field the vault returns", async () => {
+        globalThis.fetch = mockFetch(201, {
+            token: "social-jwt",
+            user_id: "u-1",
+            org_id: "o-1",
+            is_new_user: true,
+            email: "a@b.co",
+            wallet_address: "0xabc",
+        });
+        const http = makeHttp("");
+        const res = await new AuthResource(http).socialLogin({ provider: "google", id_token: "gid" });
+        expect(lastCall().url).toBe(`${BASE}/v1/auth/social-login`);
+        expect(http.getToken()).toBe("social-jwt");
+        expect(res.data?.is_new_user).toBe(true);
+    });
+
     it("google sends POST /v1/auth/google", async () => {
         globalThis.fetch = mockFetch(200, { access_token: "g-jwt" });
         const http = makeHttp("");
@@ -757,5 +808,38 @@ describe("ChannelsResource", () => {
         const body = JSON.parse(lastCall().init.body as string);
         expect(body.sender_allowlist).toEqual(["111"]);
         expect(body.auto_respond_enabled).toBe(true);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// TreasuryWalletsResource
+// ---------------------------------------------------------------------------
+describe("TreasuryWalletsResource", () => {
+    it("sendFromWallet posts value_wei with the reauth header", async () => {
+        globalThis.fetch = mockFetch(200, {
+            tx_hash: "0xh",
+            from: "0xf",
+            to: "0xt",
+            value_wei: "1000",
+            chain: "base",
+            status: "broadcast",
+        });
+        const res = await new TreasuryWalletsResource(makeHttp()).sendFromWallet(
+            "base",
+            { to: "0xt", value_wei: "1000" },
+            "pw",
+        );
+        const { url, init } = lastCall();
+        expect(url).toBe(`${BASE}/v1/treasury/wallets/base/send`);
+        expect(JSON.parse(init.body as string)).toEqual({ to: "0xt", value_wei: "1000" });
+        expect((init.headers as Record<string, string>)["X-Auth-Confirm"]).toBe("pw");
+        expect(res.data?.value_wei).toBe("1000");
+    });
+
+    it("getEffectiveSpendPolicy returns the { policy } envelope", async () => {
+        globalThis.fetch = mockFetch(200, { policy: null });
+        const res = await new TreasuryWalletsResource(makeHttp()).getEffectiveSpendPolicy();
+        expect(lastCall().url).toBe(`${BASE}/v1/treasury/wallets/spend-policy`);
+        expect(res.data?.policy).toBeNull();
     });
 });

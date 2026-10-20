@@ -53,9 +53,16 @@ export class HttpClient {
             this.dpopManager = new DPoPManager();
         }
 
+        // plt_ platform keys are sent as the Bearer token as-is: the vault
+        // authenticates them directly and has no exchange endpoint for them.
+        const isPlatformKey = !!config.apiKey?.startsWith("plt_");
+        if (isPlatformKey && !this.token) {
+            this.token = config.apiKey;
+        }
+
         const isAgentKey =
             config.apiKey?.startsWith("ocv_") || !!config.agentId;
-        if (config.apiKey && isAgentKey) {
+        if (config.apiKey && isAgentKey && !isPlatformKey) {
             this.agentCredentials = {
                 agentId: config.agentId,
                 apiKey: config.apiKey,

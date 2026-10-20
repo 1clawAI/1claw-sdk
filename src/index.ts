@@ -19,6 +19,12 @@ export { AuthResource, generatePKCE, buildAuthorizeUrl } from "./resources/auth"
 export type {
     OAuthTokenRequest,
     OAuthTokenResponse,
+    EmailOtpSendRequest,
+    EmailOtpSendResponse,
+    EmailOtpVerifyRequest,
+    EmailOtpVerifyResponse,
+    SocialLoginRequest,
+    SocialLoginResponse,
 } from "./resources/auth";
 export { ApiKeysResource } from "./resources/api-keys";
 export { ChainsResource } from "./resources/chains";
@@ -105,6 +111,15 @@ export type {
     TreasuryWalletResponse,
     TreasuryWalletListResponse,
     TreasuryWalletExportResponse,
+    TreasuryWalletBalanceResponse,
+    NativeBalance as TreasuryNativeBalance,
+    TokenBalance as TreasuryTokenBalance,
+    SendFromWalletRequest,
+    SendFromWalletResponse,
+    SwapFromWalletRequest,
+    SwapFromWalletResponse,
+    WalletSpendPolicy,
+    SpendPolicyResponse as EffectiveSpendPolicyResponse,
 } from "./resources/treasury-wallets";
 export { RiskResource } from "./resources/risk";
 export { OtelResource, parseSseFrames, frameToEvent } from "./resources/otel";

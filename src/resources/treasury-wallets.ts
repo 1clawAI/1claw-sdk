@@ -28,30 +28,46 @@ export interface TreasuryWalletExportResponse {
 export interface TreasuryWalletBalanceResponse {
     chain: string;
     address: string;
-    native_balance: string;
-    native_symbol: string;
-    tokens?: TokenBalance[];
+    native: NativeBalance;
+    tokens: TokenBalance[];
+}
+
+export interface NativeBalance {
+    symbol: string;
+    /** Smallest unit (wei, lamports, sats, ...). */
+    balance_wei: string;
+    /** Major units, formatted for display. */
+    balance_display: string;
 }
 
 export interface TokenBalance {
-    contract: string;
-    symbol: string;
-    balance: string;
-    decimals: number;
+    contract_address: string;
+    balance_raw: string;
 }
 
 export interface SendFromWalletRequest {
     to: string;
-    amount: string;
-    token_contract?: string;
+    /**
+     * EVM: value in wei. Non-EVM: value in major units (e.g. "0.5" BTC).
+     * The server also accepts `value` as an alias.
+     */
+    value_wei: string;
+    /** Approved consensus approval id, sent when resubmitting a send that needed one. */
+    approval_id?: string;
+    /** EVM only: calldata hex. */
+    data?: string;
+    /** EVM only: gas limit override (decimal string). */
+    gas_limit?: string;
+    /** EVM only: sponsor gas through the ERC-4337 paymaster. */
     gasless?: boolean;
+    /** ERC-20 contract, SPL mint, TRC-20 contract, or Cardano `policy_id.asset_name`. */
     token_mint?: string;
+    token_decimals?: number;
     memo?: string;
     destination_tag?: number;
     fee_rate_sat_per_vbyte?: number;
     xrpl_tx_json?: Record<string, unknown>;
     fee_limit_sun?: number;
-    token_decimals?: number;
     ttl?: number;
 }
 
@@ -59,10 +75,12 @@ export interface SendFromWalletResponse {
     tx_hash: string;
     from: string;
     to: string;
-    amount: string;
+    value_wei: string;
     chain: string;
     status: string;
     user_op_hash?: string;
+    /** Raw signed transaction (non-EVM only). */
+    raw_tx?: string;
 }
 
 export interface SwapFromWalletRequest {
@@ -81,15 +99,35 @@ export interface SwapFromWalletResponse {
     chain: string;
 }
 
+/** A wallet spend policy row, as the vault returns it. */
+export interface WalletSpendPolicy {
+    id: string;
+    org_id: string;
+    platform_app_id: string | null;
+    user_id: string | null;
+    to_allowlist: string[];
+    to_denylist: string[];
+    /** Decimal string. */
+    max_value_per_tx_eth: string | null;
+    /** Decimal string. */
+    daily_limit_eth: string | null;
+    allowed_chains: string[];
+    allowed_tokens: string[];
+    max_transactions_per_day: number | null;
+    human_factor_auth: Record<string, unknown> | null;
+    inference_allowance_usd: string | null;
+    inference_reserved_pct: number | null;
+    inference_hard_stop: boolean | null;
+    inference_allowance_mode: string | null;
+    max_request_cost_usd: string | null;
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
+}
+
+/** `GET /v1/treasury/wallets/spend-policy`: `policy` is null when none applies. */
 export interface SpendPolicyResponse {
-    to_allowlist?: string[];
-    to_denylist?: string[];
-    max_value_per_tx_eth?: string;
-    daily_limit_eth?: string;
-    allowed_chains?: string[];
-    allowed_tokens?: string[];
-    max_transactions_per_day?: number;
-    source: string;
+    policy: WalletSpendPolicy | null;
 }
 
 /**
@@ -176,7 +214,7 @@ export class TreasuryWalletsResource {
     /**
      * Send native currency or ERC-20 tokens. Requires re-authentication.
      * @param chain - Chain name (e.g. "ethereum")
-     * @param body - Send parameters (to, amount, optional token_contract)
+     * @param body - Send parameters (to, value_wei, optional token_mint)
      * @param password - Account password for re-authentication
      */
     async sendFromWallet(

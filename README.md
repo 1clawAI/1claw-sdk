@@ -52,13 +52,13 @@ if (error) {
 
 Agent JWTs issued by `POST /v1/auth/agent-token` may include optional claims such as `shroud_enabled` and **`shroud_config`** (when Shroud is on for that agent). Those are for services like **Shroud** that verify the JWT; the TypeScript SDK uses the token for Vault API calls and does not need to read `shroud_config` unless you build custom tooling.
 
-The SDK supports three authentication modes:
+The SDK supports four authentication modes:
 
 ```typescript
-// 1. User API key (auto-authenticates)
+// 1. User API key (exchanged for a JWT on first request)
 const client = createClient({
     baseUrl: "https://api.1claw.co",
-    apiKey: "ocv_...",
+    apiKey: "1ck_...",
 });
 
 // 2. Agent with API key (auto-authenticates as agent)
@@ -72,6 +72,13 @@ const agent = createClient({
 const authed = createClient({
     baseUrl: "https://api.1claw.co",
     token: "eyJ...",
+});
+
+// 4. Platform API key (sent as the Bearer token as-is, no exchange;
+//    `token: "plt_..."` works the same way)
+const platform = createClient({
+    baseUrl: "https://api.1claw.co",
+    apiKey: "plt_...",
 });
 
 // Or authenticate manually:

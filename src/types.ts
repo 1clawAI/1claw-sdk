@@ -19,7 +19,11 @@ export interface OneclawClientConfig {
     baseUrl: string;
     /** Pre-existing Bearer token (user JWT or agent JWT). */
     token?: string;
-    /** User API key — will be exchanged for a JWT on first request. */
+    /**
+     * API key. `1ck_` user keys are exchanged for a JWT on first request;
+     * `ocv_` agent keys are exchanged and refreshed automatically; `plt_`
+     * platform keys are sent as the Bearer token unchanged.
+     */
     apiKey?: string;
     /** Optional: agent ID to pair with `apiKey` for agent-token auth. */
     agentId?: string;
