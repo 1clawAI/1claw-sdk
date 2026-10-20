@@ -169,14 +169,28 @@ export class AgentsResource {
     }
 
     /** Update agent name, scopes, active status, expiry, or Intents API setting. */
+    /**
+     * Update an agent.
+     *
+     * Changing a guardrail, including turning raw (blind) signing on or
+     * changing `raw_signing_policy`, needs a step-up: pass `options.confirm`,
+     * your account password or a re-auth token for purpose
+     * `security.guardrail.edit`, sent as `X-Auth-Confirm`. Without it the API
+     * answers 403 naming the header. An org that reviews guardrail widenings
+     * answers 202 with an approval instead of applying the change.
+     */
     async update(
         agentId: string,
         update: UpdateAgentRequest,
+        options?: { confirm?: string },
     ): Promise<OneclawResponse<AgentResponse>> {
         return this.http.request<AgentResponse>(
             "PATCH",
             `/v1/agents/${agentId}`,
-            { body: update },
+            {
+                body: update,
+                headers: options?.confirm ? { "X-Auth-Confirm": options.confirm } : undefined,
+            },
         );
     }
 

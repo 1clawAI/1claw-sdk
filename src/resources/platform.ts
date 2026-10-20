@@ -1051,7 +1051,17 @@ export class PlatformResource {
              */
             raw_signing_enabled?: boolean;
             system_prompt?: string | null;
+            /** An approved approval id, when turning raw signing on queued one. */
+            approval_id?: string;
         },
+        /**
+         * Turning raw signing on needs the END USER's consent: `confirm` is a
+         * re-auth token the end user obtained for purpose
+         * `security.guardrail.edit` (sent as `X-Auth-Confirm`; passwords are
+         * refused on platform routes). The agent's `raw_signing_policy`
+         * becomes `approve` unless it is already `approve` or `deny`.
+         */
+        options?: { confirm?: string },
     ): Promise<
         OneclawResponse<{
             agent_id: string;
@@ -1065,7 +1075,10 @@ export class PlatformResource {
         return this.http.request(
             "PATCH",
             `/v1/platform/connections/${connectionId}/agents/${agentId}`,
-            { body },
+            {
+                body,
+                headers: options?.confirm ? { "X-Auth-Confirm": options.confirm } : undefined,
+            },
         );
     }
 
