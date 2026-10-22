@@ -263,6 +263,8 @@ export type {
     EnrollAgentRequest,
     EnrollAgentResponse,
     EnrollmentStatusResponse,
+    RequestedAccess,
+    GrantedAccess,
     PasskeySafeSpendRequest,
     CreateChildAgentRequest,
     CreateRouterKeyRequest,

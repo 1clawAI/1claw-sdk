@@ -132,6 +132,10 @@ export class AgentsResource {
      * Full pairing ceremony: enrol with `public_key`, hand the fingerprint to
      * `onFingerprint` (print it — the human compares it on the approval page),
      * then wait for the decision. Resolves with the API key on approval.
+     *
+     * Pass `requested_access` (for example `{ vault: "Harness", path: "harness/**" }`)
+     * to ask for specific access; the human sees it on the approval page and, if
+     * they grant it, the resolved status carries `granted_access`.
      */
     static async pair(
         baseUrl: string,

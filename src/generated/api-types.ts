@@ -2413,7 +2413,23 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Create a share link for a secret */
+        /**
+         * Create a share link for a secret
+         * @description Users and agents can both create shares. The caller needs read access
+         *     to the secret (a policy granting `read` on its path, or being the vault's
+         *     creator); an agent must also be bound to the secret's vault.
+         *
+         *     **Agents** may use `anyone_with_link`, `user`, `agent` and `creator`, but
+         *     not `external_email` (`403`). `creator` is only valid for an agent: it
+         *     resolves to a `user` share to the human who created the agent, so the
+         *     response's `recipient_type` is `user`. `user` and `agent` recipients must
+         *     be in the caller's org. When a share an agent created is opened, the
+         *     agent's human creator gets the access notification email.
+         *
+         *     Shares count toward the monthly share limit of the secret's org, whoever
+         *     created them, and creation is rate-limited to 10 per minute per org
+         *     (`429`).
+         */
         post: operations["createShare"];
         delete?: never;
         options?: never;
@@ -14533,6 +14549,51 @@ export interface components {
              *     in an email, nothing to copy. `1claw agent enroll --pair` does all of this.
              */
             public_key?: string;
+            requested_access?: components["schemas"]["RequestedAccess"];
+        };
+        /**
+         * @description The access an enrolling agent asks for. Validated at enroll (`400` on a
+         *     bad request): the vault name is 1-64 characters and may not name a system
+         *     vault (`__*`), the path is a secret path pattern of 1-256 characters with
+         *     no traversal, and permissions are a non-empty subset of read, write,
+         *     delete, list. Nothing is granted at enroll. The approve page shows the
+         *     vault, path and permissions; on approval (unless the human sets
+         *     `grant_requested_access: false`) exactly this is granted: the vault is
+         *     created if the org has none by that name, an allow policy for the agent
+         *     is created on the path, and the vault is bound to the agent. That
+         *     replaces the default onboarding grant (`examples/**` in `default`).
+         */
+        RequestedAccess: {
+            /**
+             * @description Vault name. Created on approval if missing.
+             * @default default
+             * @example Harness
+             */
+            vault: string;
+            /**
+             * @description Secret path pattern in that vault.
+             * @example harness/**
+             */
+            path: string;
+            /**
+             * @default [
+             *       "read",
+             *       "write"
+             *     ]
+             */
+            permissions: ("read" | "write" | "delete" | "list")[];
+        };
+        /** @description What was granted on approval for a `requested_access` request. */
+        GrantedAccess: {
+            vault?: string;
+            /** Format: uuid */
+            vault_id?: string;
+            /** @description True when the vault was created for this grant. */
+            vault_created?: boolean;
+            path?: string;
+            permissions?: string[];
+            /** @description Always true when present. */
+            granted?: boolean;
         };
         EnrollAgentResponse: {
             /**
@@ -14572,6 +14633,11 @@ export interface components {
             /** @description Present exactly once, on the first poll after approval; the pairing is then closed. */
             api_key?: string;
             vault_ids?: string[];
+            /**
+             * @description Returned with `api_key` on the first poll after approval, when the
+             *     enrollment asked for access and the human granted it.
+             */
+            granted_access?: components["schemas"]["GrantedAccess"];
         };
         CreateAgentRequest: {
             /** @description Default LLM provider for automations and Shroud. */
@@ -16257,7 +16323,11 @@ export interface components {
             is_enabled?: boolean;
         };
         CreateShareRequest: {
-            /** @enum {string} */
+            /**
+             * @description `creator` is for agent callers only (a share to the human who created
+             *     the agent). `external_email` is for human callers only.
+             * @enum {string}
+             */
             recipient_type: "user" | "agent" | "external_email" | "anyone_with_link" | "creator";
             /** Format: uuid */
             recipient_id?: string;
@@ -25739,8 +25809,26 @@ export interface operations {
                     "application/json": components["schemas"]["ShareResponse"];
                 };
             };
+            400: components["responses"]["BadRequest"];
             402: components["responses"]["PaymentRequired"];
+            /**
+             * @description No read access to the secret, agent not bound to its vault, an agent
+             *     asked for `external_email`, or a user asked for `creator`.
+             */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             404: components["responses"]["NotFound"];
+            /** @description More than 10 shares created in the last minute in this org. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     accessShare: {
@@ -38584,16 +38672,33 @@ export interface operations {
                      *     never need this.
                      */
                     approval_id?: string;
+                    /**
+                     * @description Grant the `requested_access` the agent asked for at
+                     *     enroll (default true). False gives the agent the default
+                     *     onboarding grant (`examples/**` in `default`) instead.
+                     *     Ignored when the enrollment asked for nothing.
+                     * @default true
+                     */
+                    grant_requested_access?: boolean;
                 };
             };
         };
         responses: {
-            /** @description Success */
+            /** @description Agent created. `api_key` is shown once. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        agent_id: string;
+                        api_key: string;
+                        vault_ids: string[];
+                        /** @description Present when the enrollment asked for access and it was granted. */
+                        granted_access?: components["schemas"]["GrantedAccess"];
+                    };
+                };
             };
             /** @description Unauthenticated */
             401: {
@@ -38715,6 +38820,10 @@ export interface operations {
                         /** @description Pairing only — the agent key's `SHA256:` fingerprint to verify visually. */
                         fingerprint?: string;
                         description?: string;
+                        /** @description The access the agent asked for at enroll, if any. */
+                        requested_access?: components["schemas"]["RequestedAccess"];
+                        /** @description Present and true when the requested path covers the whole vault (`**`, `**\/*` or `*`). */
+                        requested_access_whole_vault?: boolean;
                     };
                 };
             };

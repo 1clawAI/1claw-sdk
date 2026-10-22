@@ -1,4 +1,4 @@
-# @1claw/sdk (v0.63.0)
+# @1claw/sdk (v0.63.1)
 
 > ⭐ **Star [1clawAI/agent-templates](https://github.com/1clawAI/agent-templates)** — ready-to-run agent templates wired to 1Claw. It is our single starred repo.
 
@@ -459,6 +459,21 @@ const result = await AgentsResource.pair(
     (fingerprint, approvalUrl) => console.log(`Show the human: ${fingerprint}\n${approvalUrl}`),
 );
 // result.status === "approved" → result.api_key (shown once)
+```
+
+To ask for specific access instead of the default starter grant (`examples/**` in the `default` vault), add `requested_access`. The human sees the vault, path and permissions on the approval page; if they grant it, the vault is created when missing, a policy is created on the path, and the vault is bound to the agent.
+
+```typescript
+const result = await AgentsResource.pair(
+    "https://api.1claw.co",
+    {
+        name: "harness-relay",
+        public_key: "ssh-ed25519 AAAA…",
+        requested_access: { vault: "Harness", path: "harness/**" }, // permissions default to ["read", "write"]
+    },
+    (fingerprint, approvalUrl) => console.log(`Show the human: ${fingerprint}\n${approvalUrl}`),
+);
+// result.granted_access → { vault: "Harness", vault_id, vault_created, path: "harness/**", permissions, granted: true }
 ```
 
 ### Passkey-owned Safes: spend under a grant

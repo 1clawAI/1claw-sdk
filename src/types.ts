@@ -1226,6 +1226,10 @@ export interface BatchDeleteAgentsResponse {
 
 export type EnrollAgentRequest = ApiSchemas["EnrollAgentRequest"];
 export type EnrollmentStatusResponse = ApiSchemas["EnrollmentStatusResponse"];
+/** Access a pairing agent asks for at enroll (`EnrollAgentRequest.requested_access`). */
+export type RequestedAccess = ApiSchemas["RequestedAccess"];
+/** What the human granted for a `requested_access` request (`EnrollmentStatusResponse.granted_access`). */
+export type GrantedAccess = ApiSchemas["GrantedAccess"];
 
 export interface ChartResourceAction {
     action: "create" | "patch" | "unchanged" | "skipped_drifted" | "refused";
