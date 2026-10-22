@@ -14556,7 +14556,10 @@ export interface components {
          *     bad request): the vault name is 1-64 characters and may not name a system
          *     vault (`__*`), the path is a secret path pattern of 1-256 characters with
          *     no traversal, and permissions are a non-empty subset of read, write,
-         *     delete, list. Nothing is granted at enroll. The approve page shows the
+         *     delete, share (`list` is accepted and granted as `read`). Nothing is
+         *     granted at enroll. If the grant would be refused (for example a new
+         *     vault over the plan's vault limit) the approve call fails before the
+         *     agent is created and the pairing stays pending. The approve page shows the
          *     vault, path and permissions; on approval (unless the human sets
          *     `grant_requested_access: false`) exactly this is granted: the vault is
          *     created if the org has none by that name, an allow policy for the agent
@@ -14581,7 +14584,7 @@ export interface components {
              *       "write"
              *     ]
              */
-            permissions: ("read" | "write" | "delete" | "list")[];
+            permissions: ("read" | "write" | "delete" | "share" | "list")[];
         };
         /** @description What was granted on approval for a `requested_access` request. */
         GrantedAccess: {
