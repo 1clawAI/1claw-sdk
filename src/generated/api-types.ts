@@ -2448,7 +2448,7 @@ export interface paths {
         get: operations["accessShare"];
         put?: never;
         post?: never;
-        /** Revoke a share link */
+        /** Revoke a share link (creator, or an owner or admin of the share's org) */
         delete: operations["revokeShare"];
         options?: never;
         head?: never;
@@ -2464,6 +2464,28 @@ export interface paths {
         };
         /** List shares you have sent */
         get: operations["listOutboundShares"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/shares/org": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List every share on the org's secrets (owner or admin)
+         * @description Lists the shares on secrets your org owns, including ones agents
+         *     created. Owner or admin only. Each item carries `created_by` and
+         *     `created_by_type`.
+         */
+        get: operations["listOrgShares"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4706,8 +4728,11 @@ export interface paths {
         put?: never;
         /**
          * Compute the SafeTx hash for a call from a passkey Safe
-         * @description Runs the sanctions screen and spend policies on the call, reads the
-         *     Safe's on-chain nonce (0 if not yet deployed), and returns the SafeTx
+         * @description Runs wallet access, the sanctions screen, spend policies, the Cedar/OPA
+         *     transaction policy and `treasury_send` consensus on the call (a consensus
+         *     hold answers 202 with `pending_approval_id`; call again with `approval_id`
+         *     once approved), reads the Safe's on-chain nonce (0 if not yet deployed),
+         *     and returns the SafeTx
          *     hash — the raw 32 bytes are the WebAuthn challenge to sign with
          *     `userVerification: "required"`.
          */
@@ -12058,7 +12083,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Rotate the agent's EVM signer key. Generates a new secp256k1 key, builds a swapOwner UserOp on the Safe, signs with the old key, submits to bundler, a */
+        /**
+         * Rotate the agent's EVM signer key. Generates a new secp256k1 key, builds a swapOwner UserOp on the Safe, signs with the old key, submits to bundler, a
+         * @description Temporarily unavailable. Answers 501 while the flow is rebuilt; the agent's current signer keeps working.
+         */
         post: operations["rotate_signer_key"];
         delete?: never;
         options?: never;
@@ -16377,6 +16405,16 @@ export interface components {
             created_at?: string;
             is_expired?: boolean;
             is_accepted?: boolean;
+            /**
+             * Format: uuid
+             * @description Set on `GET /v1/shares/org`.
+             */
+            created_by?: string;
+            /**
+             * @description Set on `GET /v1/shares/org`.
+             * @enum {string}
+             */
+            created_by_type?: "user" | "agent";
         };
         ShareListResponse: {
             shares?: components["schemas"]["ShareListItem"][];
@@ -25898,6 +25936,29 @@ export interface operations {
             };
         };
     };
+    listOrgShares: {
+        parameters: {
+            query?: {
+                created_by_type?: "user" | "agent";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Org share list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShareListResponse"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+        };
+    };
     listInboundShares: {
         parameters: {
             query?: never;
@@ -29300,6 +29361,11 @@ export interface operations {
                     value_wei: string;
                     /** @description Hex calldata, optional. */
                     data?: string;
+                    /**
+                     * Format: uuid
+                     * @description An approved `treasury_send` consensus request, when the org requires one.
+                     */
+                    approval_id?: string;
                 };
             };
         };
@@ -29347,6 +29413,11 @@ export interface operations {
                      * @description Pass back from a grant or revoke prepare; activates / revokes the grant on success.
                      */
                     grant_id?: string;
+                    /**
+                     * Format: uuid
+                     * @description The approved `treasury_send` consensus request passed to `prepare`; spent when the send is recorded.
+                     */
+                    approval_id?: string;
                     /** @description Base64url. */
                     authenticator_data: string;
                     /** @description Base64url. */
@@ -38671,8 +38742,10 @@ export interface operations {
                      * @description Consensus approval to spend on this creation.
                      *     Approving an enrollment creates an agent, so it is
                      *     gated on `agent.create` exactly as POST /v1/agents
-                     *     is. Orgs without a control-plane consensus policy
-                     *     never need this.
+                     *     is. Granting a `requested_access` is also gated on
+                     *     `policy.create` (and `vault.create` when the vault
+                     *     does not exist yet). Orgs without a control-plane
+                     *     consensus policy never need this.
                      */
                     approval_id?: string;
                     /**
@@ -39039,6 +39112,13 @@ export interface operations {
             };
             /** @description Not found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Signer rotation is temporarily unavailable */
+            501: {
                 headers: {
                     [name: string]: unknown;
                 };
