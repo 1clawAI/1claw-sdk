@@ -140,8 +140,6 @@ await client.auth.verifyEmailChange({ code: "123456" });
 | `client.otel`      | `topology`, `threats`, `summary`, `metrics`, `flows`, `agentTrust`, `stream` — the control plane's telemetry. Human users only (a `1ck_` key or session JWT); agents are refused. `stream()` is an async iterator over SSE with `Last-Event-ID` resume; a `{type: "gap"}` event means refetch `topology()` |
 | `client.risk`      | `listEvents`, `getVerdict`, `listVerdicts`, `createHoneytoken`, `listHoneytokens`, `deleteHoneytoken`                |
 | `client.tokens`    | `list`, `listByChain`, `create`, `delete`                                                                            |
-| `client.bindings`  | `create`, `list`, `get`, `update`, `delete`, `rotateCredential`, `test`, `execute`, `listExecutions`                |
-| `client.cards`     | `order`, `list`, `get`, `reveal`, `update`, `void`, `refresh`, `import`, `searchGiftCards`                          |
 | `client.webhooks`  | `create`, `list`, `get`, `update`, `delete`                                                                          |
 | `client.memory`    | `put`, `get`, `list`, `delete`, `search`, `listNamespaces`, `deleteNamespace`                                         |
 | `client.connectors` | `listPresets`, `list`, `install`, `subscribe`, `listSubscriptions`, `unsubscribe`, `pollNow` — pre-built connectors and polled event sources |
