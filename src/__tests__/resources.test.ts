@@ -842,6 +842,10 @@ describe("TreasuryWalletsResource", () => {
         const res = await new TreasuryWalletsResource(makeHttp()).getEffectiveSpendPolicy();
         expect(lastCall().url).toBe(`${BASE}/v1/treasury/wallets/spend-policy`);
         expect(res.data?.policy).toBeNull();
+    });
+});
+
+// ---------------------------------------------------------------------------
 // WebhooksResource
 // ---------------------------------------------------------------------------
 describe("WebhooksResource", () => {
