@@ -26,24 +26,22 @@ export class X402Resource {
      * Probe a resource path to get its x402 payment requirement
      * without executing the request. Returns `null` if the resource
      * does not require payment (free-tier is not exhausted).
+     *
+     * Throws on any other error status (401, 403, 404, 5xx): those say
+     * nothing about payment, and reporting them as `null` read as "free".
      */
     async getPaymentRequirement(
         resourcePath: string,
     ): Promise<PaymentRequirement | null> {
-        const url = `${this.http.getBaseUrl()}${resourcePath}`;
-        const headers: Record<string, string> = {
-            "Content-Type": "application/json",
-        };
-        const token = this.http.getToken();
-        if (token) headers["Authorization"] = `Bearer ${token}`;
-
-        const res = await fetch(url, {
-            method: "GET",
-            headers,
-        });
+        // Same authenticated transport as withPayment(), so a fresh API-key
+        // client finishes its first token exchange before probing.
+        const res = await this.http.rawRequest("GET", resourcePath);
 
         if (res.status === 402) {
             return (await res.json()) as PaymentRequirement;
+        }
+        if (!res.ok) {
+            throw await errorFromResponse(res);
         }
         return null;
     }

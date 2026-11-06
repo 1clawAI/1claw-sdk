@@ -332,3 +332,35 @@ describe("X402Resource.withPayment", () => {
         expect(signer.signPayment).toHaveBeenCalledTimes(attempt === "paid" ? 1 : 0);
     });
 });
+
+describe("X402Resource.getPaymentRequirement", () => {
+    it("probes with the exchanged token, not anonymously", async () => {
+        const fetcher = vi.fn(async (url: string | URL | Request, init?: RequestInit) => {
+            if (String(url) === BASE + "/v1/auth/api-key-token") {
+                return json(200, { access_token: "exchanged-jwt", expires_in: 3600 });
+            }
+            return headers(init).get("Authorization") === "Bearer exchanged-jwt"
+                ? json(402, requirement)
+                : json(401, { message: "Missing authentication" });
+        });
+        vi.stubGlobal("fetch", fetcher);
+        const client = createClient({ baseUrl: BASE, apiKey: "1ck_test" });
+
+        await expect(client.x402.getPaymentRequirement(PATH)).resolves.toEqual(requirement);
+        expect(String(fetcher.mock.calls[0][0])).toBe(BASE + "/v1/auth/api-key-token");
+    });
+
+    it("returns null only when the resource is free", async () => {
+        vi.stubGlobal("fetch", vi.fn(async () => json(200, secret)));
+        const client = createClient({ baseUrl: BASE, token: "jwt" });
+
+        await expect(client.x402.getPaymentRequirement(PATH)).resolves.toBeNull();
+    });
+
+    it.each([401, 403, 404, 500])("throws on %i instead of reporting no payment", async status => {
+        vi.stubGlobal("fetch", vi.fn(async () => json(status, { message: "nope" })));
+        const client = createClient({ baseUrl: BASE, token: "jwt" });
+
+        await expect(client.x402.getPaymentRequirement(PATH)).rejects.toThrow();
+    });
+});
