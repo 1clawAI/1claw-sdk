@@ -139,6 +139,7 @@ await client.auth.verifyEmailChange({ code: "123456" });
 | `client.passkeys`  | `list`, `registerBegin`, `registerComplete`, `assertBegin`, `assertComplete`, `delete`                               |
 | `client.otel`      | `topology`, `threats`, `summary`, `metrics`, `flows`, `agentTrust`, `stream` — the control plane's telemetry. Human users only (a `1ck_` key or session JWT); agents are refused. `stream()` is an async iterator over SSE with `Last-Event-ID` resume; a `{type: "gap"}` event means refetch `topology()` |
 | `client.risk`      | `listEvents`, `getVerdict`, `listVerdicts`, `createHoneytoken`, `listHoneytokens`, `deleteHoneytoken`                |
+| `client.tokens`    | `list`, `listByChain`, `create`, `delete`                                                                            |
 | `client.webhooks`  | `create`, `list`, `get`, `update`, `delete`                                                                          |
 | `client.memory`    | `put`, `get`, `list`, `delete`, `search`, `listNamespaces`, `deleteNamespace`                                         |
 | `client.connectors` | `listPresets`, `list`, `install`, `subscribe`, `listSubscriptions`, `unsubscribe`, `pollNow` — pre-built connectors and polled event sources |
@@ -797,7 +798,7 @@ const card = await client.cards.order("agent-id", {
 const status = await client.cards.get(card.id);
 
 // Reveal (human-only with password re-auth)
-const revealed = await client.cards.reveal(card.id, "my-password");
+const revealed = await client.cards.reveal(card.id, { password: "my-password" });
 // revealed.pan, revealed.cvv, revealed.disclaimer
 
 // Gift cards
