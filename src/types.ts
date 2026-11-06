@@ -1680,7 +1680,11 @@ export interface SigningKeyExportResponse {
 export interface SignIntentRequest {
     intent_type: "personal_sign" | "typed_data" | "eip712_digest" | "transaction";
     chain: string;
-    /** Raw message bytes (hex) or UTF-8 string for personal_sign. */
+    /**
+     * Message bytes for personal_sign, hex-encoded (`0x` optional). The API
+     * rejects a plain UTF-8 string ("Invalid message hex"); encode text first,
+     * e.g. viem's `toHex("hello")`.
+     */
     message?: string;
     /** EIP-712 typed data object for typed_data signing. */
     typed_data?: unknown;
