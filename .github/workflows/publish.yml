@@ -55,5 +55,23 @@ jobs:
                   npm install -g npm@11.5.1
                   npm --version
 
+            # Releases are published from the monorepo (publish-sdk.yml) when
+            # the version in package.json changes; the tag usually lands after
+            # that. Without this check the tag's run always went red on
+            # "cannot publish over the previously published versions".
+            - name: Skip if this version is already on npm
+              id: published
+              working-directory: sdk
+              run: |
+                  name=$(node -p "require('./package.json').name")
+                  version=$(node -p "require('./package.json').version")
+                  if npm view "$name@$version" version >/dev/null 2>&1; then
+                    echo "$name@$version is already published; nothing to do."
+                    echo "skip=true" >> "$GITHUB_OUTPUT"
+                  else
+                    echo "skip=false" >> "$GITHUB_OUTPUT"
+                  fi
+
             - working-directory: sdk
+              if: steps.published.outputs.skip != 'true'
               run: npm publish --provenance --access public
