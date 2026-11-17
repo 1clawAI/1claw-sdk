@@ -2447,7 +2447,8 @@ export interface paths {
         /** Access a shared secret */
         get: operations["accessShare"];
         put?: never;
-        post?: never;
+        /** Access a passphrase-protected shared secret (passphrase in the body) */
+        post: operations["accessShareWithPassphrase"];
         /** Revoke a share link (creator, or an owner or admin of the share's org) */
         delete: operations["revokeShare"];
         options?: never;
@@ -16595,7 +16596,24 @@ export interface components {
             portal_url?: string;
         };
         SubscriptionResponse: {
+            /** Format: uuid */
+            org_id?: string;
             tier?: string;
+            /**
+             * Format: date-time
+             * @description Set for free orgs created before 2026-11-17, which keep the previous Free limits until this instant (2027-01-01T00:00:00Z). Null otherwise.
+             */
+            free_limits_grandfathered_until?: string | null;
+            /** @description The current Free plan limits, which a grandfathered org moves to at free_limits_grandfathered_until. */
+            upcoming_free_limits?: {
+                requests_per_month?: number;
+                signatures_per_month?: number;
+                vaults?: number;
+                agents?: number;
+                secrets?: number;
+                max_automations?: number;
+                automation_runs_per_month?: number;
+            };
             interval?: string;
             /** Format: date-time */
             period_end?: string;
@@ -19520,9 +19538,26 @@ export interface components {
             input_micro_usd_per_mtok: number;
             /** Format: int64 */
             output_micro_usd_per_mtok: number;
+            /** @description Where the row came from, e.g. `stripe_sync`, `pearl_sync` (Pearl's catalog, synced hourly), or `org` for an override. */
             source: string;
             /** Format: date-time */
             updated_at: string;
+            /**
+             * Format: int64
+             * @description Prompt-cache read rate, micro-USD per million tokens. Set on Pearl rows; null elsewhere.
+             */
+            cached_input_micro_usd_per_mtok?: number | null;
+            /** @description The model's published capabilities from the provider catalog (Pearl rows): `features` (e.g. `json_mode`, `tools`), `input_modalities`, `max_output_length`, `context_length`. Shroud refuses a request needing a capability the model lacks with 400 before calling the provider. `{}` on other rows. */
+            capabilities?: {
+                [key: string]: unknown;
+            };
+            /** @description False once the provider stops listing the model. Inactive rows are never used to price or route. */
+            is_active?: boolean;
+            /**
+             * Format: date-time
+             * @description When a catalog sync last confirmed this row. Managed Pearl refuses with 503 `pearl_prices_stale` when this is over 24 hours old.
+             */
+            synced_at?: string | null;
         };
         AiSpendTotals: {
             cost_usd?: number;
@@ -25875,7 +25910,10 @@ export interface operations {
     accessShare: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Passphrase for a passphrase-protected share. Repeated wrong passphrases lock the share (429). */
+                "X-Share-Passphrase"?: string;
+            };
             path: {
                 share_id: string;
             };
@@ -25894,6 +25932,50 @@ export interface operations {
             };
             402: components["responses"]["PaymentRequired"];
             404: components["responses"]["NotFound"];
+            /** @description Too many wrong passphrases; the share is locked */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    accessShareWithPassphrase: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                share_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    passphrase: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Shared secret value */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SharedSecretResponse"];
+                };
+            };
+            402: components["responses"]["PaymentRequired"];
+            404: components["responses"]["NotFound"];
+            /** @description Too many wrong passphrases; the share is locked */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     revokeShare: {

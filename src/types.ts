@@ -4373,8 +4373,17 @@ export interface LlmModelPrice {
     model_pattern: string;
     input_micro_usd_per_mtok: number;
     output_micro_usd_per_mtok: number;
+    /** e.g. `stripe_sync`, `pearl_sync` (Pearl's catalog, synced hourly), or `org`. */
     source: string;
     updated_at: string;
+    /** Prompt-cache read rate, micro-USD per Mtok. Set on Pearl rows; null elsewhere. */
+    cached_input_micro_usd_per_mtok?: number | null;
+    /** Published model capabilities from the provider catalog (Pearl rows); `{}` elsewhere. */
+    capabilities?: Record<string, unknown>;
+    /** False once the provider stops listing the model. */
+    is_active?: boolean;
+    /** When a catalog sync last confirmed this row. */
+    synced_at?: string | null;
 }
 
 export interface OrgOverview {
