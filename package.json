@@ -1,6 +1,6 @@
 {
   "name": "@1claw/sdk",
-  "version": "0.63.5",
+  "version": "0.63.6",
   "description": "TypeScript SDK for 1Claw Vault — secret management for AI agents",
   "type": "module",
   "main": "dist/index.js",
@@ -54,5 +54,9 @@
     "openapi-typescript": "^7.13.0",
     "typescript": "^5.0.0",
     "vitest": "^4.1.0"
+  },
+  "homepage": "https://1claw.co",
+  "bugs": {
+    "url": "https://github.com/1clawAI/1claw-sdk/issues"
   }
 }
